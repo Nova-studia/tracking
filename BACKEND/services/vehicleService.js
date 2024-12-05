@@ -4,7 +4,8 @@ const vehicleService = {
   async createVehicle(vehicleData) {
     try {
       const vehicle = new Vehicle(vehicleData);
-      return await vehicle.save();
+      await vehicle.save();
+      return vehicle.populate(['clientId', 'driverId']);
     } catch (error) {
       throw new Error(`Error al crear vehículo: ${error.message}`);
     }
@@ -13,8 +14,8 @@ const vehicleService = {
   async getAllVehicles() {
     try {
       return await Vehicle.find()
-        .populate('clientId', 'name')
-        .populate('driverId', 'name')
+        .populate('clientId')
+        .populate('driverId')
         .sort({ createdAt: -1 });
     } catch (error) {
       throw new Error(`Error al obtener vehículos: ${error.message}`);
@@ -26,8 +27,8 @@ const vehicleService = {
       return await Vehicle.findByIdAndUpdate(
         vehicleId,
         { status },
-        { new: true, runValidators: true }
-      );
+        { new: true }
+      ).populate(['clientId', 'driverId']);
     } catch (error) {
       throw new Error(`Error al actualizar estado del vehículo: ${error.message}`);
     }
@@ -35,19 +36,21 @@ const vehicleService = {
 
   async assignDriver(vehicleId, driverId) {
     try {
-      return await Vehicle.findByIdAndUpdate(
+      const updatedVehicle = await Vehicle.findByIdAndUpdate(
         vehicleId,
-        { driverId },
-        { new: true, runValidators: true }
-      );
+        { driverId: driverId || null },
+        { new: true }
+      ).populate(['clientId', 'driverId']);
+
+      if (!updatedVehicle) {
+        throw new Error('Vehículo no encontrado');
+      }
+
+      return updatedVehicle;
     } catch (error) {
-      throw new Error(`Error al asignar driver: ${error.message}`);
+      throw new Error(`Error al asignar conductor: ${error.message}`);
     }
   }
 };
 
-module.exports = {
-  clientService,
-  driverService,
-  vehicleService
-};
+module.exports = vehicleService;

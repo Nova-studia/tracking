@@ -9,11 +9,10 @@ const TransportesAdmin = () => {
   const [clients, setClients] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [vehicles, setVehicles] = useState([]);
-  const [activeTab, setActiveTab] = useState('clients');
+  const [activeTab, setActiveTab] = useState('vehicles');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Cargar datos iniciales
   useEffect(() => {
     const loadInitialData = async () => {
       try {
@@ -24,8 +23,8 @@ const TransportesAdmin = () => {
           fetchVehicles()
         ]);
       } catch (err) {
-        setError('Error al cargar los datos iniciales');
-        console.error('Error loading initial data:', err);
+        setError('Error al cargar los datos iniciales: ' + err.message);
+        console.error('Error completo:', err);
       } finally {
         setLoading(false);
       }
@@ -34,7 +33,6 @@ const TransportesAdmin = () => {
     loadInitialData();
   }, []);
 
-  // Funciones para obtener datos
   const fetchClients = async () => {
     try {
       const response = await fetch(`${API_URL}/clients`);
@@ -71,7 +69,6 @@ const TransportesAdmin = () => {
     }
   };
 
-  // Funciones para agregar nuevos registros
   const handleAddClient = async (newClient) => {
     try {
       const response = await fetch(`${API_URL}/clients`, {
@@ -135,8 +132,7 @@ const TransportesAdmin = () => {
     }
   };
 
-  // Función para actualizar el estado de un vehículo
-  const handleUpdateVehicleStatus = async (vehicleId, status) => {
+  const handleUpdateStatus = async (vehicleId, status) => {
     try {
       const response = await fetch(`${API_URL}/vehicles/${vehicleId}/status`, {
         method: 'PATCH',
@@ -146,7 +142,7 @@ const TransportesAdmin = () => {
         body: JSON.stringify({ status }),
       });
 
-      if (!response.ok) throw new Error('Error al actualizar estado del vehículo');
+      if (!response.ok) throw new Error('Error al actualizar estado');
       
       const updatedVehicle = await response.json();
       setVehicles(prevVehicles =>
@@ -154,36 +150,33 @@ const TransportesAdmin = () => {
           vehicle._id === vehicleId ? updatedVehicle : vehicle
         )
       );
-      return updatedVehicle;
     } catch (error) {
-      console.error('Error updating vehicle status:', error);
-      throw error;
+      console.error('Error:', error);
+      alert('Error al actualizar estado');
     }
   };
 
-  // Función para asignar conductor a un vehículo
   const handleAssignDriver = async (vehicleId, driverId) => {
     try {
+      console.log('Sending:', { vehicleId, driverId }); // Debug log
       const response = await fetch(`${API_URL}/vehicles/${vehicleId}/driver`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ driverId }),
+        body: JSON.stringify({ driverId: driverId === '' ? null : driverId }),
       });
-
-      if (!response.ok) throw new Error('Error al asignar conductor');
+  
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message);
+      }
       
       const updatedVehicle = await response.json();
-      setVehicles(prevVehicles =>
-        prevVehicles.map(vehicle =>
-          vehicle._id === vehicleId ? updatedVehicle : vehicle
-        )
-      );
-      return updatedVehicle;
+      setVehicles(prev => prev.map(v => v._id === vehicleId ? updatedVehicle : v));
     } catch (error) {
-      console.error('Error assigning driver:', error);
-      throw error;
+      console.error('Error detallado:', error);
+      alert('Error al asignar conductor: ' + error.message);
     }
   };
 
@@ -217,37 +210,37 @@ const TransportesAdmin = () => {
         <header className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900 mb-6">Sistema de Transportes</h1>
           <div className="flex space-x-4 bg-slate-100 p-1 rounded-lg">
-            <button
-              onClick={() => setActiveTab('clients')}
-              className={`px-4 py-2.5 rounded-md flex items-center flex-1 justify-center transition-all ${
-                activeTab === 'clients' 
-                  ? 'bg-white text-slate-900 shadow-sm' 
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-              }`}
-            >
-              Clientes
-            </button>
-            <button
-              onClick={() => setActiveTab('drivers')}
-              className={`px-4 py-2.5 rounded-md flex items-center flex-1 justify-center transition-all ${
-                activeTab === 'drivers' 
-                  ? 'bg-white text-slate-900 shadow-sm' 
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-              }`}
-            >
-              Conductores
-            </button>
-            <button
-              onClick={() => setActiveTab('vehicles')}
-              className={`px-4 py-2.5 rounded-md flex items-center flex-1 justify-center transition-all ${
-                activeTab === 'vehicles' 
-                  ? 'bg-white text-slate-900 shadow-sm' 
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-              }`}
-            >
-              Vehículos
-            </button>
-          </div>
+  <button
+    onClick={() => setActiveTab('vehicles')}
+    className={`px-4 py-2.5 rounded-md flex items-center flex-1 justify-center transition-all ${
+      activeTab === 'vehicles' 
+        ? 'bg-white text-slate-900 shadow-sm' 
+        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+    }`}
+  >
+    Vehículos
+  </button>
+  <button
+    onClick={() => setActiveTab('clients')}
+    className={`px-4 py-2.5 rounded-md flex items-center flex-1 justify-center transition-all ${
+      activeTab === 'clients' 
+        ? 'bg-white text-slate-900 shadow-sm' 
+        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+    }`}
+  >
+    Clientes
+  </button>
+  <button
+    onClick={() => setActiveTab('drivers')}
+    className={`px-4 py-2.5 rounded-md flex items-center flex-1 justify-center transition-all ${
+      activeTab === 'drivers' 
+        ? 'bg-white text-slate-900 shadow-sm' 
+        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+    }`}
+  >
+    Conductores
+  </button>
+</div>
         </header>
 
         {activeTab === 'clients' && (
@@ -263,17 +256,17 @@ const TransportesAdmin = () => {
             onAddDriver={handleAddDriver} 
           />
         )}
-
         {activeTab === 'vehicles' && (
           <VehiculosTab 
             vehicles={vehicles}
             clients={clients}
             drivers={drivers} 
             onAddVehicle={handleAddVehicle}
-            onUpdateStatus={handleUpdateVehicleStatus}
+            onUpdateStatus={handleUpdateStatus}
             onAssignDriver={handleAssignDriver}
           />
         )}
+
       </div>
     </div>
   );
