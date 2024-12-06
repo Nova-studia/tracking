@@ -2,6 +2,8 @@ import React, { useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import VehiclesTableView from './VehiclesTableView';
 import SearchBar from './SearchBar';
+import ClientAutocomplete from './ClientAutocomplete';
+import DriverAutocomplete from './DriverAutocomplete';
 
 const VehiculosTab = ({ vehicles, clients, drivers, onAddVehicle, onUpdateStatus, onAssignDriver }) => {
   const [viewMode, setViewMode] = useState('table');
@@ -52,7 +54,6 @@ const VehiculosTab = ({ vehicles, clients, drivers, onAddVehicle, onUpdateStatus
         }
       }
 
-      // Excluir vehículos entregados si no están específicamente filtrados
       const showDelivered = filters.status === 'delivered';
       const isNotDelivered = vehicle.status !== 'delivered' || showDelivered;
 
@@ -113,81 +114,96 @@ const VehiculosTab = ({ vehicles, clients, drivers, onAddVehicle, onUpdateStatus
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
-        <h2 className="text-xl font-semibold mb-4 text-slate-900">Registrar Nuevo Vehículo</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <select
-            value={newVehicle.clientId}
-            onChange={(e) => setNewVehicle({...newVehicle, clientId: e.target.value})}
-            className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-200 text-slate-900"
-          >
-            <option value="">Seleccionar Cliente</option>
-            {clients.map(client => (
-              <option key={client._id} value={client._id}>
-                {client.name}
-              </option>
-            ))}
-          </select>
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+        <div className="border-b border-slate-200 bg-slate-50 p-2">
+          <h2 className="font-semibold text-slate-900">Registrar Nuevo Vehículo</h2>
+        </div>
+        <div className="grid grid-cols-8 gap-px bg-slate-200">
+          <div className="bg-slate-50 p-2 text-sm font-medium text-slate-600">Cliente</div>
+          <div className="bg-slate-50 p-2 text-sm font-medium text-slate-600">Driver</div>
+          <div className="bg-slate-50 p-2 text-sm font-medium text-slate-600">Marca</div>
+          <div className="bg-slate-50 p-2 text-sm font-medium text-slate-600">Modelo</div>
+          <div className="bg-slate-50 p-2 text-sm font-medium text-slate-600">Año</div>
+          <div className="bg-slate-50 p-2 text-sm font-medium text-slate-600">LOT</div>
+          <div className="bg-slate-50 p-2 text-sm font-medium text-slate-600">Ubicación</div>
+          <div className="bg-slate-50 p-2 text-sm font-medium text-slate-600">Acciones</div>
 
-          <select
-            value={newVehicle.driverId}
-            onChange={(e) => setNewVehicle({...newVehicle, driverId: e.target.value})}
-            className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-200 text-slate-900"
-          >
-            <option value="">Asignar Driver (Opcional)</option>
-            {drivers.map(driver => (
-              <option key={driver._id} value={driver._id}>
-                {driver.name}
-              </option>
-            ))}
-          </select>
+          <div className="bg-white p-1">
+            <ClientAutocomplete
+              clients={clients}
+              value={newVehicle.clientId}
+              onChange={(clientId) => setNewVehicle({...newVehicle, clientId})}
+            />
+          </div>
 
-          <input
-            type="text"
-            placeholder="Marca"
-            value={newVehicle.brand}
-            onChange={(e) => setNewVehicle({...newVehicle, brand: e.target.value})}
-            className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-200 text-slate-900 placeholder-slate-400"
-          />
+          <div className="bg-white p-1">
+          <div className="bg-white p-1">
+  <DriverAutocomplete
+    drivers={drivers}
+    value={newVehicle.driverId}
+    onChange={(driverId) => setNewVehicle({...newVehicle, driverId})}
+  />
+</div>
+          </div>
 
-          <input
-            type="text"
-            placeholder="Modelo"
-            value={newVehicle.model}
-            onChange={(e) => setNewVehicle({...newVehicle, model: e.target.value})}
-            className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-200 text-slate-900 placeholder-slate-400"
-          />
+          <div className="bg-white p-1">
+            <input
+              type="text"
+              value={newVehicle.brand}
+              onChange={(e) => setNewVehicle({...newVehicle, brand: e.target.value})}
+              className="w-full px-2 py-1 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-slate-200 text-sm"
+              placeholder="Marca"
+            />
+          </div>
 
-          <input
-            type="text"
-            placeholder="Año"
-            value={newVehicle.year}
-            onChange={(e) => setNewVehicle({...newVehicle, year: e.target.value})}
-            className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-200 text-slate-900 placeholder-slate-400"
-          />
+          <div className="bg-white p-1">
+            <input
+              type="text"
+              value={newVehicle.model}
+              onChange={(e) => setNewVehicle({...newVehicle, model: e.target.value})}
+              className="w-full px-2 py-1 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-slate-200 text-sm"
+              placeholder="Modelo"
+            />
+          </div>
 
-          <input
-            type="text"
-            placeholder="LOT"
-            value={newVehicle.LOT}
-            onChange={(e) => setNewVehicle({...newVehicle, LOT: e.target.value})}
-            className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-200 text-slate-900 placeholder-slate-400"
-          />
+          <div className="bg-white p-1">
+            <input
+              type="text"
+              value={newVehicle.year}
+              onChange={(e) => setNewVehicle({...newVehicle, year: e.target.value})}
+              className="w-full px-2 py-1 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-slate-200 text-sm"
+              placeholder="Año"
+            />
+          </div>
 
-          <input
-            type="text"
-            placeholder="Ubicación de Subasta"
-            value={newVehicle.lotLocation}
-            onChange={(e) => setNewVehicle({...newVehicle, lotLocation: e.target.value})}
-            className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-200 text-slate-900 placeholder-slate-400"
-          />
+          <div className="bg-white p-1">
+            <input
+              type="text"
+              value={newVehicle.LOT}
+              onChange={(e) => setNewVehicle({...newVehicle, LOT: e.target.value})}
+              className="w-full px-2 py-1 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-slate-200 text-sm"
+              placeholder="LOT"
+            />
+          </div>
 
-          <button
-            onClick={handleSubmit}
-            className="px-4 py-2.5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors"
-          >
-            Registrar Vehículo
-          </button>
+          <div className="bg-white p-1">
+            <input
+              type="text"
+              value={newVehicle.lotLocation}
+              onChange={(e) => setNewVehicle({...newVehicle, lotLocation: e.target.value})}
+              className="w-full px-2 py-1 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-slate-200 text-sm"
+              placeholder="Ubicación"
+            />
+          </div>
+
+          <div className="bg-white p-1">
+            <button
+              onClick={handleSubmit}
+              className="w-full px-2 py-1 bg-slate-900 text-white rounded text-sm hover:bg-slate-800 transition-colors"
+            >
+              Registrar
+            </button>
+          </div>
         </div>
       </div>
 
@@ -196,21 +212,13 @@ const VehiculosTab = ({ vehicles, clients, drivers, onAddVehicle, onUpdateStatus
       <div className="flex justify-end space-x-2">
         <button
           onClick={() => setViewMode('grid')}
-          className={`px-4 py-2 rounded-lg ${
-            viewMode === 'grid' 
-              ? 'bg-slate-900 text-white' 
-              : 'bg-slate-100 text-slate-600'
-          }`}
+          className={`px-4 py-2 rounded-lg ${viewMode === 'grid' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'}`}
         >
           Vista Tarjetas
         </button>
         <button
           onClick={() => setViewMode('table')}
-          className={`px-4 py-2 rounded-lg ${
-            viewMode === 'table' 
-              ? 'bg-slate-900 text-white' 
-              : 'bg-slate-100 text-slate-600'
-          }`}
+          className={`px-4 py-2 rounded-lg ${viewMode === 'table' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'}`}
         >
           Vista Tabla
         </button>
