@@ -57,13 +57,39 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
     return null;
   };
 
+  const getClientName = (vehicle) => {
+    if (!vehicle?.clientId) return '-';
+    const clientId = typeof vehicle.clientId === 'object' ? vehicle.clientId._id : vehicle.clientId;
+    return clients.find(c => c._id === clientId)?.name || '-';
+  };
+
+  const getDriverName = (vehicle) => {
+    if (!vehicle?.driverId) return '-';
+    const driverId = typeof vehicle.driverId === 'object' ? vehicle.driverId._id : vehicle.driverId;
+    return drivers.find(d => d._id === driverId)?.name || '-';
+  };
+
+  const getDriverId = (vehicle) => {
+    if (!vehicle?.driverId) return '';
+    return typeof vehicle.driverId === 'object' ? vehicle.driverId._id : vehicle.driverId;
+  };
+
+  const getLocation = (vehicle, type) => {
+    if (vehicle.lotLocation) {
+      const [city, state] = vehicle.lotLocation.split(',').map(s => s.trim());
+      return type === 'city' ? city : state;
+    }
+    return type === 'city' ? (vehicle.city || '-') : (vehicle.state || '-');
+  };
+
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm text-left">
         <thead className="text-xs bg-slate-100">
           <tr className="border-b">
             <th className="px-4 py-3">LOT</th>
-            <th className="px-4 py-3">SUBASTA</th>
+            <th className="px-4 py-3">CIUDAD</th>
+            <th className="px-4 py-3">ESTADO</th>
             <th className="px-4 py-3">CLIENTE</th>
             <th className="px-4 py-3">MARCA</th>
             <th className="px-4 py-3">MODELO</th>
@@ -77,24 +103,21 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
           {sortedVehicles.map((vehicle, index) => (
             <tr 
               key={vehicle._id} 
-              className={`border-b ${
-                index % 2 === 0 ? 'bg-white' : 'bg-slate-50'
-              }`}
+              className={`border-b ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}
             >
-              <td className="px-4 py-3">{vehicle.LOT}</td>
-              <td className="px-4 py-3">{vehicle.lotLocation}</td>
-              <td className="px-4 py-3">
-                {clients.find(c => c._id === vehicle.clientId?._id || vehicle.clientId)?.name}
-              </td>
-              <td className="px-4 py-3">{vehicle.brand}</td>
-              <td className="px-4 py-3">{vehicle.model}</td>
-              <td className="px-4 py-3">{vehicle.year}</td>
+              <td className="px-4 py-3">{vehicle.LOT || '-'}</td>
+              <td className="px-4 py-3">{getLocation(vehicle, 'city')}</td>
+              <td className="px-4 py-3">{getLocation(vehicle, 'state')}</td>
+              <td className="px-4 py-3">{getClientName(vehicle)}</td>
+              <td className="px-4 py-3">{vehicle.brand || '-'}</td>
+              <td className="px-4 py-3">{vehicle.model || '-'}</td>
+              <td className="px-4 py-3">{vehicle.year || '-'}</td>
               <td className="px-4 py-3">
                 {vehicle.status === 'pending' ? (
                   <select
-                    value={vehicle.driverId?._id || vehicle.driverId || ''}
+                    value={getDriverId(vehicle)}
                     onChange={(e) => onAssignDriver(vehicle._id, e.target.value)}
-                    className="w-full px-2 py-1 text-sm border rounded"
+                    className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-slate-200"
                   >
                     <option value="">Sin asignar</option>
                     {drivers.map(driver => (
@@ -104,7 +127,7 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
                     ))}
                   </select>
                 ) : (
-                  drivers.find(d => d._id === (vehicle.driverId?._id || vehicle.driverId))?.name || '- Sin asignar -'
+                  getDriverName(vehicle)
                 )}
               </td>
               <td className="px-4 py-3">
@@ -122,9 +145,45 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
 };
 
 VehiclesTableView.propTypes = {
-  vehicles: PropTypes.array.isRequired,
-  clients: PropTypes.array.isRequired,
-  drivers: PropTypes.array.isRequired,
+  vehicles: PropTypes.arrayOf(
+    PropTypes.shape({
+      _id: PropTypes.string.isRequired,
+      clientId: PropTypes.oneOfType([
+        PropTypes.string,
+        PropTypes.shape({
+          _id: PropTypes.string.isRequired,
+          name: PropTypes.string.isRequired
+        })
+      ]).isRequired,
+      driverId: PropTypes.oneOfType([
+        PropTypes.string,
+        PropTypes.shape({
+          _id: PropTypes.string.isRequired,
+          name: PropTypes.string.isRequired
+        })
+      ]),
+      brand: PropTypes.string,
+      model: PropTypes.string,
+      year: PropTypes.string,
+      LOT: PropTypes.string,
+      lotLocation: PropTypes.string,
+      city: PropTypes.string,
+      state: PropTypes.string,
+      status: PropTypes.oneOf(['pending', 'in-transit', 'delivered', 'cancelled']).isRequired,
+    })
+  ).isRequired,
+  clients: PropTypes.arrayOf(
+    PropTypes.shape({
+      _id: PropTypes.string.isRequired,
+      name: PropTypes.string.isRequired,
+    })
+  ).isRequired,
+  drivers: PropTypes.arrayOf(
+    PropTypes.shape({
+      _id: PropTypes.string.isRequired,
+      name: PropTypes.string.isRequired,
+    })
+  ).isRequired,
   onAssignDriver: PropTypes.func.isRequired,
   onUpdateStatus: PropTypes.func.isRequired
 };

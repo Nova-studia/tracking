@@ -18,7 +18,7 @@ const SearchBar = ({ onSearch }) => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <input
           type="text"
-          placeholder="Buscar por LOT, marca, modelo..."
+          placeholder="Buscar por LOT, marca, modelo, ciudad o estado..."
           className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-slate-200"
           onChange={(e) => handleFilterChange('searchText', e.target.value)}
         />

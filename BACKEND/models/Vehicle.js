@@ -4,11 +4,12 @@ const vehicleSchema = new mongoose.Schema({
   clientId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Client',
-    required: true
+    required: [true, 'El cliente es requerido']
   },
   driverId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Driver'
+    ref: 'Driver',
+    default: null
   },
   brand: {
     type: String,
@@ -30,27 +31,60 @@ const vehicleSchema = new mongoose.Schema({
   },
   lotLocation: {
     type: String,
+    required: [true, 'La ubicación del lote es requerida'],
+    trim: true
+  },
+  city: {
+    type: String,
+    trim: true
+  },
+  state: {
+    type: String,
     trim: true
   },
   status: {
     type: String,
-    enum: ['pending', 'in-transit', 'delivered'],
+    enum: {
+      values: ['pending', 'in-transit', 'delivered', 'cancelled'],
+      message: 'Estado inválido: {VALUE}'
+    },
     default: 'pending'
   },
   createdAt: {
     type: Date,
-    default: Date.now
+    default: Date.now,
+    immutable: true
   },
   updatedAt: {
     type: Date,
     default: Date.now
   }
+}, {
+  timestamps: true,
+  versionKey: false
 });
 
-// Middleware para actualizar updatedAt
 vehicleSchema.pre('save', function(next) {
-  this.updatedAt = Date.now();
+  if (this.isModified('lotLocation')) {
+    const [city, state] = this.lotLocation.split(',').map(s => s.trim());
+    this.city = city;
+    this.state = state;
+  }
   next();
 });
+
+vehicleSchema.pre('findOneAndUpdate', function(next) {
+  const update = this.getUpdate();
+  if (update.lotLocation) {
+    const [city, state] = update.lotLocation.split(',').map(s => s.trim());
+    update.city = city;
+    update.state = state;
+  }
+  next();
+});
+
+vehicleSchema.index({ clientId: 1, status: 1 });
+vehicleSchema.index({ driverId: 1, status: 1 });
+vehicleSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model('Vehicle', vehicleSchema);

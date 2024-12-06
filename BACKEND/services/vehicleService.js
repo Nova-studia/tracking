@@ -1,54 +1,45 @@
-const Vehicle = require('../models/Vehicle');
-
 const vehicleService = {
   async createVehicle(vehicleData) {
     try {
-      const vehicle = new Vehicle(vehicleData);
+      console.log('Creating vehicle with data:', vehicleData);
+      // Construir el lotLocation a partir de city y state
+      const vehicle = new Vehicle({
+        ...vehicleData,
+        lotLocation: `${vehicleData.city}, ${vehicleData.state}`.toUpperCase()
+      });
       await vehicle.save();
-      return vehicle.populate(['clientId', 'driverId']);
+      const populated = await vehicle.populate(['clientId', 'driverId']);
+      console.log('Created vehicle:', populated);
+      return populated;
     } catch (error) {
+      console.error('Error creating vehicle:', error);
       throw new Error(`Error al crear vehículo: ${error.message}`);
     }
   },
 
   async getAllVehicles() {
     try {
-      return await Vehicle.find()
+      const vehicles = await Vehicle.find()
         .populate('clientId')
         .populate('driverId')
+        .lean()
         .sort({ createdAt: -1 });
+
+      // Separar lotLocation en city y state
+      return vehicles.map(vehicle => {
+        if (vehicle.lotLocation) {
+          const [city, state] = vehicle.lotLocation.split(',').map(s => s.trim());
+          return {
+            ...vehicle,
+            city,
+            state
+          };
+        }
+        return vehicle;
+      });
     } catch (error) {
+      console.error('Error getting vehicles:', error);
       throw new Error(`Error al obtener vehículos: ${error.message}`);
-    }
-  },
-
-  async updateVehicleStatus(vehicleId, status) {
-    try {
-      return await Vehicle.findByIdAndUpdate(
-        vehicleId,
-        { status },
-        { new: true }
-      ).populate(['clientId', 'driverId']);
-    } catch (error) {
-      throw new Error(`Error al actualizar estado del vehículo: ${error.message}`);
-    }
-  },
-
-  async assignDriver(vehicleId, driverId) {
-    try {
-      const updatedVehicle = await Vehicle.findByIdAndUpdate(
-        vehicleId,
-        { driverId: driverId || null },
-        { new: true }
-      ).populate(['clientId', 'driverId']);
-
-      if (!updatedVehicle) {
-        throw new Error('Vehículo no encontrado');
-      }
-
-      return updatedVehicle;
-    } catch (error) {
-      throw new Error(`Error al asignar conductor: ${error.message}`);
     }
   }
 };
