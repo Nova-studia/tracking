@@ -185,11 +185,21 @@ app.get('/api/drivers', authMiddleware, roleMiddleware(['admin']), async (req, r
   }
 });
 
-app.patch('/api/drivers/:id', authMiddleware, roleMiddleware(['admin']), async (req, res) => {
+app.patch('/api/drivers/:id/credentials', authMiddleware, roleMiddleware(['admin']), async (req, res) => {
   try {
     const { id } = req.params;
-    const updateData = req.body;
-    const updatedDriver = await driverService.updateDriver(id, updateData);
+    const { username, password } = req.body;
+    const updatedDriver = await driverService.updateDriverCredentials(id, { username, password });
+    res.json(updatedDriver);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+app.patch('/api/drivers/:id/status', authMiddleware, roleMiddleware(['admin']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updatedDriver = await driverService.toggleDriverStatus(id);
     res.json(updatedDriver);
   } catch (error) {
     res.status(400).json({ message: error.message });
