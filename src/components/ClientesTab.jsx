@@ -51,7 +51,7 @@ const ClientesTab = ({ clients, onAddClient }) => {
         <h2 className="text-xl font-semibold mb-4 text-slate-900">Lista de Clientes</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {clients.map(client => (
-            <div key={client.id} className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+            <div key={client._id} className="bg-slate-50 p-4 rounded-lg border border-slate-200">
               <h3 className="font-semibold text-lg text-slate-900">{client.name}</h3>
               <p className="text-slate-600">📞 {client.phoneNumber}</p>
             </div>

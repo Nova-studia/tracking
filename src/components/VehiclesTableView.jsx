@@ -10,18 +10,20 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
   const getProgressBar = (status) => {
     const colorMap = {
       'pending': 'bg-red-500',
+      'assigned': 'bg-yellow-500',
       'in-transit': 'bg-green-500',
       'delivered': 'bg-blue-500',
       'cancelled': 'bg-gray-500'
     };
-
+  
     const textMap = {
       'pending': 'PENDIENTE',
+      'assigned': 'ASIGNADO',
       'in-transit': 'EN TRÁNSITO',
       'delivered': 'ENTREGADO',
       'cancelled': 'CANCELADO'
     };
-
+  
     return (
       <div className="w-full">
         <div className={`${colorMap[status]} h-6 rounded relative`}>
@@ -32,13 +34,24 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
       </div>
     );
   };
+  
 
   const getActionButton = (vehicle) => {
     if (vehicle.status === 'pending' && vehicle.driverId) {
       return (
         <button
+          onClick={() => onUpdateStatus(vehicle._id, 'assigned')}
+          className="px-4 py-2 rounded-lg bg-yellow-100 text-yellow-600 hover:bg-yellow-200 transition-colors duration-150 text-xs"
+        >
+          Asignar a Driver
+        </button>
+      );
+    }
+    if (vehicle.status === 'assigned') {
+      return (
+        <button
           onClick={() => onUpdateStatus(vehicle._id, 'in-transit')}
-          className="px-4 py-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors duration-150 text-xs"
+          className="px-4 py-2 rounded-lg bg-green-100 text-green-600 hover:bg-green-200 transition-colors duration-150 text-xs"
         >
           Iniciar Tránsito
         </button>
@@ -48,7 +61,7 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
       return (
         <button
           onClick={() => onUpdateStatus(vehicle._id, 'delivered')}
-          className="px-4 py-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors duration-150 text-xs"
+          className="px-4 py-2 rounded-lg bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors duration-150 text-xs"
         >
           Entregar
         </button>
@@ -56,7 +69,7 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
     }
     return null;
   };
-
+  
   const getClientName = (vehicle) => {
     if (!vehicle?.clientId) return '-';
     const clientId = typeof vehicle.clientId === 'object' ? vehicle.clientId._id : vehicle.clientId;
@@ -162,26 +175,18 @@ VehiclesTableView.propTypes = {
           name: PropTypes.string.isRequired
         })
       ]),
-      brand: PropTypes.string,
-      model: PropTypes.string,
+      brand: PropTypes.string.isRequired,
+      model: PropTypes.string.isRequired,
       year: PropTypes.string,
       LOT: PropTypes.string,
       lotLocation: PropTypes.string,
-      city: PropTypes.string,
-      state: PropTypes.string,
-      status: PropTypes.oneOf(['pending', 'in-transit', 'delivered', 'cancelled']).isRequired,
-    })
-  ).isRequired,
-  clients: PropTypes.arrayOf(
-    PropTypes.shape({
-      _id: PropTypes.string.isRequired,
-      name: PropTypes.string.isRequired,
+      status: PropTypes.oneOf(['pending', 'assigned', 'in-transit', 'delivered', 'cancelled']).isRequired,
     })
   ).isRequired,
   drivers: PropTypes.arrayOf(
     PropTypes.shape({
       _id: PropTypes.string.isRequired,
-      name: PropTypes.string.isRequired,
+      name: PropTypes.string.isRequired
     })
   ).isRequired,
   onAssignDriver: PropTypes.func.isRequired,

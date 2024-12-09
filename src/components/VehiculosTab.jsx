@@ -333,7 +333,7 @@ VehiculosTab.propTypes = {
       lotLocation: PropTypes.string,
       city: PropTypes.string,
       state: PropTypes.string,
-      status: PropTypes.oneOf(['pending', 'in-transit', 'delivered', 'cancelled']).isRequired,
+      status: PropTypes.oneOf(['pending', 'assigned', 'in-transit', 'delivered', 'cancelled']).isRequired,
     })
   ).isRequired,
   clients: PropTypes.arrayOf(
@@ -352,5 +352,6 @@ VehiculosTab.propTypes = {
   onUpdateStatus: PropTypes.func.isRequired,
   onAssignDriver: PropTypes.func.isRequired,
 };
+
 
 export default VehiculosTab;

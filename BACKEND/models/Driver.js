@@ -3,22 +3,24 @@ const mongoose = require('mongoose');
 const driverSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: [true, 'El nombre es requerido'],
-    trim: true
+    required: [true, 'El nombre es requerido']
   },
   phone: {
     type: String,
-    required: [true, 'El teléfono es requerido'],
-    trim: true
+    required: [true, 'El teléfono es requerido']
   },
-  license: {
+  license: String,
+  username: {
     type: String,
-    trim: true
+    required: [true, 'El nombre de usuario es requerido'],
+    unique: true
   },
-  createdAt: {
-    type: Date,
-    default: Date.now
+  isActive: {
+    type: Boolean,
+    default: true
   }
+}, {
+  timestamps: true
 });
 
 module.exports = mongoose.model('Driver', driverSchema);

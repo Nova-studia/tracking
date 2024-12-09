@@ -13,6 +13,14 @@ const TransportesAdmin = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('token');
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    };
+  };
+
   useEffect(() => {
     const loadInitialData = async () => {
       try {
@@ -35,8 +43,13 @@ const TransportesAdmin = () => {
 
   const fetchClients = async () => {
     try {
-      const response = await fetch(`${API_URL}/clients`);
-      if (!response.ok) throw new Error('Error al obtener clientes');
+      const response = await fetch(`${API_URL}/clients`, {
+        headers: getAuthHeaders()
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al obtener clientes');
+      }
       const data = await response.json();
       setClients(data);
     } catch (error) {
@@ -47,8 +60,13 @@ const TransportesAdmin = () => {
 
   const fetchDrivers = async () => {
     try {
-      const response = await fetch(`${API_URL}/drivers`);
-      if (!response.ok) throw new Error('Error al obtener conductores');
+      const response = await fetch(`${API_URL}/drivers`, {
+        headers: getAuthHeaders()
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al obtener conductores');
+      }
       const data = await response.json();
       setDrivers(data);
     } catch (error) {
@@ -59,8 +77,13 @@ const TransportesAdmin = () => {
 
   const fetchVehicles = async () => {
     try {
-      const response = await fetch(`${API_URL}/vehicles`);
-      if (!response.ok) throw new Error('Error al obtener vehículos');
+      const response = await fetch(`${API_URL}/vehicles`, {
+        headers: getAuthHeaders()
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al obtener vehículos');
+      }
       const data = await response.json();
       setVehicles(data);
     } catch (error) {
@@ -73,13 +96,14 @@ const TransportesAdmin = () => {
     try {
       const response = await fetch(`${API_URL}/clients`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify(newClient),
       });
 
-      if (!response.ok) throw new Error('Error al crear cliente');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al crear cliente');
+      }
       
       const data = await response.json();
       setClients(prevClients => [...prevClients, data]);
@@ -94,13 +118,14 @@ const TransportesAdmin = () => {
     try {
       const response = await fetch(`${API_URL}/drivers`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify(newDriver),
       });
 
-      if (!response.ok) throw new Error('Error al crear conductor');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al crear conductor');
+      }
       
       const data = await response.json();
       setDrivers(prevDrivers => [...prevDrivers, data]);
@@ -115,13 +140,14 @@ const TransportesAdmin = () => {
     try {
       const response = await fetch(`${API_URL}/vehicles`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify(newVehicle),
       });
 
-      if (!response.ok) throw new Error('Error al crear vehículo');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al crear vehículo');
+      }
       
       const data = await response.json();
       setVehicles(prevVehicles => [...prevVehicles, data]);
@@ -136,13 +162,14 @@ const TransportesAdmin = () => {
     try {
       const response = await fetch(`${API_URL}/vehicles/${vehicleId}/status`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ status }),
       });
 
-      if (!response.ok) throw new Error('Error al actualizar estado');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al actualizar estado');
+      }
       
       const updatedVehicle = await response.json();
       setVehicles(prevVehicles =>
@@ -152,24 +179,21 @@ const TransportesAdmin = () => {
       );
     } catch (error) {
       console.error('Error:', error);
-      alert('Error al actualizar estado');
+      alert('Error al actualizar estado: ' + error.message);
     }
   };
 
   const handleAssignDriver = async (vehicleId, driverId) => {
     try {
-      console.log('Sending:', { vehicleId, driverId }); // Debug log
       const response = await fetch(`${API_URL}/vehicles/${vehicleId}/driver`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ driverId: driverId === '' ? null : driverId }),
       });
   
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message);
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al asignar conductor');
       }
       
       const updatedVehicle = await response.json();
@@ -210,37 +234,37 @@ const TransportesAdmin = () => {
         <header className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900 mb-6">Sistema de Transportes</h1>
           <div className="flex space-x-4 bg-slate-100 p-1 rounded-lg">
-  <button
-    onClick={() => setActiveTab('vehicles')}
-    className={`px-4 py-2.5 rounded-md flex items-center flex-1 justify-center transition-all ${
-      activeTab === 'vehicles' 
-        ? 'bg-white text-slate-900 shadow-sm' 
-        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-    }`}
-  >
-    Vehículos
-  </button>
-  <button
-    onClick={() => setActiveTab('clients')}
-    className={`px-4 py-2.5 rounded-md flex items-center flex-1 justify-center transition-all ${
-      activeTab === 'clients' 
-        ? 'bg-white text-slate-900 shadow-sm' 
-        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-    }`}
-  >
-    Clientes
-  </button>
-  <button
-    onClick={() => setActiveTab('drivers')}
-    className={`px-4 py-2.5 rounded-md flex items-center flex-1 justify-center transition-all ${
-      activeTab === 'drivers' 
-        ? 'bg-white text-slate-900 shadow-sm' 
-        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-    }`}
-  >
-    Conductores
-  </button>
-</div>
+            <button
+              onClick={() => setActiveTab('vehicles')}
+              className={`px-4 py-2.5 rounded-md flex items-center flex-1 justify-center transition-all ${
+                activeTab === 'vehicles' 
+                  ? 'bg-white text-slate-900 shadow-sm' 
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              Vehículos
+            </button>
+            <button
+              onClick={() => setActiveTab('clients')}
+              className={`px-4 py-2.5 rounded-md flex items-center flex-1 justify-center transition-all ${
+                activeTab === 'clients' 
+                  ? 'bg-white text-slate-900 shadow-sm' 
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              Clientes
+            </button>
+            <button
+              onClick={() => setActiveTab('drivers')}
+              className={`px-4 py-2.5 rounded-md flex items-center flex-1 justify-center transition-all ${
+                activeTab === 'drivers' 
+                  ? 'bg-white text-slate-900 shadow-sm' 
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              Conductores
+            </button>
+          </div>
         </header>
 
         {activeTab === 'clients' && (
@@ -256,6 +280,7 @@ const TransportesAdmin = () => {
             onAddDriver={handleAddDriver} 
           />
         )}
+
         {activeTab === 'vehicles' && (
           <VehiculosTab 
             vehicles={vehicles}
@@ -266,7 +291,6 @@ const TransportesAdmin = () => {
             onAssignDriver={handleAssignDriver}
           />
         )}
-
       </div>
     </div>
   );

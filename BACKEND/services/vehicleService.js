@@ -1,3 +1,5 @@
+const Vehicle = require('../models/Vehicle');
+
 const vehicleService = {
   async createVehicle(vehicleData) {
     try {
@@ -40,6 +42,42 @@ const vehicleService = {
     } catch (error) {
       console.error('Error getting vehicles:', error);
       throw new Error(`Error al obtener vehículos: ${error.message}`);
+    }
+  },
+
+  async updateVehicleStatus(vehicleId, status) {
+    try {
+      const vehicle = await Vehicle.findByIdAndUpdate(
+        vehicleId,
+        { status },
+        { new: true }
+      ).populate(['clientId', 'driverId']);
+      
+      if (!vehicle) {
+        throw new Error('Vehículo no encontrado');
+      }
+      
+      return vehicle;
+    } catch (error) {
+      throw new Error(`Error al actualizar estado: ${error.message}`);
+    }
+  },
+
+  async assignDriver(vehicleId, driverId) {
+    try {
+      const vehicle = await Vehicle.findByIdAndUpdate(
+        vehicleId,
+        { driverId: driverId || null },
+        { new: true }
+      ).populate(['clientId', 'driverId']);
+      
+      if (!vehicle) {
+        throw new Error('Vehículo no encontrado');
+      }
+      
+      return vehicle;
+    } catch (error) {
+      throw new Error(`Error al asignar conductor: ${error.message}`);
     }
   }
 };
