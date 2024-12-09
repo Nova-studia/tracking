@@ -25,15 +25,20 @@ const VehiculosTab = ({ vehicles, clients, drivers, onAddVehicle, onUpdateStatus
 
   const filteredVehicles = useMemo(() => {
     return vehicles.filter(vehicle => {
+      // Hide delivered vehicles unless specifically filtered for delivered status
+      if (vehicle.status === 'delivered' && filters.status !== 'delivered') {
+        return false;
+      }
+  
       const searchText = filters.searchText.toLowerCase();
       const matchesSearch = filters.searchText === '' || 
         vehicle.LOT?.toLowerCase().includes(searchText) ||
         vehicle.brand?.toLowerCase().includes(searchText) ||
         vehicle.model?.toLowerCase().includes(searchText) ||
         vehicle.lotLocation?.toLowerCase().includes(searchText);
-
+  
       const matchesStatus = filters.status === '' || vehicle.status === filters.status;
-
+  
       let matchesDate = true;
       if (filters.dateRange !== 'all') {
         const vehicleDate = new Date(vehicle.createdAt);
@@ -55,7 +60,7 @@ const VehiculosTab = ({ vehicles, clients, drivers, onAddVehicle, onUpdateStatus
             break;
         }
       }
-
+  
       return matchesSearch && matchesStatus && matchesDate;
     });
   }, [vehicles, filters]);
