@@ -18,6 +18,11 @@ const driverSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
+  },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
   }
 }, {
   timestamps: true

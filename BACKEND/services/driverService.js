@@ -9,7 +9,7 @@ const driverService = {
     session.startTransaction();
 
     try {
-      // Generar username y password por defecto si no se proporcionan
+      // Generar username y password si no se proporcionan
       const username = driverData.username || driverData.phone;
       const password = driverData.password || '1234';
       const hashedPassword = await bcrypt.hash(password, 10);
@@ -29,7 +29,8 @@ const driverService = {
         phone: driverData.phone,
         license: driverData.license,
         username: username,
-        isActive: true
+        isActive: true,
+        userId: user._id // Vinculamos el usuario
       });
       await driver.save({ session });
 
@@ -48,17 +49,9 @@ const driverService = {
 
   async getAllDrivers() {
     try {
-      const drivers = await Driver.find().sort({ createdAt: -1 });
-      const users = await User.find({ role: 'driver' }, 'username isActive');
-      
-      // Combinar información de drivers con estado de usuario
-      return drivers.map(driver => {
-        const userInfo = users.find(u => u.username === driver.username);
-        return {
-          ...driver.toObject(),
-          isActive: userInfo ? userInfo.isActive : false
-        };
-      });
+      return await Driver.find()
+        .populate('userId', '-password')
+        .sort({ createdAt: -1 });
     } catch (error) {
       throw new Error(`Error al obtener conductores: ${error.message}`);
     }
@@ -69,28 +62,26 @@ const driverService = {
     session.startTransaction();
 
     try {
-      const driver = await Driver.findById(driverId);
+      const driver = await Driver.findById(driverId).populate('userId');
       if (!driver) {
         throw new Error('Conductor no encontrado');
       }
 
-      // Actualizar usuario existente
-      const user = await User.findOne({ username: driver.username });
+      const user = await User.findById(driver.userId);
       if (!user) {
         throw new Error('Usuario no encontrado');
       }
 
-      // Si se proporciona nuevo username
       if (username && username !== driver.username) {
-        const usernameExists = await User.findOne({ username });
-        if (usernameExists) {
+        // Verificar que el nuevo username no exista
+        const existingUser = await User.findOne({ username });
+        if (existingUser) {
           throw new Error('El nombre de usuario ya está en uso');
         }
         user.username = username;
         driver.username = username;
       }
 
-      // Si se proporciona nueva contraseña
       if (password) {
         const hashedPassword = await bcrypt.hash(password, 10);
         user.password = hashedPassword;
@@ -116,18 +107,18 @@ const driverService = {
     session.startTransaction();
 
     try {
-      const driver = await Driver.findById(driverId);
+      const driver = await Driver.findById(driverId).populate('userId');
       if (!driver) {
         throw new Error('Conductor no encontrado');
       }
 
-      const user = await User.findOne({ username: driver.username });
+      const user = await User.findById(driver.userId);
       if (!user) {
         throw new Error('Usuario no encontrado');
       }
 
-      user.isActive = !user.isActive;
-      driver.isActive = user.isActive;
+      driver.isActive = !driver.isActive;
+      user.isActive = driver.isActive;
 
       await Promise.all([
         user.save({ session }),

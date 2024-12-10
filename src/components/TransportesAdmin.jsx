@@ -136,6 +136,57 @@ const TransportesAdmin = () => {
     }
   };
 
+  const handleUpdateCredentials = async (driverId, credentials) => {
+    try {
+      const response = await fetch(`${API_URL}/drivers/${driverId}/credentials`, {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(credentials),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al actualizar credenciales');
+      }
+      
+      const updatedDriver = await response.json();
+      setDrivers(prevDrivers =>
+        prevDrivers.map(driver =>
+          driver._id === driverId ? updatedDriver : driver
+        )
+      );
+      return updatedDriver;
+    } catch (error) {
+      console.error('Error updating credentials:', error);
+      throw error;
+    }
+  };
+
+  const handleToggleStatus = async (driverId) => {
+    try {
+      const response = await fetch(`${API_URL}/drivers/${driverId}/status`, {
+        method: 'PATCH',
+        headers: getAuthHeaders()
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al cambiar estado');
+      }
+      
+      const updatedDriver = await response.json();
+      setDrivers(prevDrivers =>
+        prevDrivers.map(driver =>
+          driver._id === driverId ? updatedDriver : driver
+        )
+      );
+      return updatedDriver;
+    } catch (error) {
+      console.error('Error toggling status:', error);
+      throw error;
+    }
+  };
+
   const handleAddVehicle = async (newVehicle) => {
     try {
       const response = await fetch(`${API_URL}/vehicles`, {
@@ -277,7 +328,9 @@ const TransportesAdmin = () => {
         {activeTab === 'drivers' && (
           <DriversTab 
             drivers={drivers} 
-            onAddDriver={handleAddDriver} 
+            onAddDriver={handleAddDriver}
+            onUpdateCredentials={handleUpdateCredentials}
+            onToggleStatus={handleToggleStatus}
           />
         )}
 

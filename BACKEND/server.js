@@ -54,16 +54,37 @@ mongoose.connect(MONGODB_URI)
 app.use(cors());
 app.use(express.json());
 
+// Debug Middleware - Log todas las peticiones
+app.use((req, res, next) => {
+  console.log(`📝 ${new Date().toISOString()} - ${req.method} ${req.path}`);
+  if (req.body && Object.keys(req.body).length > 0) {
+    console.log('Request Body:', JSON.stringify(req.body, null, 2));
+  }
+  if (req.headers.authorization) {
+    console.log('Token provided:', req.headers.authorization.substring(0, 20) + '...');
+  }
+  next();
+});
+
 // Middleware de autenticación
 const authMiddleware = async (req, res, next) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
+    console.log('🔑 Verificando token:', token ? token.substring(0, 20) + '...' : 'No token');
+    
     if (!token) {
       return res.status(401).json({ message: 'Token no proporcionado' });
     }
 
     const decoded = jwt.verify(token, JWT_SECRET);
+    console.log('🔓 Token decodificado:', decoded);
+
     const user = await User.findOne({ username: decoded.username, isActive: true });
+    console.log('👤 Usuario encontrado:', user ? {
+      username: user.username,
+      role: user.role,
+      isActive: user.isActive
+    } : 'No encontrado');
     
     if (!user) {
       return res.status(401).json({ message: 'Usuario no encontrado o inactivo' });
@@ -76,7 +97,12 @@ const authMiddleware = async (req, res, next) => {
     };
 
     if (user.role === 'driver') {
-      const driver = await Driver.findOne({ username: user.username });
+      const driver = await Driver.findOne({ userId: user._id });
+      console.log('🚗 Info del conductor:', driver ? {
+        id: driver._id,
+        name: driver.name
+      } : 'No encontrado');
+      
       if (driver) {
         req.user.driverId = driver._id;
       }
@@ -84,13 +110,15 @@ const authMiddleware = async (req, res, next) => {
 
     next();
   } catch (error) {
-    return res.status(401).json({ message: 'Token inválido' });
+    console.error('❌ Error en autenticación:', error);
+    return res.status(401).json({ message: 'Token inválido', error: error.message });
   }
 };
 
 // Middleware de roles
 const roleMiddleware = (roles) => {
   return (req, res, next) => {
+    console.log(`👮 Verificando rol: Usuario ${req.user.username} (${req.user.role}) - Roles permitidos: ${roles.join(', ')}`);
     if (!roles.includes(req.user.role)) {
       return res.status(403).json({ message: 'Acceso no autorizado' });
     }
@@ -102,13 +130,17 @@ const roleMiddleware = (roles) => {
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { username, password } = req.body;
+    console.log('🔑 Intento de login:', { username, passwordProvided: !!password });
 
-    const user = await User.findOne({ username, isActive: true });
-    if (!user) {
+    const user = await User.findOne({ username });
+    if (!user || !user.isActive) {
+      console.log('❌ Usuario no encontrado o inactivo');
       return res.status(401).json({ message: 'Credenciales inválidas' });
     }
 
     const isValidPassword = await bcrypt.compare(password, user.password);
+    console.log('🔐 Validación de contraseña:', isValidPassword ? 'Correcta' : 'Incorrecta');
+
     if (!isValidPassword) {
       return res.status(401).json({ message: 'Credenciales inválidas' });
     }
@@ -119,9 +151,8 @@ app.post('/api/auth/login', async (req, res) => {
       id: user._id
     };
 
-    // Si es conductor, obtener información adicional
     if (user.role === 'driver') {
-      const driver = await Driver.findOne({ username: user.username });
+      const driver = await Driver.findOne({ userId: user._id });
       if (!driver) {
         return res.status(404).json({ message: 'Información de conductor no encontrada' });
       }
@@ -133,14 +164,12 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     const token = jwt.sign(userData, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+    console.log('🎟️ Token generado para:', userData.username);
 
-    res.json({
-      token,
-      user: userData
-    });
+    res.json({ token, user: userData });
   } catch (error) {
-    console.error('Error en login:', error);
-    res.status(500).json({ message: 'Error en el servidor' });
+    console.error('❌ Error en login:', error);
+    res.status(500).json({ message: 'Error en el servidor', error: error.message });
   }
 });
 
@@ -166,9 +195,11 @@ app.get('/api/clients', authMiddleware, roleMiddleware(['admin']), async (req, r
 // Rutas de conductores
 app.post('/api/drivers', authMiddleware, roleMiddleware(['admin']), async (req, res) => {
   try {
+    console.log('📝 Creando nuevo conductor:', req.body);
     const driver = await driverService.createDriver(req.body);
     res.status(201).json(driver);
   } catch (error) {
+    console.error('❌ Error creando conductor:', error);
     res.status(400).json({ 
       message: 'Error al crear conductor',
       error: error.message 
@@ -179,6 +210,7 @@ app.post('/api/drivers', authMiddleware, roleMiddleware(['admin']), async (req, 
 app.get('/api/drivers', authMiddleware, roleMiddleware(['admin']), async (req, res) => {
   try {
     const drivers = await driverService.getAllDrivers();
+    console.log(`📋 Conductores obtenidos: ${drivers.length}`);
     res.json(drivers);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -189,9 +221,14 @@ app.patch('/api/drivers/:id/credentials', authMiddleware, roleMiddleware(['admin
   try {
     const { id } = req.params;
     const { username, password } = req.body;
+    console.log('🔄 Actualizando credenciales del conductor:', { id, updateUsername: !!username });
+    
     const updatedDriver = await driverService.updateDriverCredentials(id, { username, password });
+    console.log('✅ Credenciales actualizadas para:', updatedDriver.username);
+    
     res.json(updatedDriver);
   } catch (error) {
+    console.error('❌ Error actualizando credenciales:', error);
     res.status(400).json({ message: error.message });
   }
 });
@@ -199,9 +236,17 @@ app.patch('/api/drivers/:id/credentials', authMiddleware, roleMiddleware(['admin
 app.patch('/api/drivers/:id/status', authMiddleware, roleMiddleware(['admin']), async (req, res) => {
   try {
     const { id } = req.params;
+    console.log('🔄 Cambiando estado del conductor:', id);
+    
     const updatedDriver = await driverService.toggleDriverStatus(id);
+    console.log('✅ Estado actualizado:', {
+      id: updatedDriver._id,
+      isActive: updatedDriver.isActive
+    });
+    
     res.json(updatedDriver);
   } catch (error) {
+    console.error('❌ Error cambiando estado del conductor:', error);
     res.status(400).json({ message: error.message });
   }
 });
@@ -218,10 +263,16 @@ app.post('/api/vehicles', authMiddleware, roleMiddleware(['admin']), async (req,
 
 app.get('/api/vehicles', authMiddleware, async (req, res) => {
   try {
+    console.log('🔍 Buscando vehículos para:', {
+      username: req.user.username,
+      role: req.user.role
+    });
+
     let vehicles = await vehicleService.getAllVehicles();
     
     if (req.user.role === 'driver') {
       if (!req.user.driverId) {
+        console.log('❌ Conductor no encontrado');
         return res.status(404).json({ message: 'Conductor no encontrado' });
       }
       vehicles = vehicles.filter(v => 
@@ -229,6 +280,7 @@ app.get('/api/vehicles', authMiddleware, async (req, res) => {
         (v.driverId._id.toString() === req.user.driverId.toString() || 
          v.driverId.toString() === req.user.driverId.toString())
       );
+      console.log(`📋 Vehículos filtrados para conductor: ${vehicles.length}`);
     }
     
     res.json(vehicles);
@@ -272,7 +324,7 @@ app.patch('/api/vehicles/:id/driver', authMiddleware, roleMiddleware(['admin']),
 
 // Manejo de errores global
 app.use((err, req, res, next) => {
-  console.error('Error no manejado:', err.stack);
+  console.error('❌ Error no manejado:', err.stack);
   res.status(500).json({ 
     message: 'Error interno del servidor',
     error: process.env.NODE_ENV === 'development' ? err.message : undefined
