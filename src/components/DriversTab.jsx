@@ -10,22 +10,52 @@ const DriversTab = ({ drivers, onAddDriver, onUpdateCredentials, onToggleStatus 
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [lastCreatedDriver, setLastCreatedDriver] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
   const [editingDriver, setEditingDriver] = useState(null);
   const [editCredentials, setEditCredentials] = useState({
     username: '',
     password: ''
   });
 
-  const handleSubmit = async () => {
-    if (!newDriver.name || !newDriver.phone) {
-      alert('Por favor complete los campos requeridos: Nombre y Teléfono');
-      return;
-    }
+  const validateDriverData = () => {
+    if (!newDriver.name.trim()) return 'El nombre es requerido';
+    if (!newDriver.phone.trim()) return 'El teléfono es requerido';
+    if (newDriver.username && newDriver.username.length < 4) return 'El username debe tener al menos 4 caracteres';
+    if (newDriver.password && newDriver.password.length < 4) return 'La contraseña debe tener al menos 4 caracteres';
+    return null;
+  };
 
+  const handleSubmit = async () => {
     try {
-      const response = await onAddDriver(newDriver);
-      setLastCreatedDriver(response);
+      setError(null);
+      setSuccess(null);
+      setLoading(true);
+
+      const validationError = validateDriverData();
+      if (validationError) {
+        setError(validationError);
+        return;
+      }
+
+      const driverData = {
+        ...newDriver,
+        username: newDriver.username || newDriver.phone, // Si no se proporciona username, usa el teléfono
+        password: newDriver.password || '1234' // Password por defecto si no se proporciona
+      };
+
+      const response = await onAddDriver(driverData);
+
+      // Mostrar credenciales y mensaje de éxito
+      setSuccess(`
+        Conductor creado exitosamente!
+        Username: ${response.username}
+        Password inicial: ${response.tempPassword}
+        Por favor, guarde estas credenciales.
+      `);
+
+      // Limpiar el formulario
       setNewDriver({
         name: '',
         phone: '',
@@ -34,31 +64,48 @@ const DriversTab = ({ drivers, onAddDriver, onUpdateCredentials, onToggleStatus 
         password: ''
       });
 
-      // Mostrar las credenciales temporalmente
-      alert(`¡Conductor creado exitosamente!\n\nCredenciales de acceso:\nUsuario: ${response.username}\nContraseña: ${response.tempPassword || '1234'}\n\nGuarde estas credenciales, no se mostrarán nuevamente.`);
-    } catch (error) {
-      alert('Error al crear conductor: ' + error.message);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleUpdateCredentials = async (driverId) => {
     try {
+      setError(null);
+      setLoading(true);
+
       if (!editCredentials.username && !editCredentials.password) {
-        alert('Ingrese un nuevo nombre de usuario o contraseña');
+        setError('Ingrese un nuevo username o password');
         return;
       }
 
       await onUpdateCredentials(driverId, editCredentials);
       setEditingDriver(null);
       setEditCredentials({ username: '', password: '' });
-      alert('Credenciales actualizadas exitosamente');
-    } catch (error) {
-      alert('Error al actualizar credenciales: ' + error.message);
+      setSuccess('Credenciales actualizadas exitosamente');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="space-y-6">
+      {/* Mensajes de error y éxito */}
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+          {error}
+        </div>
+      )}
+      {success && (
+        <div className="p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg whitespace-pre-line">
+          {success}
+        </div>
+      )}
+
       {/* Formulario de nuevo conductor */}
       <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
         <h2 className="text-xl font-semibold mb-4 text-slate-900">Agregar Nuevo Conductor</h2>
@@ -69,6 +116,7 @@ const DriversTab = ({ drivers, onAddDriver, onUpdateCredentials, onToggleStatus 
             value={newDriver.name}
             onChange={(e) => setNewDriver({...newDriver, name: e.target.value})}
             className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-200"
+            disabled={loading}
           />
           <input
             type="tel"
@@ -76,42 +124,48 @@ const DriversTab = ({ drivers, onAddDriver, onUpdateCredentials, onToggleStatus 
             value={newDriver.phone}
             onChange={(e) => setNewDriver({...newDriver, phone: e.target.value})}
             className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-200"
+            disabled={loading}
           />
           <input
             type="text"
-            placeholder="Número de Licencia"
+            placeholder="Número de Licencia (opcional)"
             value={newDriver.license}
             onChange={(e) => setNewDriver({...newDriver, license: e.target.value})}
             className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-200"
+            disabled={loading}
           />
           <input
             type="text"
-            placeholder="Username (opcional, se usará el teléfono si no se proporciona)"
+            placeholder="Username (opcional)"
             value={newDriver.username}
             onChange={(e) => setNewDriver({...newDriver, username: e.target.value})}
             className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-200"
+            disabled={loading}
           />
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
-              placeholder="Password (opcional, se usará '1234' si no se proporciona)"
+              placeholder="Password (opcional)"
               value={newDriver.password}
               onChange={(e) => setNewDriver({...newDriver, password: e.target.value})}
               className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-200 pr-10"
+              disabled={loading}
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-3 top-1/2 transform -translate-y-1/2"
+              disabled={loading}
             >
               {showPassword ? <EyeOff className="h-5 w-5 text-slate-400" /> : <Eye className="h-5 w-5 text-slate-400" />}
             </button>
           </div>
           <button
             onClick={handleSubmit}
-            className="px-4 py-2.5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors"
+            disabled={loading}
+            className="px-4 py-2.5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors disabled:bg-slate-400"
           >
-            Agregar Conductor
+            {loading ? 'Creando...' : 'Agregar Conductor'}
           </button>
         </div>
       </div>
@@ -141,6 +195,7 @@ const DriversTab = ({ drivers, onAddDriver, onUpdateCredentials, onToggleStatus 
                   </button>
                 </div>
               </div>
+              
               <div className="space-y-1">
                 <p className="text-slate-600">📞 {driver.phone}</p>
                 {driver.license && (
