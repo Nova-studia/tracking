@@ -11,9 +11,9 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
   // Función para obtener la barra de progreso con el estado
   const getProgressBar = (status) => {
     const styles = {
-      pending: 'bg-yellow-500',
-      'in-transit': 'bg-blue-500',
-      delivered: 'bg-green-500',
+      pending: 'bg-yellow-300',
+      'in-transit': 'bg-green-500',
+      delivered: 'bg-blue-500',
       cancelled: 'bg-gray-500'
     };
 
@@ -49,7 +49,7 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
           onClick={() => onUpdateStatus(vehicle._id, 'in-transit')}
           className="px-4 py-2 rounded-lg bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors duration-150 text-xs"
         >
-          Iniciar Tránsito
+          Asignar Conductor
         </button>
       );
     }
