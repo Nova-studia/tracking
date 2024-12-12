@@ -1,6 +1,34 @@
 const Vehicle = require('../models/Vehicle');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// Configuración de multer para el almacenamiento de fotos
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const dir = 'uploads/vehicles';
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    cb(null, dir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ storage: storage });
 
 const vehicleService = {
+  // Middleware de multer para la subida de fotos
+  uploadMiddleware: upload.fields([
+    { name: 'frontPhoto', maxCount: 1 },
+    { name: 'backPhoto', maxCount: 1 },
+    { name: 'leftPhoto', maxCount: 1 },
+    { name: 'rightPhoto', maxCount: 1 }
+  ]),
+
   async createVehicle(vehicleData) {
     try {
       console.log('Creating vehicle with data:', vehicleData);
@@ -45,13 +73,26 @@ const vehicleService = {
 
   async updateVehicleStatus(vehicleId, newStatus) {
     try {
-      // Validar el estado antes de la actualización
+      console.log('Updating vehicle status:', { vehicleId, newStatus });
+      
+      // Validar el estado
       const validStates = ['pending', 'assigned', 'loading', 'in-transit', 'delivered'];
       if (!validStates.includes(newStatus)) {
         throw new Error(`Estado inválido: ${newStatus}`);
       }
 
-      // Realizar la actualización
+      // Si se está cambiando a 'loading', verificar que tenga fotos
+      if (newStatus === 'loading') {
+        const vehicle = await Vehicle.findById(vehicleId);
+        if (!vehicle.loadingPhotos || 
+            !vehicle.loadingPhotos.frontPhoto || 
+            !vehicle.loadingPhotos.backPhoto || 
+            !vehicle.loadingPhotos.leftPhoto || 
+            !vehicle.loadingPhotos.rightPhoto) {
+          throw new Error('Se requieren todas las fotos antes de cambiar el estado a loading');
+        }
+      }
+
       const vehicle = await Vehicle.findByIdAndUpdate(
         vehicleId,
         { 
@@ -68,6 +109,7 @@ const vehicleService = {
         throw new Error('Vehículo no encontrado');
       }
 
+      console.log('Vehicle status updated:', vehicle);
       return vehicle;
     } catch (error) {
       console.error('Error updating vehicle status:', error);
@@ -96,6 +138,46 @@ const vehicleService = {
       return vehicle;
     } catch (error) {
       throw new Error(`Error al asignar conductor: ${error.message}`);
+    }
+  },
+
+  async uploadVehiclePhotos(vehicleId, files) {
+    try {
+      console.log('Uploading photos for vehicle:', vehicleId);
+      const photos = {};
+
+      // Procesar cada foto subida
+      if (files) {
+        Object.keys(files).forEach(key => {
+          photos[key] = {
+            url: `/uploads/vehicles/${files[key][0].filename}`,
+            uploadedAt: new Date()
+          };
+        });
+      }
+
+      // Actualizar el vehículo con las URLs de las fotos
+      const vehicle = await Vehicle.findByIdAndUpdate(
+        vehicleId,
+        { 
+          loadingPhotos: photos,
+          updatedAt: new Date()
+        },
+        { 
+          new: true,
+          runValidators: true 
+        }
+      ).populate(['clientId', 'driverId']);
+
+      if (!vehicle) {
+        throw new Error('Vehículo no encontrado');
+      }
+
+      console.log('Photos uploaded successfully');
+      return vehicle;
+    } catch (error) {
+      console.error('Error uploading photos:', error);
+      throw new Error(`Error al subir fotos: ${error.message}`);
     }
   }
 };

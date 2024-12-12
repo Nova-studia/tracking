@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import PhotoUploadModal from './PhotoUploadModal';
 
 const DriverDashboard = ({ driverId }) => {
   const [assignedVehicles, setAssignedVehicles] = useState([]);
@@ -7,6 +8,8 @@ const DriverDashboard = ({ driverId }) => {
   const [error, setError] = useState(null);
   const [currentTrips, setCurrentTrips] = useState([]);
   const [completedTrips, setCompletedTrips] = useState([]);
+  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
+  const [selectedVehicleId, setSelectedVehicleId] = useState('');
 
   useEffect(() => {
     const fetchAssignedVehicles = async () => {
@@ -30,14 +33,12 @@ const DriverDashboard = ({ driverId }) => {
 
         const vehicles = await response.json();
         
-        // Filtrar y categorizar vehículos
         const allAssigned = vehicles.filter(v => 
           v.driverId?._id === driverId || v.driverId === driverId
         );
         
         setAssignedVehicles(allAssigned);
         
-        // Separar viajes actuales y completados
         setCurrentTrips(allAssigned.filter(v => 
           ['assigned', 'loading', 'in-transit'].includes(v.status)
         ));
@@ -78,12 +79,10 @@ const DriverDashboard = ({ driverId }) => {
 
       const updatedVehicle = await response.json();
 
-      // Actualizar las listas de vehículos
       setAssignedVehicles(prev => 
         prev.map(v => v._id === vehicleId ? updatedVehicle : v)
       );
 
-      // Actualizar las listas según el nuevo estado
       if (newStatus === 'delivered') {
         setCurrentTrips(prev => prev.filter(v => v._id !== vehicleId));
         setCompletedTrips(prev => [...prev, updatedVehicle]);
@@ -96,6 +95,60 @@ const DriverDashboard = ({ driverId }) => {
     } catch (error) {
       console.error('Error updating status:', error);
       alert('Error al actualizar el estado: ' + error.message);
+    }
+  };
+
+  const handlePhotoSubmit = async (formData) => {
+    try {
+      if (!selectedVehicleId) {
+        throw new Error('No hay vehículo seleccionado');
+      }
+
+      const token = localStorage.getItem('token');
+      
+      // Verificar que formData contiene todas las fotos requeridas
+      let hasAllPhotos = true;
+      ['frontPhoto', 'backPhoto', 'leftPhoto', 'rightPhoto'].forEach(key => {
+        if (!formData.has(key)) {
+          hasAllPhotos = false;
+        }
+      });
+
+      if (!hasAllPhotos) {
+        throw new Error('Se requieren las 4 fotos');
+      }
+
+      const response = await fetch(`http://localhost:5000/api/vehicles/${selectedVehicleId}/photos`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al subir las fotos');
+      }
+
+      const updatedVehicle = await response.json();
+      
+      setAssignedVehicles(prev => 
+        prev.map(v => v._id === selectedVehicleId ? updatedVehicle : v)
+      );
+
+      setCurrentTrips(prev => 
+        prev.map(v => v._id === selectedVehicleId ? updatedVehicle : v)
+      );
+
+      await handleStatusUpdate(selectedVehicleId, 'loading');
+      
+      setIsPhotoModalOpen(false);
+      setSelectedVehicleId('');
+
+    } catch (error) {
+      console.error('Error in photo submission:', error);
+      alert('Error al procesar las fotos: ' + error.message);
     }
   };
 
@@ -122,18 +175,21 @@ const DriverDashboard = ({ driverId }) => {
   const getActionButton = (vehicle) => {
     const buttonConfig = {
       assigned: {
-        text: 'INICIAR CARGA',
-        nextStatus: 'loading',
+        text: 'CARGAR VEHÍCULO',
+        action: () => {
+          setSelectedVehicleId(vehicle._id);
+          setIsPhotoModalOpen(true);
+        },
         className: 'bg-orange-600 hover:bg-orange-700'
       },
       loading: {
         text: 'INICIAR VIAJE',
-        nextStatus: 'in-transit',
+        action: () => handleStatusUpdate(vehicle._id, 'in-transit'),
         className: 'bg-green-600 hover:bg-green-700'
       },
       'in-transit': {
         text: 'MARCAR ENTREGADO',
-        nextStatus: 'delivered',
+        action: () => handleStatusUpdate(vehicle._id, 'delivered'),
         className: 'bg-blue-600 hover:bg-blue-700'
       }
     };
@@ -143,7 +199,7 @@ const DriverDashboard = ({ driverId }) => {
 
     return (
       <button
-        onClick={() => handleStatusUpdate(vehicle._id, config.nextStatus)}
+        onClick={config.action}
         className={`px-4 py-2 text-white rounded transition-colors ${config.className}`}
       >
         {config.text}
@@ -278,6 +334,17 @@ const DriverDashboard = ({ driverId }) => {
           )}
         </div>
       </div>
+
+      {/* Modal de fotos */}
+      <PhotoUploadModal
+        isOpen={isPhotoModalOpen}
+        onClose={() => {
+          setIsPhotoModalOpen(false);
+          setSelectedVehicleId('');
+        }}
+        onSubmit={handlePhotoSubmit}
+        vehicleId={selectedVehicleId}
+      />
     </div>
   );
 };

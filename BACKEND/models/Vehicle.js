@@ -49,12 +49,40 @@ const vehicleSchema = new mongoose.Schema({
       message: 'Estado inválido: {VALUE}'
     },
     default: 'pending'
+  },
+  loadingPhotos: {
+    frontPhoto: {
+      url: String,
+      uploadedAt: Date
+    },
+    backPhoto: {
+      url: String,
+      uploadedAt: Date
+    },
+    leftPhoto: {
+      url: String,
+      uploadedAt: Date
+    },
+    rightPhoto: {
+      url: String,
+      uploadedAt: Date
+    }
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+    immutable: true
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
   }
 }, {
   timestamps: true,
   versionKey: false
 });
 
+// Middleware para extraer ciudad y estado de la ubicación
 vehicleSchema.pre('save', function(next) {
   if (this.isModified('lotLocation')) {
     const [city, state] = this.lotLocation.split(',').map(s => s.trim());
@@ -64,6 +92,7 @@ vehicleSchema.pre('save', function(next) {
   next();
 });
 
+// Middleware para actualizar ciudad y estado cuando se actualiza la ubicación
 vehicleSchema.pre('findOneAndUpdate', function(next) {
   const update = this.getUpdate();
   if (update.lotLocation) {
@@ -74,6 +103,23 @@ vehicleSchema.pre('findOneAndUpdate', function(next) {
   next();
 });
 
+// Middleware para asegurar que no se pueda cambiar a 'loading' sin fotos
+vehicleSchema.pre('findOneAndUpdate', async function(next) {
+  const update = this.getUpdate();
+  if (update.status === 'loading') {
+    const vehicle = await this.model.findOne(this.getQuery());
+    if (!vehicle.loadingPhotos || 
+        !vehicle.loadingPhotos.frontPhoto || 
+        !vehicle.loadingPhotos.backPhoto || 
+        !vehicle.loadingPhotos.leftPhoto || 
+        !vehicle.loadingPhotos.rightPhoto) {
+      throw new Error('Se requieren todas las fotos antes de cambiar el estado a loading');
+    }
+  }
+  next();
+});
+
+// Índices para mejorar el rendimiento de las consultas
 vehicleSchema.index({ clientId: 1, status: 1 });
 vehicleSchema.index({ driverId: 1, status: 1 });
 vehicleSchema.index({ createdAt: -1 });

@@ -4,6 +4,9 @@ const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const { clientService, driverService, vehicleService } = require('./services');
 const Vehicle = require('./models/Vehicle');
 const Driver = require('./models/Driver');
@@ -16,6 +19,28 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 const JWT_EXPIRES_IN = '24h';
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/transportes';
 const PORT = process.env.PORT || 5000;
+
+// Configuración de multer para subida de fotos
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const dir = 'uploads/vehicles';
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    cb(null, dir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const uploadMiddleware = multer({ storage: storage }).fields([
+  { name: 'frontPhoto', maxCount: 1 },
+  { name: 'backPhoto', maxCount: 1 },
+  { name: 'leftPhoto', maxCount: 1 },
+  { name: 'rightPhoto', maxCount: 1 }
+]);
 
 // Función de inicialización del sistema
 const initializeSystem = async () => {
@@ -32,6 +57,13 @@ const initializeSystem = async () => {
       });
       await adminUser.save();
       console.log('✅ Usuario administrador creado exitosamente');
+    }
+
+    // Asegurar que existe el directorio para las fotos
+    const uploadDir = path.join(__dirname, 'uploads/vehicles');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+      console.log('✅ Directorio de uploads creado exitosamente');
     }
   } catch (error) {
     console.error('❌ Error en la inicialización del sistema:', error);
@@ -53,6 +85,7 @@ mongoose.connect(MONGODB_URI)
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use('/uploads', express.static('uploads'));
 
 // Debug Middleware - Log todas las peticiones
 app.use((req, res, next) => {
@@ -126,7 +159,7 @@ const roleMiddleware = (roles) => {
   };
 };
 
-// Autenticación
+// Rutas de autenticación
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -210,7 +243,6 @@ app.post('/api/drivers', authMiddleware, roleMiddleware(['admin']), async (req, 
 app.get('/api/drivers', authMiddleware, roleMiddleware(['admin']), async (req, res) => {
   try {
     const drivers = await driverService.getAllDrivers();
-    console.log(`📋 Conductores obtenidos: ${drivers.length}`);
     res.json(drivers);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -271,10 +303,6 @@ app.get('/api/vehicles', authMiddleware, async (req, res) => {
     let vehicles = await vehicleService.getAllVehicles();
     
     if (req.user.role === 'driver') {
-      if (!req.user.driverId) {
-        console.log('❌ Conductor no encontrado');
-        return res.status(404).json({ message: 'Conductor no encontrado' });
-      }
       vehicles = vehicles.filter(v => 
         v.driverId && 
         (v.driverId._id.toString() === req.user.driverId.toString() || 
@@ -313,26 +341,74 @@ app.patch('/api/vehicles/:id/status', authMiddleware, async (req, res) => {
 app.patch('/api/vehicles/:id/driver', authMiddleware, roleMiddleware(['admin']), async (req, res) => {
   try {
     const updatedVehicle = await vehicleService.assignDriver(req.params.id, req.body.driverId);
-    if (!updatedVehicle) {
-      return res.status(404).json({ message: 'Vehículo no encontrado' });
-    }
     res.json(updatedVehicle);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
 });
 
+// Ruta para subir fotos
+app.post('/api/vehicles/:id/photos', 
+  authMiddleware,
+  uploadMiddleware,
+  async (req, res) => {
+    try {
+      const vehicle = await Vehicle.findById(req.params.id).populate('driverId');
+      
+      if (!vehicle) {
+        return res.status(404).json({ message: 'Vehículo no encontrado' });
+      }
+
+      // Verificar permisos
+      if (req.user.role === 'driver') {
+        if (!req.user.driverId || 
+            vehicle.driverId._id.toString() !== req.user.driverId.toString()) {
+          return res.status(403).json({ message: 'No autorizado para modificar este vehículo' });
+        }
+      }
+
+      const photos = {};
+      if (req.files) {
+        Object.entries(req.files).forEach(([key, fileArray]) => {
+          photos[key] = {
+            url: `/uploads/vehicles/${fileArray[0].filename}`,
+            uploadedAt: new Date()
+          };
+        });
+      }
+
+      // Actualizar el vehículo con las URLs de las fotos
+      const updatedVehicle = await Vehicle.findByIdAndUpdate(
+        req.params.id,
+        { 
+          loadingPhotos: photos,
+          updatedAt: new Date()
+        },
+        { 
+          new: true,
+          runValidators: true 
+        }
+      ).populate(['clientId', 'driverId']);
+
+      res.json(updatedVehicle);
+    } catch (error) {
+      console.error('Error in photo upload route:', error);
+      res.status(400).json({ message: error.message });
+    }
+}
+);
+
 // Manejo de errores global
 app.use((err, req, res, next) => {
-  console.error('❌ Error no manejado:', err.stack);
-  res.status(500).json({ 
-    message: 'Error interno del servidor',
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined
-  });
+console.error('❌ Error no manejado:', err.stack);
+res.status(500).json({ 
+  message: 'Error interno del servidor',
+  error: process.env.NODE_ENV === 'development' ? err.message : undefined
+});
 });
 
 // Iniciar servidor
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
-  console.log(`📝 Ambiente: ${process.env.NODE_ENV || 'development'}`);
+console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
+console.log(`📝 Ambiente: ${process.env.NODE_ENV || 'development'}`);
 });
