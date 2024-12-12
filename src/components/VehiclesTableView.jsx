@@ -1,7 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
+import PhotoViewModal from './PhotoViewModal';
 
 const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdateStatus }) => {
+  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
+  const [selectedPhotos, setSelectedPhotos] = useState(null);
+
   // Ordenar vehículos por prioridad de estado
   const sortedVehicles = [...vehicles].sort((a, b) => {
     const priority = { 
@@ -45,14 +49,33 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
 
   // Función para obtener el botón de acción según el estado
   const getActionButton = (vehicle) => {
+    const buttons = [];
+
+    // Botón de ver fotos si existen
+    if (vehicle.loadingPhotos && Object.keys(vehicle.loadingPhotos).length > 0) {
+      buttons.push(
+        <button
+          key="view-photos"
+          onClick={() => {
+            setSelectedPhotos(vehicle.loadingPhotos);
+            setIsPhotoModalOpen(true);
+          }}
+          className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors mr-2"
+        >
+          Ver Fotos
+        </button>
+      );
+    }
+
     if (vehicle.status === 'delivered') {
-      return null;
+      return buttons;
     }
 
     // Si está pendiente, mostrar selector de conductor
     if (vehicle.status === 'pending') {
-      return (
+      buttons.push(
         <select
+          key="driver-select"
           value={vehicle.driverId || ''}
           onChange={(e) => {
             onAssignDriver(vehicle._id, e.target.value);
@@ -75,6 +98,7 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
           }
         </select>
       );
+      return buttons;
     }
 
     // Botones según el estado
@@ -97,16 +121,19 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
     };
 
     const config = buttonConfig[vehicle.status];
-    if (!config) return null;
+    if (config) {
+      buttons.push(
+        <button
+          key="status-button"
+          onClick={() => onUpdateStatus(vehicle._id, config.action)}
+          className={`px-4 py-2 rounded-lg text-white text-sm transition-colors ${config.className}`}
+        >
+          {config.text}
+        </button>
+      );
+    }
 
-    return (
-      <button
-        onClick={() => onUpdateStatus(vehicle._id, config.action)}
-        className={`px-4 py-2 rounded-lg text-white text-sm transition-colors ${config.className}`}
-      >
-        {config.text}
-      </button>
-    );
+    return buttons;
   };
 
   // Funciones auxiliares para obtener nombres
@@ -142,7 +169,7 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
             <th className="px-4 py-3">AÑO</th>
             <th className="px-4 py-3">CONDUCTOR</th>
             <th className="px-4 py-3 w-64">STATUS</th>
-            <th className="px-4 py-3 w-32">ACCIONES</th>
+            <th className="px-4 py-3 w-40">ACCIONES</th>
           </tr>
         </thead>
         <tbody>
@@ -162,7 +189,9 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
                 {getProgressBar(vehicle.status)}
               </td>
               <td className="px-4 py-3">
-                {getActionButton(vehicle)}
+                <div className="flex space-x-2">
+                  {getActionButton(vehicle)}
+                </div>
               </td>
             </tr>
           ))}
@@ -175,6 +204,15 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
           )}
         </tbody>
       </table>
+
+      <PhotoViewModal
+        isOpen={isPhotoModalOpen}
+        onClose={() => {
+          setIsPhotoModalOpen(false);
+          setSelectedPhotos(null);
+        }}
+        photos={selectedPhotos}
+      />
     </div>
   );
 };
@@ -203,6 +241,24 @@ VehiclesTableView.propTypes = {
       LOT: PropTypes.string,
       lotLocation: PropTypes.string,
       status: PropTypes.oneOf(['pending', 'assigned', 'loading', 'in-transit', 'delivered']).isRequired,
+      loadingPhotos: PropTypes.shape({
+        frontPhoto: PropTypes.shape({
+          url: PropTypes.string,
+          uploadedAt: PropTypes.string
+        }),
+        backPhoto: PropTypes.shape({
+          url: PropTypes.string,
+          uploadedAt: PropTypes.string
+        }),
+        leftPhoto: PropTypes.shape({
+          url: PropTypes.string,
+          uploadedAt: PropTypes.string
+        }),
+        rightPhoto: PropTypes.shape({
+          url: PropTypes.string,
+          uploadedAt: PropTypes.string
+        })
+      })
     })
   ).isRequired,
   clients: PropTypes.arrayOf(
