@@ -45,19 +45,10 @@ const vehicleSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: {
-      values: ['pending', 'in-transit', 'delivered', 'cancelled'],
+      values: ['pending', 'assigned', 'loading', 'in-transit', 'delivered'],
       message: 'Estado inválido: {VALUE}'
     },
     default: 'pending'
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-    immutable: true
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
   }
 }, {
   timestamps: true,

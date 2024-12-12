@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import VehiclesTableView from './VehiclesTableView';
 import SearchBar from './SearchBar';
@@ -25,11 +25,6 @@ const VehiculosTab = ({ vehicles, clients, drivers, onAddVehicle, onUpdateStatus
 
   const filteredVehicles = useMemo(() => {
     return vehicles.filter(vehicle => {
-      // Hide delivered vehicles unless specifically filtered for delivered status
-      if (vehicle.status === 'delivered' && filters.status !== 'delivered') {
-        return false;
-      }
-  
       const searchText = filters.searchText.toLowerCase();
       const matchesSearch = filters.searchText === '' || 
         vehicle.LOT?.toLowerCase().includes(searchText) ||
@@ -83,10 +78,11 @@ const VehiculosTab = ({ vehicles, clients, drivers, onAddVehicle, onUpdateStatus
         ...newVehicle,
         city,
         state,
-        lotLocation: `${city}, ${state}`
+        lotLocation: `${city}, ${state}`,
+        status: 'pending'
       };
       
-      const response = await onAddVehicle(vehicleData);
+      await onAddVehicle(vehicleData);
 
       setNewVehicle({
         clientId: '',
@@ -110,17 +106,19 @@ const VehiculosTab = ({ vehicles, clients, drivers, onAddVehicle, onUpdateStatus
 
   const getStatusBadge = (status) => {
     const styles = {
-      pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      'in-transit': 'bg-blue-100 text-blue-800 border-blue-200',
-      delivered: 'bg-green-100 text-green-800 border-green-200',
-      cancelled: 'bg-gray-100 text-gray-800 border-gray-200'
+      pending: 'bg-red-100 text-red-800 border-red-200',
+      assigned: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      loading: 'bg-orange-100 text-orange-800 border-orange-200',
+      'in-transit': 'bg-green-100 text-green-800 border-green-200',
+      delivered: 'bg-blue-100 text-blue-800 border-blue-200'
     };
 
     const labels = {
       pending: 'Pendiente',
+      assigned: 'Asignado',
+      loading: 'En Carga',
       'in-transit': 'En Tránsito',
-      delivered: 'Entregado',
-      cancelled: 'Cancelado'
+      delivered: 'Entregado'
     };
 
     return (
@@ -132,6 +130,7 @@ const VehiculosTab = ({ vehicles, clients, drivers, onAddVehicle, onUpdateStatus
 
   return (
     <div className="space-y-6">
+      {/* Formulario de Registro */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200">
         <div className="border-b border-slate-200 bg-slate-50 p-2">
           <h2 className="font-semibold text-slate-900">Registrar Nuevo Vehículo</h2>
@@ -282,25 +281,40 @@ const VehiculosTab = ({ vehicles, clients, drivers, onAddVehicle, onUpdateStatus
                   </div>
                 )}
 
-                {vehicle.status === 'pending' && vehicle.driverId && (
+                {vehicle.status === 'assigned' && (
+                  <button
+                    onClick={() => onUpdateStatus(vehicle._id, 'loading')}
+                    className="mt-4 w-full px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                  >
+                    Iniciar Carga
+                  </button>
+                )}
+
+                {vehicle.status === 'loading' && (
                   <button
                     onClick={() => onUpdateStatus(vehicle._id, 'in-transit')}
-                    className="mt-4 w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                    className="mt-4 w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
                   >
-                    Iniciar Tránsito
+                    Iniciar Viaje
                   </button>
                 )}
 
                 {vehicle.status === 'in-transit' && (
                   <button
                     onClick={() => onUpdateStatus(vehicle._id, 'delivered')}
-                    className="mt-4 w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                    className="mt-4 w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                   >
                     Marcar como Entregado
                   </button>
                 )}
               </div>
             ))}
+            
+            {filteredVehicles.length === 0 && (
+              <div className="col-span-full text-center py-8 bg-slate-50 rounded-lg border border-slate-200">
+                <p className="text-slate-600">No hay vehículos que coincidan con los filtros</p>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -333,7 +347,9 @@ VehiculosTab.propTypes = {
       lotLocation: PropTypes.string,
       city: PropTypes.string,
       state: PropTypes.string,
-      status: PropTypes.oneOf(['pending', 'assigned', 'in-transit', 'delivered', 'cancelled']).isRequired,
+      status: PropTypes.oneOf(['pending', 'assigned', 'loading', 'in-transit', 'delivered']).isRequired,
+      createdAt: PropTypes.string,
+      updatedAt: PropTypes.string
     })
   ).isRequired,
   clients: PropTypes.arrayOf(
@@ -352,6 +368,5 @@ VehiculosTab.propTypes = {
   onUpdateStatus: PropTypes.func.isRequired,
   onAssignDriver: PropTypes.func.isRequired,
 };
-
 
 export default VehiculosTab;

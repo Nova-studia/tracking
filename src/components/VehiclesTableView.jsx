@@ -4,24 +4,32 @@ import PropTypes from 'prop-types';
 const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdateStatus }) => {
   // Ordenar vehículos por prioridad de estado
   const sortedVehicles = [...vehicles].sort((a, b) => {
-    const priority = { pending: 0, 'in-transit': 1, delivered: 2, cancelled: 3 };
+    const priority = { 
+      pending: 0, 
+      assigned: 1, 
+      loading: 2, 
+      'in-transit': 3, 
+      delivered: 4 
+    };
     return priority[a.status] - priority[b.status];
   });
 
   // Función para obtener la barra de progreso con el estado
   const getProgressBar = (status) => {
     const styles = {
-      pending: 'bg-yellow-300',
+      pending: 'bg-red-500',
+      assigned: 'bg-yellow-500',
+      loading: 'bg-orange-500',
       'in-transit': 'bg-green-500',
-      delivered: 'bg-blue-500',
-      cancelled: 'bg-gray-500'
+      delivered: 'bg-blue-500'
     };
 
     const textMap = {
       pending: 'PENDIENTE',
+      assigned: 'ASIGNADO',
+      loading: 'EN CARGA',
       'in-transit': 'EN TRÁNSITO',
-      delivered: 'ENTREGADO',
-      cancelled: 'CANCELADO'
+      delivered: 'ENTREGADO'
     };
 
     return (
@@ -37,36 +45,68 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
 
   // Función para obtener el botón de acción según el estado
   const getActionButton = (vehicle) => {
-    // Solo mostrar botón si el vehículo no está entregado o cancelado
-    if (vehicle.status === 'delivered' || vehicle.status === 'cancelled') {
+    if (vehicle.status === 'delivered') {
       return null;
     }
 
-    // Si está pendiente y tiene conductor asignado, mostrar botón para iniciar tránsito
-    if (vehicle.status === 'pending' && vehicle.driverId) {
+    // Si está pendiente, mostrar selector de conductor
+    if (vehicle.status === 'pending') {
       return (
-        <button
-          onClick={() => onUpdateStatus(vehicle._id, 'in-transit')}
-          className="px-4 py-2 rounded-lg bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors duration-150 text-xs"
+        <select
+          value={vehicle.driverId || ''}
+          onChange={(e) => {
+            onAssignDriver(vehicle._id, e.target.value);
+            if (e.target.value) {
+              setTimeout(() => {
+                onUpdateStatus(vehicle._id, 'assigned');
+              }, 100);
+            }
+          }}
+          className="px-4 py-2 rounded-lg bg-white border border-slate-200 text-slate-800 text-sm w-full"
         >
-          Asignar Conductor
-        </button>
+          <option value="">Asignar Conductor</option>
+          {drivers
+            .filter(driver => driver.isActive)
+            .map(driver => (
+              <option key={driver._id} value={driver._id}>
+                {driver.name}
+              </option>
+            ))
+          }
+        </select>
       );
     }
 
-    // Si está en tránsito, mostrar botón para marcar como entregado
-    if (vehicle.status === 'in-transit') {
-      return (
-        <button
-          onClick={() => onUpdateStatus(vehicle._id, 'delivered')}
-          className="px-4 py-2 rounded-lg bg-green-100 text-green-600 hover:bg-green-200 transition-colors duration-150 text-xs"
-        >
-          Marcar Entregado
-        </button>
-      );
-    }
+    // Botones según el estado
+    const buttonConfig = {
+      assigned: {
+        action: 'loading',
+        text: 'Iniciar Carga',
+        className: 'bg-orange-500 hover:bg-orange-600'
+      },
+      loading: {
+        action: 'in-transit',
+        text: 'Iniciar Viaje',
+        className: 'bg-green-500 hover:bg-green-600'
+      },
+      'in-transit': {
+        action: 'delivered',
+        text: 'Marcar Entregado',
+        className: 'bg-blue-500 hover:bg-blue-600'
+      }
+    };
 
-    return null;
+    const config = buttonConfig[vehicle.status];
+    if (!config) return null;
+
+    return (
+      <button
+        onClick={() => onUpdateStatus(vehicle._id, config.action)}
+        className={`px-4 py-2 rounded-lg text-white text-sm transition-colors ${config.className}`}
+      >
+        {config.text}
+      </button>
+    );
   };
 
   // Funciones auxiliares para obtener nombres
@@ -80,11 +120,6 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
     if (!vehicle?.driverId) return '-';
     const driverId = typeof vehicle.driverId === 'object' ? vehicle.driverId._id : vehicle.driverId;
     return drivers.find(d => d._id === driverId)?.name || '-';
-  };
-
-  const getDriverId = (vehicle) => {
-    if (!vehicle?.driverId) return '';
-    return typeof vehicle.driverId === 'object' ? vehicle.driverId._id : vehicle.driverId;
   };
 
   const getLocation = (vehicle) => {
@@ -122,32 +157,11 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
               <td className="px-4 py-3">{vehicle.brand || '-'}</td>
               <td className="px-4 py-3">{vehicle.model || '-'}</td>
               <td className="px-4 py-3">{vehicle.year || '-'}</td>
-              <td className="px-4 py-3">
-                {vehicle.status === 'pending' ? (
-                  <select
-                    value={getDriverId(vehicle)}
-                    onChange={(e) => onAssignDriver(vehicle._id, e.target.value)}
-                    className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-slate-200"
-                    disabled={vehicle.status !== 'pending'}
-                  >
-                    <option value="">Sin asignar</option>
-                    {drivers
-                      .filter(driver => driver.isActive) // Solo mostrar conductores activos
-                      .map(driver => (
-                        <option key={driver._id} value={driver._id}>
-                          {driver.name}
-                        </option>
-                      ))
-                    }
-                  </select>
-                ) : (
-                  getDriverName(vehicle)
-                )}
-              </td>
+              <td className="px-4 py-3">{getDriverName(vehicle)}</td>
               <td className="px-4 py-3">
                 {getProgressBar(vehicle.status)}
               </td>
-              <td className="px-4 py-3 text-right">
+              <td className="px-4 py-3">
                 {getActionButton(vehicle)}
               </td>
             </tr>
@@ -188,7 +202,7 @@ VehiclesTableView.propTypes = {
       year: PropTypes.string,
       LOT: PropTypes.string,
       lotLocation: PropTypes.string,
-      status: PropTypes.oneOf(['pending', 'in-transit', 'delivered', 'cancelled']).isRequired,
+      status: PropTypes.oneOf(['pending', 'assigned', 'loading', 'in-transit', 'delivered']).isRequired,
     })
   ).isRequired,
   clients: PropTypes.arrayOf(

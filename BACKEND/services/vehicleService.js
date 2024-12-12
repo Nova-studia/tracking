@@ -4,7 +4,6 @@ const vehicleService = {
   async createVehicle(vehicleData) {
     try {
       console.log('Creating vehicle with data:', vehicleData);
-      // Construir el lotLocation a partir de city y state
       const vehicle = new Vehicle({
         ...vehicleData,
         lotLocation: `${vehicleData.city}, ${vehicleData.state}`.toUpperCase()
@@ -27,7 +26,6 @@ const vehicleService = {
         .lean()
         .sort({ createdAt: -1 });
 
-      // Separar lotLocation en city y state
       return vehicles.map(vehicle => {
         if (vehicle.lotLocation) {
           const [city, state] = vehicle.lotLocation.split(',').map(s => s.trim());
@@ -45,20 +43,34 @@ const vehicleService = {
     }
   },
 
-  async updateVehicleStatus(vehicleId, status) {
+  async updateVehicleStatus(vehicleId, newStatus) {
     try {
+      // Validar el estado antes de la actualización
+      const validStates = ['pending', 'assigned', 'loading', 'in-transit', 'delivered'];
+      if (!validStates.includes(newStatus)) {
+        throw new Error(`Estado inválido: ${newStatus}`);
+      }
+
+      // Realizar la actualización
       const vehicle = await Vehicle.findByIdAndUpdate(
         vehicleId,
-        { status },
-        { new: true }
+        { 
+          status: newStatus,
+          updatedAt: new Date()
+        },
+        { 
+          new: true, 
+          runValidators: true 
+        }
       ).populate(['clientId', 'driverId']);
-      
+
       if (!vehicle) {
         throw new Error('Vehículo no encontrado');
       }
-      
+
       return vehicle;
     } catch (error) {
+      console.error('Error updating vehicle status:', error);
       throw new Error(`Error al actualizar estado: ${error.message}`);
     }
   },
@@ -67,8 +79,14 @@ const vehicleService = {
     try {
       const vehicle = await Vehicle.findByIdAndUpdate(
         vehicleId,
-        { driverId: driverId || null },
-        { new: true }
+        { 
+          driverId: driverId || null,
+          updatedAt: new Date()
+        },
+        { 
+          new: true,
+          runValidators: true 
+        }
       ).populate(['clientId', 'driverId']);
       
       if (!vehicle) {

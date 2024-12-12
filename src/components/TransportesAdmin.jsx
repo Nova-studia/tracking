@@ -211,6 +211,7 @@ const TransportesAdmin = () => {
 
   const handleUpdateStatus = async (vehicleId, status) => {
     try {
+      console.log('Actualizando estado:', vehicleId, status);
       const response = await fetch(`${API_URL}/vehicles/${vehicleId}/status`, {
         method: 'PATCH',
         headers: getAuthHeaders(),
@@ -223,25 +224,27 @@ const TransportesAdmin = () => {
       }
       
       const updatedVehicle = await response.json();
+      console.log('Vehículo actualizado:', updatedVehicle);
       setVehicles(prevVehicles =>
         prevVehicles.map(vehicle =>
           vehicle._id === vehicleId ? updatedVehicle : vehicle
         )
       );
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error detallado:', error);
       alert('Error al actualizar estado: ' + error.message);
     }
   };
 
   const handleAssignDriver = async (vehicleId, driverId) => {
     try {
+      // Primero asignamos el conductor
       const response = await fetch(`${API_URL}/vehicles/${vehicleId}/driver`, {
         method: 'PATCH',
         headers: getAuthHeaders(),
         body: JSON.stringify({ driverId: driverId === '' ? null : driverId }),
       });
-  
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Error al asignar conductor');
@@ -249,6 +252,11 @@ const TransportesAdmin = () => {
       
       const updatedVehicle = await response.json();
       setVehicles(prev => prev.map(v => v._id === vehicleId ? updatedVehicle : v));
+
+      // Si se asignó un conductor (driverId no está vacío), actualizamos el estado
+      if (driverId) {
+        await handleUpdateStatus(vehicleId, 'assigned');
+      }
     } catch (error) {
       console.error('Error detallado:', error);
       alert('Error al asignar conductor: ' + error.message);

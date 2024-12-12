@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 
 const DriverDashboard = ({ driverId }) => {
   const [assignedVehicles, setAssignedVehicles] = useState([]);
@@ -38,7 +39,7 @@ const DriverDashboard = ({ driverId }) => {
         
         // Separar viajes actuales y completados
         setCurrentTrips(allAssigned.filter(v => 
-          ['assigned', 'in-transit'].includes(v.status)
+          ['assigned', 'loading', 'in-transit'].includes(v.status)
         ));
         
         setCompletedTrips(allAssigned.filter(v => 
@@ -86,7 +87,7 @@ const DriverDashboard = ({ driverId }) => {
       if (newStatus === 'delivered') {
         setCurrentTrips(prev => prev.filter(v => v._id !== vehicleId));
         setCompletedTrips(prev => [...prev, updatedVehicle]);
-      } else if (newStatus === 'in-transit') {
+      } else {
         setCurrentTrips(prev => 
           prev.map(v => v._id === vehicleId ? updatedVehicle : v)
         );
@@ -101,6 +102,7 @@ const DriverDashboard = ({ driverId }) => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'assigned': return 'bg-yellow-100 text-yellow-800';
+      case 'loading': return 'bg-orange-100 text-orange-800';
       case 'in-transit': return 'bg-green-100 text-green-800';
       case 'delivered': return 'bg-blue-100 text-blue-800';
       default: return 'bg-gray-100 text-gray-800';
@@ -109,11 +111,44 @@ const DriverDashboard = ({ driverId }) => {
 
   const getStatusText = (status) => {
     switch (status) {
-      case 'assigned': return 'Asignado';
-      case 'in-transit': return 'En Tránsito';
-      case 'delivered': return 'Entregado';
-      default: return 'Desconocido';
+      case 'assigned': return 'ASIGNADO';
+      case 'loading': return 'EN CARGA';
+      case 'in-transit': return 'EN TRÁNSITO';
+      case 'delivered': return 'ENTREGADO';
+      default: return 'DESCONOCIDO';
     }
+  };
+
+  const getActionButton = (vehicle) => {
+    const buttonConfig = {
+      assigned: {
+        text: 'INICIAR CARGA',
+        nextStatus: 'loading',
+        className: 'bg-orange-600 hover:bg-orange-700'
+      },
+      loading: {
+        text: 'INICIAR VIAJE',
+        nextStatus: 'in-transit',
+        className: 'bg-green-600 hover:bg-green-700'
+      },
+      'in-transit': {
+        text: 'MARCAR ENTREGADO',
+        nextStatus: 'delivered',
+        className: 'bg-blue-600 hover:bg-blue-700'
+      }
+    };
+
+    const config = buttonConfig[vehicle.status];
+    if (!config) return null;
+
+    return (
+      <button
+        onClick={() => handleStatusUpdate(vehicle._id, config.nextStatus)}
+        className={`px-4 py-2 text-white rounded transition-colors ${config.className}`}
+      >
+        {config.text}
+      </button>
+    );
   };
 
   if (loading) {
@@ -172,22 +207,7 @@ const DriverDashboard = ({ driverId }) => {
               </div>
               
               <div className="flex justify-end space-x-2">
-                {vehicle.status === 'assigned' && (
-                  <button
-                    onClick={() => handleStatusUpdate(vehicle._id, 'in-transit')}
-                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-                  >
-                    Iniciar Viaje
-                  </button>
-                )}
-                {vehicle.status === 'in-transit' && (
-                  <button
-                    onClick={() => handleStatusUpdate(vehicle._id, 'delivered')}
-                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                  >
-                    Marcar como Entregado
-                  </button>
-                )}
+                {getActionButton(vehicle)}
               </div>
             </div>
           ))}
@@ -260,6 +280,10 @@ const DriverDashboard = ({ driverId }) => {
       </div>
     </div>
   );
+};
+
+DriverDashboard.propTypes = {
+  driverId: PropTypes.string.isRequired
 };
 
 export default DriverDashboard;
