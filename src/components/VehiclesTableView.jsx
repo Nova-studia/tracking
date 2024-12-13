@@ -60,7 +60,7 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
             setSelectedPhotos(vehicle.loadingPhotos);
             setIsPhotoModalOpen(true);
           }}
-          className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors mr-2"
+          className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors transform hover:scale-105 shadow hover:shadow-md w-32"
         >
           Ver Fotos
         </button>
@@ -68,12 +68,18 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
     }
 
     if (vehicle.status === 'delivered') {
+      // Si no hay fotos en un vehículo entregado, añadimos un placeholder para mantener el espacio
+      if (buttons.length === 0) {
+        buttons.push(
+          <div key="placeholder" className="w-32" />
+        );
+      }
       return buttons;
     }
 
     // Si está pendiente, mostrar selector de conductor
     if (vehicle.status === 'pending') {
-      buttons.push(
+      const select = (
         <select
           key="driver-select"
           value={vehicle.driverId || ''}
@@ -85,9 +91,9 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
               }, 100);
             }
           }}
-          className="px-4 py-2 rounded-lg bg-white border border-slate-200 text-slate-800 text-sm w-full"
+          className="px-4 py-2 rounded-lg bg-white border border-slate-200 text-slate-800 text-sm w-32 hover:border-slate-300 focus:ring-2 focus:ring-slate-200 transition-all cursor-pointer"
         >
-          <option value="">Asignar Conductor</option>
+          <option value="">Asignar</option>
           {drivers
             .filter(driver => driver.isActive)
             .map(driver => (
@@ -98,6 +104,7 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
           }
         </select>
       );
+      buttons.push(select);
       return buttons;
     }
 
@@ -115,7 +122,7 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
       },
       'in-transit': {
         action: 'delivered',
-        text: 'Marcar Entregado',
+        text: 'Entregar',
         className: 'bg-blue-500 hover:bg-blue-600'
       }
     };
@@ -126,7 +133,7 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
         <button
           key="status-button"
           onClick={() => onUpdateStatus(vehicle._id, config.action)}
-          className={`px-4 py-2 rounded-lg text-white text-sm transition-colors ${config.className}`}
+          className={`px-4 py-2 rounded-lg text-white text-sm transition-all transform hover:scale-105 shadow hover:shadow-md w-32 ${config.className}`}
         >
           {config.text}
         </button>
@@ -169,7 +176,7 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
             <th className="px-4 py-3">AÑO</th>
             <th className="px-4 py-3">CONDUCTOR</th>
             <th className="px-4 py-3 w-64">STATUS</th>
-            <th className="px-4 py-3 w-40">ACCIONES</th>
+            <th className="px-1 py-1 text-center">ACCIONES</th>
           </tr>
         </thead>
         <tbody>
@@ -188,8 +195,8 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
               <td className="px-4 py-3">
                 {getProgressBar(vehicle.status)}
               </td>
-              <td className="px-4 py-3">
-                <div className="flex space-x-2">
+              <td className="px-1 py-1">
+                <div className="flex justify-center space-x-2">
                   {getActionButton(vehicle)}
                 </div>
               </td>

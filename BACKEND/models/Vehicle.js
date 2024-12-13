@@ -27,7 +27,23 @@ const vehicleSchema = new mongoose.Schema({
   },
   LOT: {
     type: String,
-    trim: true
+    trim: true,
+    maxlength: [8, 'El LOT no puede tener más de 8 caracteres'],
+    match: [/^[A-Za-z0-9]{1,8}$/, 'El LOT solo puede contener letras y números'],
+    validate: {
+      validator: async function(lot) {
+        if (!lot) return true; // Permitir LOT vacío si no es requerido
+        
+        // Buscar si existe otro vehículo con el mismo LOT
+        const Vehicle = this.constructor;
+        const exists = await Vehicle.findOne({ 
+          LOT: lot,
+          _id: { $ne: this._id } // Excluir el documento actual en actualizaciones
+        });
+        return !exists;
+      },
+      message: 'Este número de LOT ya está en uso'
+    }
   },
   lotLocation: {
     type: String,
@@ -123,5 +139,6 @@ vehicleSchema.pre('findOneAndUpdate', async function(next) {
 vehicleSchema.index({ clientId: 1, status: 1 });
 vehicleSchema.index({ driverId: 1, status: 1 });
 vehicleSchema.index({ createdAt: -1 });
+vehicleSchema.index({ LOT: 1 }, { unique: true, sparse: true }); // Índice único para LOT
 
 module.exports = mongoose.model('Vehicle', vehicleSchema);

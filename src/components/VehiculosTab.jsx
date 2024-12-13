@@ -25,6 +25,11 @@ const VehiculosTab = ({ vehicles, clients, drivers, onAddVehicle, onUpdateStatus
 
   const filteredVehicles = useMemo(() => {
     return vehicles.filter(vehicle => {
+      // Por defecto, no mostrar los vehículos entregados a menos que se seleccione específicamente
+      if (vehicle.status === 'delivered' && filters.status !== 'delivered') {
+        return false;
+      }
+  
       const searchText = filters.searchText.toLowerCase();
       const matchesSearch = filters.searchText === '' || 
         vehicle.LOT?.toLowerCase().includes(searchText) ||
@@ -101,9 +106,24 @@ const VehiculosTab = ({ vehicles, clients, drivers, onAddVehicle, onUpdateStatus
   };
 
   const handleInputChange = (field, value) => {
+    if (field === 'LOT') {
+      // Solo permitir hasta 8 caracteres
+      if (value.length > 8) return;
+      
+      // Solo permitir letras y números
+      if (!/^[A-Za-z0-9]*$/.test(value)) return;
+      
+      // Verificar si el LOT ya existe
+      const lotExists = vehicles.some(vehicle => vehicle.LOT === value);
+      if (lotExists) {
+        alert('Este número de LOT ya existe');
+        return;
+      }
+    }
+    
     setNewVehicle(prev => ({ ...prev, [field]: value }));
   };
-
+  
   const getStatusBadge = (status) => {
     const styles = {
       pending: 'bg-red-100 text-red-800 border-red-200',
