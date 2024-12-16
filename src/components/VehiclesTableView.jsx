@@ -6,26 +6,50 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const [selectedPhotos, setSelectedPhotos] = useState(null);
 
-  // Ordenar vehículos por prioridad de estado
-  const sortedVehicles = [...vehicles].sort((a, b) => {
-    const priority = { 
-      pending: 0, 
-      assigned: 1, 
-      loading: 2, 
-      'in-transit': 3, 
-      delivered: 4 
+  // Ordenar y agrupar vehículos por conductor
+  const groupedVehicles = React.useMemo(() => {
+    const groups = {
+      unassigned: []
     };
-    return priority[a.status] - priority[b.status];
-  });
+
+    const sortedVehicles = [...vehicles].sort((a, b) => {
+      const priority = { 
+        pending: 0, 
+        assigned: 1, 
+        loading: 2, 
+        'in-transit': 3, 
+        delivered: 4 
+      };
+      return priority[a.status] - priority[b.status];
+    });
+
+    sortedVehicles.forEach(vehicle => {
+      // Validar que vehicle.driverId no sea null antes de acceder a sus propiedades
+      const driverId = vehicle.driverId
+        ? (typeof vehicle.driverId === 'object' ? vehicle.driverId._id : vehicle.driverId)
+        : null;
+
+      if (!driverId) {
+        groups.unassigned.push(vehicle);
+      } else {
+        if (!groups[driverId]) {
+          groups[driverId] = [];
+        }
+        groups[driverId].push(vehicle);
+      }
+    });
+
+    return groups;
+  }, [vehicles]);
 
   // Función para obtener la barra de progreso con el estado
   const getProgressBar = (status) => {
     const styles = {
       pending: 'bg-red-500',
-      assigned: 'bg-yellow-500',
-      loading: 'bg-orange-500',
-      'in-transit': 'bg-green-500',
-      delivered: 'bg-blue-500'
+      assigned: 'bg-yellow-300',
+      loading: 'bg-yellow-400',
+      'in-transit': 'bg-blue-500',
+      delivered: 'bg-green-500'
     };
 
     const textMap = {
@@ -60,7 +84,7 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
             setSelectedPhotos(vehicle.loadingPhotos);
             setIsPhotoModalOpen(true);
           }}
-          className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors transform hover:scale-105 shadow hover:shadow-md w-32"
+          className="px-4 py-2 bg-black text-white rounded-lg hover:bg-slate-700 transition-colors transform hover:scale-105 shadow hover:shadow-md w-32"
         >
           Ver Fotos
         </button>
@@ -68,7 +92,6 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
     }
 
     if (vehicle.status === 'delivered') {
-      // Si no hay fotos en un vehículo entregado, añadimos un placeholder para mantener el espacio
       if (buttons.length === 0) {
         buttons.push(
           <div key="placeholder" className="w-32" />
@@ -150,12 +173,6 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
     return clients.find(c => c._id === clientId)?.name || '-';
   };
 
-  const getDriverName = (vehicle) => {
-    if (!vehicle?.driverId) return '-';
-    const driverId = typeof vehicle.driverId === 'object' ? vehicle.driverId._id : vehicle.driverId;
-    return drivers.find(d => d._id === driverId)?.name || '-';
-  };
-
   const getLocation = (vehicle) => {
     if (vehicle.lotLocation) {
       return vehicle.lotLocation;
@@ -163,55 +180,87 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
     return vehicle.city && vehicle.state ? `${vehicle.city}, ${vehicle.state}` : '-';
   };
 
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm text-left">
-        <thead className="text-xs bg-slate-100">
-          <tr className="border-b">
-            <th className="px-4 py-3">LOT</th>
-            <th className="px-4 py-3">UBICACIÓN</th>
-            <th className="px-4 py-3">CLIENTE</th>
-            <th className="px-4 py-3">MARCA</th>
-            <th className="px-4 py-3">MODELO</th>
-            <th className="px-4 py-3">AÑO</th>
-            <th className="px-4 py-3">CONDUCTOR</th>
-            <th className="px-4 py-3 w-64">STATUS</th>
-            <th className="px-1 py-1 text-center">ACCIONES</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sortedVehicles.map((vehicle, index) => (
-            <tr 
-              key={vehicle._id} 
-              className={`border-b ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}
-            >
-              <td className="px-4 py-3">{vehicle.LOT || '-'}</td>
-              <td className="px-4 py-3">{getLocation(vehicle)}</td>
-              <td className="px-4 py-3">{getClientName(vehicle)}</td>
-              <td className="px-4 py-3">{vehicle.brand || '-'}</td>
-              <td className="px-4 py-3">{vehicle.model || '-'}</td>
-              <td className="px-4 py-3">{vehicle.year || '-'}</td>
-              <td className="px-4 py-3">{getDriverName(vehicle)}</td>
-              <td className="px-4 py-3">
-                {getProgressBar(vehicle.status)}
-              </td>
-              <td className="px-1 py-1">
-                <div className="flex justify-center space-x-2">
-                  {getActionButton(vehicle)}
-                </div>
-              </td>
+  // Componente para la tabla de vehículos por grupo
+  const VehicleGroupTable = ({ vehicles, groupTitle, className }) => (
+    <div className={`bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-6 ${className}`}>
+      <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
+        <h3 className="text-lg font-semibold text-slate-800">{groupTitle}</h3>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm text-left">
+          <thead className="text-xs bg-slate-100">
+            <tr className="border-b">
+              <th className="px-4 py-3">LOT</th>
+              <th className="px-4 py-3">UBICACIÓN</th>
+              <th className="px-4 py-3">CLIENTE</th>
+              <th className="px-4 py-3">MARCA</th>
+              <th className="px-4 py-3">MODELO</th>
+              <th className="px-4 py-3">AÑO</th>
+              <th className="px-4 py-3 w-64">STATUS</th>
+              <th className="px-1 py-1 text-center">ACCIONES</th>
             </tr>
-          ))}
-          {sortedVehicles.length === 0 && (
-            <tr>
-              <td colSpan="9" className="px-4 py-8 text-center text-slate-500">
-                No hay vehículos registrados
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {vehicles.map((vehicle, index) => (
+              <tr 
+                key={vehicle._id} 
+                className={`border-b ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}
+              >
+                <td className="px-4 py-3">{vehicle.LOT || '-'}</td>
+                <td className="px-4 py-3">{getLocation(vehicle)}</td>
+                <td className="px-4 py-3">{getClientName(vehicle)}</td>
+                <td className="px-4 py-3">{vehicle.brand || '-'}</td>
+                <td className="px-4 py-3">{vehicle.model || '-'}</td>
+                <td className="px-4 py-3">{vehicle.year || '-'}</td>
+                <td className="px-4 py-3">
+                  {getProgressBar(vehicle.status)}
+                </td>
+                <td className="px-1 py-1">
+                  <div className="flex justify-center space-x-2">
+                    {getActionButton(vehicle)}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 
+  return (
+    <div>
+      {/* Sección de vehículos sin asignar */}
+      {groupedVehicles.unassigned.length > 0 && (
+        <VehicleGroupTable 
+          vehicles={groupedVehicles.unassigned} 
+          groupTitle={`Sin Conductor Asignado (${groupedVehicles.unassigned.length})`}
+          className="border-red-200 bg-red-50"
+        />
+      )}
+
+  {/* Secciones por conductor */}
+  {drivers.map(driver => {
+        const driverVehicles = groupedVehicles[driver._id] || [];
+        if (driverVehicles.length === 0) return null;
+
+        return (
+          <VehicleGroupTable 
+            key={driver._id}
+            vehicles={driverVehicles} 
+            groupTitle={`${driver.name} (${driverVehicles.length})`}
+          />
+        );
+      })}
+
+      {/* Mensaje cuando no hay vehículos */}
+      {Object.values(groupedVehicles).every(group => group.length === 0) && (
+        <div className="text-center py-8 bg-slate-50 rounded-lg border border-slate-200">
+          <p className="text-slate-600">No hay vehículos registrados</p>
+        </div>
+      )}
+
+      {/* Modal para visualizar fotos */}
       <PhotoViewModal
         isOpen={isPhotoModalOpen}
         onClose={() => {
