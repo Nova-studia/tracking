@@ -6,7 +6,6 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const [selectedPhotos, setSelectedPhotos] = useState(null);
 
-  // Ordenar y agrupar vehículos por conductor
   const groupedVehicles = React.useMemo(() => {
     const groups = {
       unassigned: []
@@ -24,7 +23,6 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
     });
 
     sortedVehicles.forEach(vehicle => {
-      // Validar que vehicle.driverId no sea null antes de acceder a sus propiedades
       const driverId = vehicle.driverId
         ? (typeof vehicle.driverId === 'object' ? vehicle.driverId._id : vehicle.driverId)
         : null;
@@ -42,7 +40,6 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
     return groups;
   }, [vehicles]);
 
-  // Función para obtener la barra de progreso con el estado
   const getProgressBar = (status) => {
     const styles = {
       pending: 'bg-red-500',
@@ -63,7 +60,7 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
     return (
       <div className="w-full">
         <div className={`${styles[status]} h-6 rounded relative`}>
-          <span className="absolute inset-0 text-center text-xs font-bold flex items-center justify-center text-white">
+          <span className="absolute inset-0 text-center text-sm font-bold flex items-center justify-center text-white">
             {textMap[status]}
           </span>
         </div>
@@ -71,11 +68,9 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
     );
   };
 
-  // Función para obtener el botón de acción según el estado
   const getActionButton = (vehicle) => {
     const buttons = [];
 
-    // Botón de ver fotos si existen
     if (vehicle.loadingPhotos && Object.keys(vehicle.loadingPhotos).length > 0) {
       buttons.push(
         <button
@@ -84,7 +79,7 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
             setSelectedPhotos(vehicle.loadingPhotos);
             setIsPhotoModalOpen(true);
           }}
-          className="px-4 py-2 bg-black text-white rounded-lg hover:bg-slate-700 transition-colors transform hover:scale-105 shadow hover:shadow-md w-32"
+          className="px-2 py-1 text-sm font-medium bg-black text-white rounded hover:bg-slate-700 transition-colors w-24"
         >
           Ver Fotos
         </button>
@@ -94,13 +89,12 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
     if (vehicle.status === 'delivered') {
       if (buttons.length === 0) {
         buttons.push(
-          <div key="placeholder" className="w-32" />
+          <div key="placeholder" className="w-24" />
         );
       }
       return buttons;
     }
 
-    // Si está pendiente, mostrar selector de conductor
     if (vehicle.status === 'pending') {
       const select = (
         <select
@@ -114,7 +108,7 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
               }, 100);
             }
           }}
-          className="px-4 py-2 rounded-lg bg-white border border-slate-200 text-slate-800 text-sm w-32 hover:border-slate-300 focus:ring-2 focus:ring-slate-200 transition-all cursor-pointer"
+          className="px-2 py-1 rounded text-sm font-medium bg-white border border-slate-200 text-slate-800 w-24 hover:border-slate-300 focus:ring-1 focus:ring-slate-200"
         >
           <option value="">Asignar</option>
           {drivers
@@ -131,7 +125,6 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
       return buttons;
     }
 
-    // Botones según el estado
     const buttonConfig = {
       assigned: {
         action: 'loading',
@@ -156,7 +149,7 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
         <button
           key="status-button"
           onClick={() => onUpdateStatus(vehicle._id, config.action)}
-          className={`px-4 py-2 rounded-lg text-white text-sm transition-all transform hover:scale-105 shadow hover:shadow-md w-32 ${config.className}`}
+          className={`px-2 py-1 rounded text-white text-sm font-medium transition-colors w-24 ${config.className}`}
         >
           {config.text}
         </button>
@@ -166,7 +159,6 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
     return buttons;
   };
 
-  // Funciones auxiliares para obtener nombres
   const getClientName = (vehicle) => {
     if (!vehicle?.clientId) return '-';
     const clientId = typeof vehicle.clientId === 'object' ? vehicle.clientId._id : vehicle.clientId;
@@ -174,49 +166,87 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
   };
 
   const getLocation = (vehicle) => {
-    if (vehicle.lotLocation) {
-      return vehicle.lotLocation;
-    }
-    return vehicle.city && vehicle.state ? `${vehicle.city}, ${vehicle.state}` : '-';
+    return vehicle.lotLocation || 
+      (vehicle.city && vehicle.state ? `${vehicle.city}, ${vehicle.state}` : '-');
   };
 
-  // Componente para la tabla de vehículos por grupo
   const VehicleGroupTable = ({ vehicles, groupTitle, className }) => (
-    <div className={`bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-6 ${className}`}>
-      <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
-        <h3 className="text-lg font-semibold text-slate-800">{groupTitle}</h3>
+    <div className={`bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden mb-4 ${className}`}>
+      <div className="border-b border-slate-200">
+        <div className="w-full bg-slate-50 px-4 py-2 flex items-center">
+          <div className="flex-1 min-w-0">
+            <h3 className="text-base font-semibold text-slate-800 truncate" title={groupTitle}>
+              {groupTitle}
+            </h3>
+          </div>
+        </div>
       </div>
+
       <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left">
-          <thead className="text-xs bg-slate-100">
+        <table className="w-full table-fixed border-collapse">
+          <colgroup>
+            <col style={{width: '80px'}} /> {/* LOT */}
+            <col style={{width: '120px'}} /> {/* UBICACIÓN */}
+            <col style={{width: '120px'}} /> {/* CLIENTE */}
+            <col style={{width: '90px'}} /> {/* MARCA */}
+            <col style={{width: '90px'}} /> {/* MODELO */}
+            <col style={{width: '60px'}} />  {/* AÑO */}
+            <col style={{width: '200px'}} /> {/* STATUS */}
+            <col style={{width: '140px'}} /> {/* ACCIONES */}
+          </colgroup>
+          <thead className="text-sm bg-slate-100">
             <tr className="border-b">
-              <th className="px-4 py-3">LOT</th>
-              <th className="px-4 py-3">UBICACIÓN</th>
-              <th className="px-4 py-3">CLIENTE</th>
-              <th className="px-4 py-3">MARCA</th>
-              <th className="px-4 py-3">MODELO</th>
-              <th className="px-4 py-3">AÑO</th>
-              <th className="px-4 py-3 w-64">STATUS</th>
-              <th className="px-1 py-1 text-center">ACCIONES</th>
+              <th className="px-2 py-1.5 text-left font-bold">LOT</th>
+              <th className="px-2 py-1.5 text-left font-bold">UBICACIÓN</th>
+              <th className="px-2 py-1.5 text-left font-bold">CLIENTE</th>
+              <th className="px-2 py-1.5 text-left font-bold">MARCA</th>
+              <th className="px-2 py-1.5 text-left font-bold">MODELO</th>
+              <th className="px-2 py-1.5 text-left font-bold">AÑO</th>
+              <th className="px-2 py-1.5 text-left font-bold">STATUS</th>
+              <th className="px-2 py-1.5 text-center font-bold">ACCIONES</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="text-sm font-medium">
             {vehicles.map((vehicle, index) => (
               <tr 
                 key={vehicle._id} 
                 className={`border-b ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}
               >
-                <td className="px-4 py-3">{vehicle.LOT || '-'}</td>
-                <td className="px-4 py-3">{getLocation(vehicle)}</td>
-                <td className="px-4 py-3">{getClientName(vehicle)}</td>
-                <td className="px-4 py-3">{vehicle.brand || '-'}</td>
-                <td className="px-4 py-3">{vehicle.model || '-'}</td>
-                <td className="px-4 py-3">{vehicle.year || '-'}</td>
-                <td className="px-4 py-3">
+                <td className="px-2 py-1.5">
+                  <div className="truncate" title={vehicle.LOT || '-'}>
+                    {vehicle.LOT || '-'}
+                  </div>
+                </td>
+                <td className="px-2 py-1.5">
+                  <div className="truncate" title={getLocation(vehicle)}>
+                    {getLocation(vehicle)}
+                  </div>
+                </td>
+                <td className="px-2 py-1.5">
+                  <div className="truncate" title={getClientName(vehicle)}>
+                    {getClientName(vehicle)}
+                  </div>
+                </td>
+                <td className="px-2 py-1.5">
+                  <div className="truncate" title={vehicle.brand || '-'}>
+                    {vehicle.brand || '-'}
+                  </div>
+                </td>
+                <td className="px-2 py-1.5">
+                  <div className="truncate" title={vehicle.model || '-'}>
+                    {vehicle.model || '-'}
+                  </div>
+                </td>
+                <td className="px-2 py-1.5">
+                  <div className="truncate" title={vehicle.year || '-'}>
+                    {vehicle.year || '-'}
+                  </div>
+                </td>
+                <td className="px-2 py-1.5">
                   {getProgressBar(vehicle.status)}
                 </td>
-                <td className="px-1 py-1">
-                  <div className="flex justify-center space-x-2">
+                <td className="px-2 py-1.5">
+                  <div className="flex justify-center gap-2">
                     {getActionButton(vehicle)}
                   </div>
                 </td>
@@ -229,18 +259,16 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
   );
 
   return (
-    <div>
-      {/* Sección de vehículos sin asignar */}
+    <div className="space-y-4">
       {groupedVehicles.unassigned.length > 0 && (
         <VehicleGroupTable 
           vehicles={groupedVehicles.unassigned} 
           groupTitle={`Sin Conductor Asignado (${groupedVehicles.unassigned.length})`}
-          className="border-red-200 bg-red-50"
+          className="border-red-200"
         />
       )}
 
-  {/* Secciones por conductor */}
-  {drivers.map(driver => {
+      {drivers.map(driver => {
         const driverVehicles = groupedVehicles[driver._id] || [];
         if (driverVehicles.length === 0) return null;
 
@@ -253,14 +281,12 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
         );
       })}
 
-      {/* Mensaje cuando no hay vehículos */}
       {Object.values(groupedVehicles).every(group => group.length === 0) && (
-        <div className="text-center py-8 bg-slate-50 rounded-lg border border-slate-200">
+        <div className="text-center py-4 bg-slate-50 rounded-lg border border-slate-200 text-sm">
           <p className="text-slate-600">No hay vehículos registrados</p>
         </div>
       )}
 
-      {/* Modal para visualizar fotos */}
       <PhotoViewModal
         isOpen={isPhotoModalOpen}
         onClose={() => {
