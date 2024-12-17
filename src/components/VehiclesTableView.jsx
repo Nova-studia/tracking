@@ -42,11 +42,11 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
 
   const getProgressBar = (status) => {
     const styles = {
-      pending: 'bg-red-500',
-      assigned: 'bg-yellow-300',
-      loading: 'bg-yellow-400',
+      pending: 'bg-red-600',
+      assigned: 'bg-orange-400',
+      loading: 'bg-orange-400',
       'in-transit': 'bg-blue-500',
-      delivered: 'bg-green-500'
+      delivered: 'bg-lime-400'
     };
 
     const textMap = {
@@ -184,16 +184,16 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
 
       <div className="overflow-x-auto">
         <table className="w-full table-fixed border-collapse">
-          <colgroup>
-            <col style={{width: '80px'}} /> {/* LOT */}
-            <col style={{width: '120px'}} /> {/* UBICACIÓN */}
-            <col style={{width: '120px'}} /> {/* CLIENTE */}
-            <col style={{width: '90px'}} /> {/* MARCA */}
-            <col style={{width: '90px'}} /> {/* MODELO */}
-            <col style={{width: '60px'}} />  {/* AÑO */}
-            <col style={{width: '200px'}} /> {/* STATUS */}
-            <col style={{width: '140px'}} /> {/* ACCIONES */}
-          </colgroup>
+        <colgroup>
+    <col style={{width: '80px'}}/>
+    <col style={{width: '120px'}}/>
+    <col style={{width: '120px'}}/>
+    <col style={{width: '90px'}}/>
+    <col style={{width: '90px'}}/>
+    <col style={{width: '60px'}}/>
+    <col style={{width: '200px'}}/>
+    <col style={{width: '140px'}}/>
+  </colgroup>
           <thead className="text-sm bg-slate-100">
             <tr className="border-b">
               <th className="px-2 py-1.5 text-left font-bold">LOT</th>
