@@ -289,7 +289,7 @@ const TransportesAdmin = () => {
 
   return (
     <div className="min-h-screen bg-white text-slate-900">
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto p-6">
         <header className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900 mb-6">Sistema de Transportes</h1>
           <div className="flex space-x-4 bg-slate-100 p-1 rounded-lg">

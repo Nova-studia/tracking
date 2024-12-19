@@ -44,8 +44,8 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
     const styles = {
       pending: 'bg-red-600',
       assigned: 'bg-orange-400',
-      loading: 'bg-orange-400',
-      'in-transit': 'bg-blue-500',
+      loading: 'bg-blue-200',
+      'in-transit': 'bg-blue-600',
       delivered: 'bg-lime-400'
     };
 
