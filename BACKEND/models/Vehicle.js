@@ -3,8 +3,7 @@ const mongoose = require('mongoose');
 const vehicleSchema = new mongoose.Schema({
   clientId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Client',
-    required: [true, 'El cliente es requerido']
+    ref: 'Client'
   },
   driverId: {
     type: mongoose.Schema.Types.ObjectId,

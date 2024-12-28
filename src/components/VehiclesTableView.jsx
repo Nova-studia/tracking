@@ -1,10 +1,45 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
+import { Pencil } from 'lucide-react';
 import PhotoViewModal from './PhotoViewModal';
+import ClientEditModal from './ClientEditModal';
 
-const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdateStatus }) => {
+const VehiclesTableView = ({ 
+  vehicles, 
+  clients, 
+  drivers, 
+  onAssignDriver, 
+  onUpdateStatus,
+  onVehicleUpdate 
+}) => {
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const [selectedPhotos, setSelectedPhotos] = useState(null);
+  const [isClientModalOpen, setIsClientModalOpen] = useState(false);
+  const [selectedVehicle, setSelectedVehicle] = useState(null);
+
+  const handleUpdateClient = async (clientId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/vehicles/${selectedVehicle._id}/client`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ clientId })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message);
+      }
+
+      const updatedVehicle = await response.json();
+      onVehicleUpdate(updatedVehicle);
+    } catch (error) {
+      console.error('Error updating client:', error);
+      throw error;
+    }
+  };
 
   const groupedVehicles = React.useMemo(() => {
     const groups = {
@@ -184,16 +219,16 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
 
       <div className="overflow-x-auto">
         <table className="w-full table-fixed border-collapse">
-        <colgroup>
-    <col style={{width: '80px'}}/>
-    <col style={{width: '120px'}}/>
-    <col style={{width: '120px'}}/>
-    <col style={{width: '90px'}}/>
-    <col style={{width: '90px'}}/>
-    <col style={{width: '60px'}}/>
-    <col style={{width: '200px'}}/>
-    <col style={{width: '140px'}}/>
-  </colgroup>
+          <colgroup>
+            <col style={{width: '80px'}}/>
+            <col style={{width: '120px'}}/>
+            <col style={{width: '120px'}}/>
+            <col style={{width: '90px'}}/>
+            <col style={{width: '90px'}}/>
+            <col style={{width: '60px'}}/>
+            <col style={{width: '200px'}}/>
+            <col style={{width: '140px'}}/>
+          </colgroup>
           <thead className="text-sm bg-slate-100">
             <tr className="border-b">
               <th className="px-2 py-1.5 text-left font-bold">LOT</th>
@@ -223,8 +258,19 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
                   </div>
                 </td>
                 <td className="px-2 py-1.5">
-                  <div className="truncate" title={getClientName(vehicle)}>
-                    {getClientName(vehicle)}
+                  <div className="flex items-center">
+                    <div className="truncate" title={getClientName(vehicle)}>
+                      {getClientName(vehicle)}
+                    </div>
+                    <button
+                      onClick={() => {
+                        setSelectedVehicle(vehicle);
+                        setIsClientModalOpen(true);
+                      }}
+                      className="ml-2 p-1 text-slate-400 hover:text-slate-600"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
                   </div>
                 </td>
                 <td className="px-2 py-1.5">
@@ -295,6 +341,17 @@ const VehiclesTableView = ({ vehicles, clients, drivers, onAssignDriver, onUpdat
         }}
         photos={selectedPhotos}
       />
+
+      <ClientEditModal
+        isOpen={isClientModalOpen}
+        onClose={() => {
+          setIsClientModalOpen(false);
+          setSelectedVehicle(null);
+        }}
+        onSubmit={handleUpdateClient}
+        vehicle={selectedVehicle}
+        clients={clients}
+      />
     </div>
   );
 };
@@ -303,13 +360,13 @@ VehiclesTableView.propTypes = {
   vehicles: PropTypes.arrayOf(
     PropTypes.shape({
       _id: PropTypes.string.isRequired,
-      clientId: PropTypes.oneOfType([
+      clientId: PropTypes.oneOfType([  // Quitamos el .isRequired de aquí
         PropTypes.string,
         PropTypes.shape({
           _id: PropTypes.string.isRequired,
           name: PropTypes.string.isRequired
         })
-      ]).isRequired,
+      ]),
       driverId: PropTypes.oneOfType([
         PropTypes.string,
         PropTypes.shape({
@@ -322,6 +379,8 @@ VehiclesTableView.propTypes = {
       year: PropTypes.string,
       LOT: PropTypes.string,
       lotLocation: PropTypes.string,
+      city: PropTypes.string,        // Añadido
+      state: PropTypes.string,       // Añadido
       status: PropTypes.oneOf(['pending', 'assigned', 'loading', 'in-transit', 'delivered']).isRequired,
       loadingPhotos: PropTypes.shape({
         frontPhoto: PropTypes.shape({
@@ -357,7 +416,8 @@ VehiclesTableView.propTypes = {
     })
   ).isRequired,
   onAssignDriver: PropTypes.func.isRequired,
-  onUpdateStatus: PropTypes.func.isRequired
+  onUpdateStatus: PropTypes.func.isRequired,
+  onVehicleUpdate: PropTypes.func.isRequired  // Añadido
 };
 
 export default VehiclesTableView;

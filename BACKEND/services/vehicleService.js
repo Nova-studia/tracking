@@ -117,6 +117,30 @@ const vehicleService = {
     }
   },
 
+  async updateVehicleClient(vehicleId, clientId) {
+    try {
+      const vehicle = await Vehicle.findByIdAndUpdate(
+        vehicleId,
+        { 
+          clientId: clientId,
+          updatedAt: new Date()
+        },
+        { 
+          new: true,
+          runValidators: true 
+        }
+      ).populate(['clientId', 'driverId']);
+      
+      if (!vehicle) {
+        throw new Error('Vehículo no encontrado');
+      }
+      
+      return vehicle;
+    } catch (error) {
+      throw new Error(`Error al actualizar cliente: ${error.message}`);
+    }
+  },
+  
   async assignDriver(vehicleId, driverId) {
     try {
       const vehicle = await Vehicle.findByIdAndUpdate(

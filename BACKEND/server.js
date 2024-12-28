@@ -347,6 +347,39 @@ app.patch('/api/vehicles/:id/driver', authMiddleware, roleMiddleware(['admin']),
   }
 });
 
+app.patch('/api/vehicles/:id/client', authMiddleware, roleMiddleware(['admin']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { clientId } = req.body;
+
+    // Validación básica
+    if (!clientId) {
+      return res.status(400).json({ message: 'Se requiere el ID del cliente' });
+    }
+
+    const updatedVehicle = await Vehicle.findByIdAndUpdate(
+      id,
+      { 
+        clientId,
+        updatedAt: new Date()
+      },
+      { 
+        new: true,
+        runValidators: true 
+      }
+    ).populate(['clientId', 'driverId']);
+
+    if (!updatedVehicle) {
+      return res.status(404).json({ message: 'Vehículo no encontrado' });
+    }
+
+    res.json(updatedVehicle);
+  } catch (error) {
+    console.error('Error updating vehicle client:', error);
+    res.status(400).json({ message: 'Error al actualizar el cliente del vehículo', error: error.message });
+  }
+});
+
 // Ruta para subir fotos
 app.post('/api/vehicles/:id/photos', 
   authMiddleware,
