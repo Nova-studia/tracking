@@ -83,6 +83,21 @@ const vehicleSchema = new mongoose.Schema({
       uploadedAt: Date
     }
   },
+  travelComments: [{
+    comment: {
+      type: String,
+      required: true
+    },
+    status: {
+      type: String,
+      enum: ['pending', 'assigned', 'loading', 'in-transit', 'delivered'],
+      required: true
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
   createdAt: {
     type: Date,
     default: Date.now,

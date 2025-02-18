@@ -117,6 +117,59 @@ const vehicleService = {
     }
   },
 
+  async updateVehicleStatusWithComment(vehicleId, status, comment) {
+    try {
+      console.log('Updating vehicle status with comment:', { vehicleId, status, comment });
+      
+      // Validar el estado
+      const validStates = ['pending', 'assigned', 'loading', 'in-transit', 'delivered'];
+      if (!validStates.includes(status)) {
+        throw new Error(`Estado inválido: ${status}`);
+      }
+
+      // Si se está cambiando a 'loading', verificar que tenga fotos
+      if (status === 'loading') {
+        const vehicle = await Vehicle.findById(vehicleId);
+        if (!vehicle.loadingPhotos || 
+            !vehicle.loadingPhotos.frontPhoto || 
+            !vehicle.loadingPhotos.backPhoto || 
+            !vehicle.loadingPhotos.leftPhoto || 
+            !vehicle.loadingPhotos.rightPhoto) {
+          throw new Error('Se requieren todas las fotos antes de cambiar el estado a loading');
+        }
+      }
+
+      const vehicle = await Vehicle.findByIdAndUpdate(
+        vehicleId,
+        { 
+          status,
+          $push: { 
+            travelComments: {
+              comment,
+              status,
+              createdAt: new Date()
+            }
+          },
+          updatedAt: new Date()
+        },
+        { 
+          new: true,
+          runValidators: true 
+        }
+      ).populate(['clientId', 'driverId']);
+
+      if (!vehicle) {
+        throw new Error('Vehículo no encontrado');
+      }
+
+      console.log('Vehicle updated with comment:', vehicle);
+      return vehicle;
+    } catch (error) {
+      console.error('Error updating vehicle with comment:', error);
+      throw new Error(`Error al actualizar vehículo: ${error.message}`);
+    }
+  },
+
   async updateVehicleClient(vehicleId, clientId) {
     try {
       const vehicle = await Vehicle.findByIdAndUpdate(
