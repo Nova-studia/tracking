@@ -40,7 +40,8 @@ const driverService = {
         username,
         password: hashedPassword,
         role: 'driver',
-        isActive: true
+        isActive: true,
+        state: driverData.state
       });
       await user.save({ session });
 
@@ -51,7 +52,8 @@ const driverService = {
         license: driverData.license,
         username: username,
         isActive: true,
-        userId: user._id
+        userId: user._id,
+        state: driverData.state
       });
       await driver.save({ session });
 

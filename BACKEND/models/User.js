@@ -16,6 +16,10 @@ const userSchema = new mongoose.Schema({
     enum: ['admin', 'driver'],
     required: true
   },
+  state:{
+    type: String,
+    required: true
+  },
   isActive: {
     type: Boolean,
     default: true

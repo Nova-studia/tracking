@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
 import { Eye, EyeOff, Lock, Power } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { ListState } from '../service/headerTagCity';
 
 const DriversTab = ({ drivers, onAddDriver, onUpdateCredentials, onToggleStatus }) => {
   const [newDriver, setNewDriver] = useState({
@@ -14,16 +15,26 @@ const DriversTab = ({ drivers, onAddDriver, onUpdateCredentials, onToggleStatus 
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [editingDriver, setEditingDriver] = useState(null);
+  const [states, setStates] = useState([]);
   const [editCredentials, setEditCredentials] = useState({
     username: '',
     password: ''
   });
+
+
+  useEffect(() => {
+    (async() => {
+      const resul = await ListState();
+      setStates(resul);
+    })()
+  }, []);
 
   const validateDriverData = () => {
     if (!newDriver.name.trim()) return 'El nombre es requerido';
     if (!newDriver.phone.trim()) return 'El teléfono es requerido';
     if (newDriver.username && newDriver.username.length < 4) return 'El username debe tener al menos 4 caracteres';
     if (newDriver.password && newDriver.password.length < 4) return 'La contraseña debe tener al menos 4 caracteres';
+    if(newDriver.state === 'Seleccione un estado') return 'Seleccione un estado';
     return null;
   };
 
@@ -110,6 +121,21 @@ const DriversTab = ({ drivers, onAddDriver, onUpdateCredentials, onToggleStatus 
       <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
         <h2 className="text-xl font-semibold mb-4 text-slate-900">Agregar Nuevo Conductor</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* State */}
+          <select
+            value={newDriver.state}
+            onChange={(e) => setNewDriver({...newDriver, state: e.target.value})}
+            className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-200"
+            disabled={loading}
+          >
+            <option value="Seleccione un estado">Seleccione un estado</option>
+            {
+              states.map((state, index) => (
+                <option key={index} value={state.state}>{state.state}</option>
+              ))
+            }
+          </select>
+
           <input
             type="text"
             placeholder="Nombre del Conductor *"

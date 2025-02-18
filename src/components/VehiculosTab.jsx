@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
-import VehiclesTableView from './VehiclesTableView';
-import SearchBar from './SearchBar';
+import React, { useMemo, useState } from 'react';
+import { extractUniqueLotLocations, FilterDriversSelect } from '../service/headerTagCity';
 import ClientAutocomplete from './ClientAutocomplete';
+import SearchBar from './SearchBar';
+import VehiclesTableView from './VehiclesTableView';
 
 const VehiculosTab = ({ vehicles, clients, drivers, onAddVehicle, onUpdateStatus, onAssignDriver }) => {
   const [filters, setFilters] = useState({
@@ -220,13 +221,28 @@ const VehiculosTab = ({ vehicles, clients, drivers, onAddVehicle, onUpdateStatus
       </div>
 
       <SearchBar onSearch={setFilters} />
-
+      <div className="border-b border-slate-200">
+          {
+            extractUniqueLotLocations(vehicles).map((state, index) => (
+              <button
+                key={index}
+                onClick={() => setFilters(prev => ({ ...prev, searchText: state }))}
+                className="px-2 py-1 bg-slate-200 text-sm text-slate-900 rounded-full hover:bg-slate-100 transition-colors mr-2 mb-2"
+              >
+                {state}
+              </button>
+            ))
+          }
+      </div>
+      {
+        
+      }
       <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
         <h2 className="text-xl font-semibold mb-4 text-slate-900">Lista de Vehículos</h2>
         <VehiclesTableView 
           vehicles={filteredVehicles}
           clients={clients}
-          drivers={drivers}
+          drivers={FilterDriversSelect(drivers, filters.searchText)}
           onAssignDriver={onAssignDriver}
           onUpdateStatus={onUpdateStatus}
           onVehicleUpdate={handleVehicleUpdate}

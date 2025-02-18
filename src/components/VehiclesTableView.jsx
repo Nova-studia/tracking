@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import PropTypes from 'prop-types';
 import { Pencil } from 'lucide-react';
-import PhotoViewModal from './PhotoViewModal';
+import PropTypes from 'prop-types';
+import React, { useState } from 'react';
 import ClientEditModal from './ClientEditModal';
+import PhotoViewModal from './PhotoViewModal';
 
 const VehiclesTableView = ({ 
   vehicles, 
@@ -231,6 +231,7 @@ const VehiclesTableView = ({
           </colgroup>
           <thead className="text-sm bg-slate-100">
             <tr className="border-b">
+              <th className="px-2 py-1.5 text-left font-bold">FECHA</th>
               <th className="px-2 py-1.5 text-left font-bold">LOT</th>
               <th className="px-2 py-1.5 text-left font-bold">UBICACIÓN</th>
               <th className="px-2 py-1.5 text-left font-bold">CLIENTE</th>
@@ -247,19 +248,24 @@ const VehiclesTableView = ({
                 key={vehicle._id} 
                 className={`border-b ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}
               >
+                <td className="px-2 w-16">
+                  <div className="" title={new Date(vehicle.createdAt).toLocaleDateString()}>
+                    {new Date(vehicle.createdAt).toLocaleDateString()}
+                  </div>
+                </td>
                 <td className="px-2 py-1.5">
-                  <div className="truncate" title={vehicle.LOT || '-'}>
+                  <div className="" title={vehicle.LOT || '-'}>
                     {vehicle.LOT || '-'}
                   </div>
                 </td>
                 <td className="px-2 py-1.5">
-                  <div className="truncate" title={getLocation(vehicle)}>
+                  <div className="" title={getLocation(vehicle)}>
                     {getLocation(vehicle)}
                   </div>
                 </td>
                 <td className="px-2 py-1.5">
                   <div className="flex items-center">
-                    <div className="truncate" title={getClientName(vehicle)}>
+                    <div className="" title={getClientName(vehicle)}>
                       {getClientName(vehicle)}
                     </div>
                     <button
@@ -274,17 +280,17 @@ const VehiclesTableView = ({
                   </div>
                 </td>
                 <td className="px-2 py-1.5">
-                  <div className="truncate" title={vehicle.brand || '-'}>
+                  <div className="" title={vehicle.brand || '-'}>
                     {vehicle.brand || '-'}
                   </div>
                 </td>
                 <td className="px-2 py-1.5">
-                  <div className="truncate" title={vehicle.model || '-'}>
+                  <div className="" title={vehicle.model || '-'}>
                     {vehicle.model || '-'}
                   </div>
                 </td>
                 <td className="px-2 py-1.5">
-                  <div className="truncate" title={vehicle.year || '-'}>
+                  <div className="" title={vehicle.year || '-'}>
                     {vehicle.year || '-'}
                   </div>
                 </td>

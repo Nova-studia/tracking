@@ -15,6 +15,10 @@ const driverSchema = new mongoose.Schema({
     required: [true, 'El nombre de usuario es requerido'],
     unique: true
   },
+  state:{
+    type: String,
+    
+  },
   isActive: {
     type: Boolean,
     default: true

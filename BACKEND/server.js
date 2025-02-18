@@ -11,6 +11,7 @@ const { clientService, driverService, vehicleService } = require('./services');
 const Vehicle = require('./models/Vehicle');
 const Driver = require('./models/Driver');
 const User = require('./models/User');
+const State = require('./models/State');
 
 const app = express();
 
@@ -71,11 +72,48 @@ const initializeSystem = async () => {
   }
 };
 
+const initializeStates = async () => {
+  try {
+    const states = [
+      'Georgia',
+      'North Carolina',
+      'Tennessee',
+      'Kentucky ',
+      'Illinois ',
+      'Missouri ',
+      'Kansas',
+      'Oklahoma ',
+      'Alabama',
+      'South Carolina',
+      'Florida',
+      'Mississipi',
+      'Ohio',
+      'Louisiana',
+      'Michigan',
+      'Arkansas',
+      'Texas',
+    ];
+
+    for (const state of states) {
+      const existingState = await State.findOne({ state });
+      if (!existingState) {
+        await State.create({ state });
+        console.log(`✅ Estado creado: ${state}`);
+      }
+    }
+
+    console.log('✅ Estados inicializados correctamente');
+  } catch (error) {
+    console.error('❌ Error inicializando estados:', error);
+  }
+}
+
 // Conectar a MongoDB
 mongoose.connect(MONGODB_URI)
   .then(async () => {
     console.log('✅ Conectado a MongoDB');
     await initializeSystem();
+    await initializeStates();
   })
   .catch(err => {
     console.error('❌ Error conectando a MongoDB:', err);
@@ -430,6 +468,18 @@ app.post('/api/vehicles/:id/photos',
     }
 }
 );
+
+
+// Rutas de estados
+app.get('/api/states', async (req, res) => {
+  try {
+    const states = await State.find();
+    res.json(states);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 
 // Manejo de errores global
 app.use((err, req, res, next) => {
