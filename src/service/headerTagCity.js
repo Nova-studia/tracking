@@ -2,11 +2,13 @@
 
 export function extractUniqueLotLocations(vehicles) {
     const state = new Set();
+    state.add('Todos');
     vehicles.forEach(vehicle => {
         if (vehicle.state) {
             state.add(vehicle.state);
         }
     });
+    // al inicio le ponemos un estado que tida todos
     return Array.from(state);
 }
 
@@ -36,14 +38,11 @@ export const FilterDriversSelect = (drivers, states) => {
     
     
         if (Array.isArray(drivers) && drivers.length > 0) {
-            console.log('drivers:', drivers.length > 0);
             const dri = drivers.filter(driver => {
-                console.log('driver:', driver);
                 if(idKeyObj(driver, 'state')){
                     return driver.state.toLowerCase() === states;
                 }
             });
-            console.log('dri:', dri);
             if(dri.length === 0){
                 return drivers;
             }else{

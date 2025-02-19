@@ -24,6 +24,9 @@ const vehicleSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  comments: {
+    type: String,
+  },
   LOT: {
     type: String,
     trim: true,

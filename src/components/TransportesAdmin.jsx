@@ -345,6 +345,7 @@ const TransportesAdmin = () => {
         {activeTab === 'vehicles' && (
           <VehiculosTab 
             vehicles={vehicles}
+            setVehicles={setVehicles}
             clients={clients}
             drivers={drivers} 
             onAddVehicle={handleAddVehicle}
