@@ -1,3 +1,4 @@
+// Vehicle.js
 const mongoose = require('mongoose');
 
 const vehicleSchema = new mongoose.Schema({
@@ -26,6 +27,32 @@ const vehicleSchema = new mongoose.Schema({
   },
   comments: {
     type: String,
+  },
+  auctionHouse: {
+    type: String,
+    enum: {
+      values: ['Copart', 'IAA', 'Otra'],
+      message: 'Casa de subasta inválida: {VALUE}'
+    },
+    required: [true, 'La casa de subasta es requerida']
+  },
+  PIN: {
+    type: String,
+    trim: true,
+    validate: {
+      validator: async function(pin) {
+        if (!pin) return true; // Permitir PIN vacío si no es requerido
+        
+        // Buscar si existe otro vehículo con el mismo PIN
+        const Vehicle = this.constructor;
+        const exists = await Vehicle.findOne({ 
+          PIN: pin,
+          _id: { $ne: this._id } // Excluir el documento actual en actualizaciones
+        });
+        return !exists;
+      },
+      message: 'Este número de PIN ya está en uso'
+    }
   },
   LOT: {
     type: String,
@@ -157,5 +184,7 @@ vehicleSchema.index({ clientId: 1, status: 1 });
 vehicleSchema.index({ driverId: 1, status: 1 });
 vehicleSchema.index({ createdAt: -1 });
 vehicleSchema.index({ LOT: 1 }, { unique: true, sparse: true }); // Índice único para LOT
+vehicleSchema.index({ PIN: 1 }, { unique: true, sparse: true }); // Índice único para PIN
+vehicleSchema.index({ auctionHouse: 1 }); // Índice para casa de subasta
 
 module.exports = mongoose.model('Vehicle', vehicleSchema);

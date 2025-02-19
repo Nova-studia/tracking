@@ -18,6 +18,8 @@ const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, o
     model: '',
     year: '',
     LOT: '',
+    PIN: '',
+    auctionHouse: 'Copart', // Valor por defecto
     lotLocation: '',
     city: '',
     state: '',
@@ -41,6 +43,7 @@ const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, o
       const searchText = filters.searchText.toLowerCase();
       const matchesSearch = filters.searchText === '' || 
         vehicle.LOT?.toLowerCase().includes(searchText) ||
+        vehicle.PIN?.toLowerCase().includes(searchText) ||
         vehicle.brand?.toLowerCase().includes(searchText) ||
         vehicle.model?.toLowerCase().includes(searchText) ||
         vehicle.lotLocation?.toLowerCase().includes(searchText);
@@ -74,8 +77,8 @@ const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, o
   }, [localVehicles, filters]);
 
   const handleSubmit = async () => {
-    if (!newVehicle.brand || !newVehicle.model || !newVehicle.lotLocation) {
-      alert('Por favor complete los campos requeridos:\n- Marca\n- Modelo\n- Ubicación (Ciudad, Estado)');
+    if (!newVehicle.brand || !newVehicle.model || !newVehicle.lotLocation || !newVehicle.auctionHouse) {
+      alert('Por favor complete los campos requeridos:\n- Marca\n- Modelo\n- Ubicación (Ciudad, Estado)\n- Casa de Subasta');
       return;
     }
   
@@ -106,6 +109,8 @@ const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, o
         model: '',
         year: '',
         LOT: '',
+        PIN: '',
+        auctionHouse: 'Copart',
         lotLocation: '',
         city: '',
         state: '',
@@ -124,6 +129,13 @@ const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, o
       const lotExists = vehicles.some(vehicle => vehicle.LOT === value);
       if (lotExists) {
         alert('Este número de LOT ya existe');
+        return;
+      }
+    }
+    if (field === 'PIN') {
+      const pinExists = vehicles.some(vehicle => vehicle.PIN === value);
+      if (pinExists) {
+        alert('Este número de PIN ya existe');
         return;
       }
     }
@@ -165,6 +177,19 @@ const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, o
               value={newVehicle.clientId}
               onChange={(clientId) => handleInputChange('clientId', clientId)}
             />
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-slate-700">Casa de Subasta</label>
+            <select
+              value={newVehicle.auctionHouse}
+              onChange={(e) => handleInputChange('auctionHouse', e.target.value)}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-400 text-sm"
+            >
+              <option value="Copart">Copart</option>
+              <option value="IAA">IAA</option>
+              <option value="Otra">Otra</option>
+            </select>
           </div>
 
           <div className="space-y-2">
@@ -212,6 +237,17 @@ const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, o
           </div>
 
           <div className="space-y-2">
+            <label className="block text-sm font-medium text-slate-700">PIN</label>
+            <input
+              type="text"
+              value={newVehicle.PIN}
+              onChange={(e) => handleInputChange('PIN', e.target.value)}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-400 text-sm"
+              placeholder="Número de PIN"
+            />
+          </div>
+
+          <div className="space-y-2">
             <label className="block text-sm font-medium text-slate-700">Ubicación</label>
             <input
               type="text"
@@ -231,14 +267,16 @@ const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, o
         </div>
 
         {/* Formulario desktop (original) */}
-        <div className="hidden md:grid grid-cols-8 gap-px bg-slate-200">
+        <div className="hidden md:grid grid-cols-9 gap-px bg-slate-200">
           <div className="bg-slate-50 p-2 text-sm font-medium text-slate-600">Cliente</div>
+          <div className="bg-slate-50 p-2 text-sm font-medium text-slate-600">Subasta</div>
           <div className="bg-slate-50 p-2 text-sm font-medium text-slate-600">Marca</div>
           <div className="bg-slate-50 p-2 text-sm font-medium text-slate-600">Modelo</div>
           <div className="bg-slate-50 p-2 text-sm font-medium text-slate-600">Año</div>
           <div className="bg-slate-50 p-2 text-sm font-medium text-slate-600">LOT</div>
+          <div className="bg-slate-50 p-2 text-sm font-medium text-slate-600">PIN</div>
           <div className="bg-slate-50 p-2 text-sm font-medium text-slate-600">Ubicación</div>
-          <div className="bg-slate-50 p-2 text-sm font-medium text-slate-600 col-span-2">Acciones</div>
+          <div className="bg-slate-50 p-2 text-sm font-medium text-slate-600">Acciones</div>
 
           <div className="bg-white p-1">
             <ClientAutocomplete
@@ -246,6 +284,18 @@ const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, o
               value={newVehicle.clientId}
               onChange={(clientId) => handleInputChange('clientId', clientId)}
             />
+          </div>
+
+          <div className="bg-white p-1">
+            <select
+              value={newVehicle.auctionHouse}
+              onChange={(e) => handleInputChange('auctionHouse', e.target.value)}
+              className="w-full px-2 py-1 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-slate-200 text-sm"
+            >
+              <option value="Copart">Copart</option>
+              <option value="IAA">IAA</option>
+              <option value="Otra">Otra</option>
+            </select>
           </div>
 
           <div className="bg-white p-1">
@@ -277,7 +327,6 @@ const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, o
               placeholder="Año"
             />
           </div>
-
           <div className="bg-white p-1">
             <input
               type="text"
@@ -291,6 +340,16 @@ const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, o
           <div className="bg-white p-1">
             <input
               type="text"
+              value={newVehicle.PIN}
+              onChange={(e) => handleInputChange('PIN', e.target.value)}
+              className="w-full px-2 py-1 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-slate-200 text-sm"
+              placeholder="PIN"
+            />
+          </div>
+
+          <div className="bg-white p-1">
+            <input
+              type="text"
               value={newVehicle.lotLocation}
               onChange={(e) => handleInputChange('lotLocation', e.target.value)}
               className="w-full px-2 py-1 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-slate-200 text-sm"
@@ -298,7 +357,7 @@ const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, o
             />
           </div>
 
-          <div className="bg-white p-1 col-span-2">
+          <div className="bg-white p-1">
             <button
               onClick={handleSubmit}
               className="w-full px-2 py-1 bg-slate-900 text-white rounded text-sm hover:bg-slate-800 transition-colors"
@@ -367,6 +426,8 @@ VehiculosTab.propTypes = {
       model: PropTypes.string.isRequired,
       year: PropTypes.string,
       LOT: PropTypes.string,
+      PIN: PropTypes.string,
+      auctionHouse: PropTypes.oneOf(['Copart', 'IAA', 'Otra']).isRequired,
       lotLocation: PropTypes.string,
       city: PropTypes.string,
       state: PropTypes.string,

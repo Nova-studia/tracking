@@ -1,3 +1,4 @@
+// vehicleService.js
 const Vehicle = require('../models/Vehicle');
 const multer = require('multer');
 const path = require('path');
@@ -32,10 +33,21 @@ const vehicleService = {
   async createVehicle(vehicleData) {
     try {
       console.log('Creating vehicle with data:', vehicleData);
+      
+      // Asegurarnos de que los campos PIN y auctionHouse están incluidos
       const vehicle = new Vehicle({
         ...vehicleData,
-        lotLocation: `${vehicleData.city}, ${vehicleData.state}`.toUpperCase()
+        lotLocation: vehicleData.lotLocation ? vehicleData.lotLocation.toUpperCase() : 
+                    `${vehicleData.city}, ${vehicleData.state}`.toUpperCase(),
+        PIN: vehicleData.PIN,
+        auctionHouse: vehicleData.auctionHouse
       });
+      
+      // Validaciones explícitas
+      if (!vehicle.auctionHouse) {
+        throw new Error('La casa de subasta es requerida');
+      }
+  
       await vehicle.save();
       const populated = await vehicle.populate(['clientId', 'driverId']);
       console.log('Created vehicle:', populated);

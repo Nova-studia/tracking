@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import { Pencil } from 'lucide-react';
 import PropTypes from 'prop-types';
 import React, { useState } from 'react';
@@ -217,32 +216,35 @@ const VehiclesTableView = ({
     setComments(prev => ({ ...prev, [vehicleId]: newComment }));
   };
 
-  const handleKeyPress = async (event, vehicleId) => {
-    if (event.key === 'Enter' || event.key === 'Escape') {
+  const handleCommentBlur = async (vehicleId) => {
+    const newComment = comments[vehicleId];
+    try {
+      const API_URL = `${process.env.REACT_APP_API_URL}/api`;
+      const response = await fetch(`${API_URL}/vehicles/${vehicleId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ comments: newComment })
+      });
+      if (!response.ok) throw new Error('Failed to update comments');
+      
+      const updatedVehicle = await response.json();
+      onVehicleUpdate(updatedVehicle);
+    } catch (error) {
+      console.error('Error updating comments:', error);
+    }
+  };
+
+  const handleKeyPress = (event, vehicleId) => {
+    if (event.key === 'Enter') {
       event.preventDefault();
-      const newComments = comments[vehicleId];
-      try {
-        const API_URL = `${process.env.REACT_APP_API_URL}/api`;
-        const response = await fetch(`${API_URL}/vehicles/${vehicleId}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          },
-          body: JSON.stringify({ comments: newComments })
-        });
-        if (!response.ok) throw new Error('Failed to update comments');
-        
-        const updatedVehicle = await response.json();
-        onVehicleUpdate(updatedVehicle);
-      } catch (error) {
-        console.error('Error updating comments:', error);
-      }
+      event.target.blur();
     }
   };
 
   // Card component for mobile view
-  // VehicleCard component para vista móvil
   const VehicleCard = ({ vehicle }) => {
     const [isExpanded, setIsExpanded] = useState(false);
   
@@ -280,7 +282,9 @@ const VehiclesTableView = ({
             <div className="font-semibold text-slate-800">
               {vehicle.brand} {vehicle.model} {vehicle.year}
             </div>
-            <div className="text-sm text-slate-500 mt-0.5">{vehicle.LOT || '-'}</div>
+            <div className="text-sm text-slate-500 mt-0.5">
+              LOT: {vehicle.LOT || '-'} | PIN: {vehicle.PIN || '-'}
+            </div>
           </div>
           <div className="flex items-center gap-3">
             {getStatusBadge(vehicle.status)}
@@ -318,6 +322,14 @@ const VehiclesTableView = ({
                 <div className="text-sm font-medium text-slate-600">Ubicación</div>
                 <div className="text-slate-800">{getLocation(vehicle)}</div>
               </div>
+              <div className="space-y-1">
+                <div className="text-sm font-medium text-slate-600">Casa de Subasta</div>
+                <div className="text-slate-800">{vehicle.auctionHouse || '-'}</div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-sm font-medium text-slate-600">PIN</div>
+                <div className="text-slate-800">{vehicle.PIN || '-'}</div>
+              </div>
             </div>
    
             <div className="space-y-1">
@@ -327,6 +339,7 @@ const VehiclesTableView = ({
                 value={comments[vehicle._id]}
                 onChange={(e) => handleCommentChange(vehicle._id, e.target.value)}
                 onKeyPress={(e) => handleKeyPress(e, vehicle._id)}
+                onBlur={() => handleCommentBlur(vehicle._id)}
                 placeholder="Agregar comentario..."
                 className="w-full px-3 py-2 rounded-lg bg-slate-50 border-0 text-sm focus:ring-2 focus:ring-slate-200 outline-none"
               />
@@ -360,6 +373,8 @@ const VehiclesTableView = ({
             <tr className="border-b">
               <th className="px-2 py-1.5 text-left font-bold">FECHA</th>
               <th className="px-2 py-1.5 text-left font-bold">LOT</th>
+              <th className="px-2 py-1.5 text-left font-bold">PIN</th>
+              <th className="px-2 py-1.5 text-left font-bold">SUBASTA</th>
               <th className="px-2 py-1.5 text-left font-bold">UBICACIÓN</th>
               <th className="px-2 py-1.5 text-left font-bold">CLIENTE</th>
               <th className="px-2 py-1.5 text-left font-bold">MARCA</th>
@@ -386,6 +401,16 @@ const VehiclesTableView = ({
                   <td className="px-2 py-1.5">
                     <div title={vehicle.LOT || '-'}>
                       {vehicle.LOT || '-'}
+                    </div>
+                  </td>
+                  <td className="px-2 py-1.5">
+                    <div title={vehicle.PIN || '-'}>
+                      {vehicle.PIN || '-'}
+                    </div>
+                  </td>
+                  <td className="px-2 py-1.5">
+                    <div title={vehicle.auctionHouse || '-'}>
+                      {vehicle.auctionHouse || '-'}
                     </div>
                   </td>
                   <td className="px-2 py-1.5">
@@ -433,7 +458,9 @@ const VehiclesTableView = ({
                       value={comments[vehicle._id]}
                       onChange={(e) => handleCommentChange(vehicle._id, e.target.value)}
                       onKeyPress={(e) => handleKeyPress(e, vehicle._id)}
+                      onBlur={() => handleCommentBlur(vehicle._id)}
                       className="w-full px-2 py-1.5 rounded border border-slate-200 text-sm focus:ring-1 focus:ring-slate-200 outline-none"
+                      placeholder="Agregar comentario..."
                     />
                   </td>
                   <td className="px-2 py-1.5">
@@ -534,6 +561,8 @@ VehiclesTableView.propTypes = {
       model: PropTypes.string.isRequired,
       year: PropTypes.string,
       LOT: PropTypes.string,
+      PIN: PropTypes.string,
+      auctionHouse: PropTypes.oneOf(['Copart', 'IAA', 'Otra']),
       lotLocation: PropTypes.string,
       city: PropTypes.string,
       state: PropTypes.string,
@@ -573,7 +602,8 @@ VehiclesTableView.propTypes = {
   ).isRequired,
   onAssignDriver: PropTypes.func.isRequired,
   onUpdateStatus: PropTypes.func.isRequired,
-  onVehicleUpdate: PropTypes.func.isRequired
+  onVehicleUpdate: PropTypes.func.isRequired,
+  setVehicles: PropTypes.func.isRequired
 };
 
 export default VehiclesTableView;
