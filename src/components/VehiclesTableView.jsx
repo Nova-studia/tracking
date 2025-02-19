@@ -19,7 +19,8 @@ const VehiclesTableView = ({
 
   const handleUpdateClient = async (clientId) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/vehicles/${selectedVehicle._id}/client`, {
+      const API_URL = `${process.env.REACT_APP_API_URL}/api`;
+      const response = await fetch(`${API_URL}/vehicles/${selectedVehicle._id}/client`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

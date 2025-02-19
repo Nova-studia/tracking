@@ -24,7 +24,7 @@ const PhotoViewModal = ({ isOpen, onClose, photos }) => {
             <div className="space-y-2">
               <p className="font-medium text-sm text-gray-600">Frente</p>
               <img
-                src={`http://localhost:5000${photos.frontPhoto.url}`}
+                src={`${process.env.REACT_APP_API_URL}${photos.frontPhoto.url}`}
                 alt="Frente del vehículo"
                 className="w-full h-48 object-cover rounded-lg"
               />
@@ -34,7 +34,7 @@ const PhotoViewModal = ({ isOpen, onClose, photos }) => {
             <div className="space-y-2">
               <p className="font-medium text-sm text-gray-600">Parte Trasera</p>
               <img
-                src={`http://localhost:5000${photos.backPhoto.url}`}
+                src={`${process.env.REACT_APP_API_URL}${photos.backPhoto.url}`}
                 alt="Parte trasera del vehículo"
                 className="w-full h-48 object-cover rounded-lg"
               />
@@ -44,7 +44,7 @@ const PhotoViewModal = ({ isOpen, onClose, photos }) => {
             <div className="space-y-2">
               <p className="font-medium text-sm text-gray-600">Lado Izquierdo</p>
               <img
-                src={`http://localhost:5000${photos.leftPhoto.url}`}
+                src={`${process.env.REACT_APP_API_URL}${photos.leftPhoto.url}`}
                 alt="Lado izquierdo del vehículo"
                 className="w-full h-48 object-cover rounded-lg"
               />
@@ -54,7 +54,7 @@ const PhotoViewModal = ({ isOpen, onClose, photos }) => {
             <div className="space-y-2">
               <p className="font-medium text-sm text-gray-600">Lado Derecho</p>
               <img
-                src={`http://localhost:5000${photos.rightPhoto.url}`}
+                src={`${process.env.REACT_APP_API_URL}${photos.rightPhoto.url}`}
                 alt="Lado derecho del vehículo"
                 className="w-full h-48 object-cover rounded-lg"
               />

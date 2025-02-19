@@ -114,7 +114,8 @@ const DriverDashboard = ({ driverId }) => {
           throw new Error('No se encontró token de autenticación');
         }
 
-        const response = await fetch('http://localhost:5000/api/vehicles', {
+        const API_URL = `${process.env.REACT_APP_API_URL}/api`;
+        const response = await fetch(`${API_URL}/vehicles`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -158,7 +159,7 @@ const DriverDashboard = ({ driverId }) => {
   const handleStatusUpdate = async (vehicleId, newStatus, comment) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/vehicles/${vehicleId}/status`, {
+      const response = await fetch(`${API_URL}/vehicles/${vehicleId}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -216,7 +217,7 @@ const DriverDashboard = ({ driverId }) => {
         throw new Error('Se requieren las 4 fotos');
       }
 
-      const response = await fetch(`http://localhost:5000/api/vehicles/${selectedVehicleId}/photos`, {
+      const response = await fetch(`${API_URL}/vehicles/${selectedVehicleId}/photos`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`

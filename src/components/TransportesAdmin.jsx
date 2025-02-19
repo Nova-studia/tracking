@@ -3,7 +3,7 @@ import ClientesTab from './ClientesTab';
 import DriversTab from './DriversTab';
 import VehiculosTab from './VehiculosTab';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = `${process.env.REACT_APP_API_URL}/api`;
 
 const TransportesAdmin = () => {
   const [clients, setClients] = useState([]);
