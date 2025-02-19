@@ -5,6 +5,8 @@ import PhotoViewModal from './PhotoViewModal';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
+const API_URL = `${process.env.REACT_APP_API_URL}/api`;
+
 const StatusUpdateWithComment = ({ vehicle, onUpdate, className = '' }) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [comment, setComment] = useState('');
