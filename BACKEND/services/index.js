@@ -191,6 +191,18 @@ const vehicleService = {
     }
   },
 
+  async updateVehiculoComentarios(vehicleId, comentarios) {
+    try {
+      return await Vehicle.findByIdAndUpdate(
+        vehicleId,
+        { comments: comentarios },
+        { new: true, runValidators: true }
+      ).populate('clientId').populate('driverId');
+    } catch (error) {
+      throw new Error(`Error al actualizar comentarios del vehículo: ${error.message}`);
+    }
+  },
+
   async assignDriver(vehicleId, driverId) {
     try {
       const vehicle = await Vehicle.findByIdAndUpdate(

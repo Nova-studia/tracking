@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { Pencil } from 'lucide-react';
 import PropTypes from 'prop-types';
 import React, { useState } from 'react';
@@ -10,7 +11,8 @@ const VehiclesTableView = ({
   drivers, 
   onAssignDriver, 
   onUpdateStatus,
-  onVehicleUpdate 
+  onVehicleUpdate,
+  setVehicles
 }) => {
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const [selectedPhotos, setSelectedPhotos] = useState(null);
@@ -206,6 +208,40 @@ const VehiclesTableView = ({
       (vehicle.city && vehicle.state ? `${vehicle.city}, ${vehicle.state}` : '-');
   };
 
+
+  const [comments, setComments] = useState(() => vehicles.reduce((acc, vehicle) => ({
+    ...acc,
+    [vehicle._id]: vehicle.comments || ''
+  }), {}));
+
+  const handleCommentChange = (vehicleId, newComment) => {
+    setComments(prev => ({ ...prev, [vehicleId]: newComment }));
+    // volver a poner el cursor al final del input
+  };
+
+  const handleKeyPress = async (event, vehicleId) => {
+    if (event.key === 'Enter' || event.key === 'Escape') {
+      event.preventDefault();
+      const newComments = comments[vehicleId];
+      try {
+        const response = await fetch(`http://localhost:5000/api/vehicles/${vehicleId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({ comments: newComments })
+        });
+        if (!response.ok) throw new Error('Failed to update comments');
+        
+        const updatedVehicle = await response.json();
+        onVehicleUpdate(updatedVehicle);
+      } catch (error) {
+        console.error('Error updating comments:', error);
+      }
+    }
+  };
+
   const VehicleGroupTable = ({ vehicles, groupTitle, className }) => (
     <div className={`bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden mb-4 ${className}`}>
       <div className="border-b border-slate-200">
@@ -220,16 +256,6 @@ const VehiclesTableView = ({
 
       <div className="overflow-x-auto">
         <table className="w-full table-fixed border-collapse">
-          <colgroup>
-            <col style={{width: '80px'}}/>
-            <col style={{width: '120px'}}/>
-            <col style={{width: '120px'}}/>
-            <col style={{width: '90px'}}/>
-            <col style={{width: '90px'}}/>
-            <col style={{width: '60px'}}/>
-            <col style={{width: '200px'}}/>
-            <col style={{width: '140px'}}/>
-          </colgroup>
           <thead className="text-sm bg-slate-100">
             <tr className="border-b">
               <th className="px-2 py-1.5 text-left font-bold">FECHA</th>
@@ -240,11 +266,13 @@ const VehiclesTableView = ({
               <th className="px-2 py-1.5 text-left font-bold">MODELO</th>
               <th className="px-2 py-1.5 text-left font-bold">AÑO</th>
               <th className="px-2 py-1.5 text-left font-bold">STATUS</th>
+              <th className="px-2 py-1.5 text-left font-bold">COMENTARIO</th>
               <th className="px-2 py-1.5 text-center font-bold">ACCIONES</th>
             </tr>
           </thead>
           <tbody className="text-sm font-medium">
-            {vehicles.map((vehicle, index) => (
+            {vehicles.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+            .map((vehicle, index) => (
               <tr 
                 key={vehicle._id} 
                 className={`border-b ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}
@@ -295,10 +323,39 @@ const VehiclesTableView = ({
                     {vehicle.year || '-'}
                   </div>
                 </td>
+
+
                 <td className="px-2 py-1.5">
                   {getProgressBar(vehicle.status)}
                 </td>
-                <td className="px-2 py-1.5">
+
+                {/* input para ingresar un comentario al vehiculo */}
+                <td className="px-2 py-1.5 "
+                  style={{
+                    maxWidth: '200px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  <input
+                    key={vehicle._id}
+                    id='comment'
+                    name='comments'
+                    type="text"
+                    value={comments[vehicle._id]}
+                    onChange={(e) => handleCommentChange(vehicle._id, e.target.value)}
+                    onKeyPress={(e) => handleKeyPress(e, vehicle._id)}
+                    className="w-full px-2 py-1.5 rounded border border-slate-200 text-sm focus:ring-1 focus:ring-slate-200 outline-none"
+                  />
+                </td>
+
+                <td className="px-2 py-1.5 "
+                  style={{
+                    maxWidth: '80px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
                   <div className="flex justify-center gap-2">
                     {getActionButton(vehicle)}
                   </div>
@@ -321,7 +378,8 @@ const VehiclesTableView = ({
         />
       )}
 
-      {drivers.map(driver => {
+      {drivers.sort((a, b)=> a.createdAt - b.createdAt)
+      .map(driver => {
         const driverVehicles = groupedVehicles[driver._id] || [];
         if (driverVehicles.length === 0) return null;
 

@@ -348,11 +348,29 @@ app.get('/api/vehicles', authMiddleware, async (req, res) => {
       );
       console.log(`📋 Vehículos filtrados para conductor: ${vehicles.length}`);
     }
-    
     res.json(vehicles);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
+});
+
+app.put('/api/vehicles/:id', async (req, res) => {
+  try {
+    console.log("Comments: ", req.body.comments);
+    const vehicle = await vehicleService.updateVehiculoComentarios(req.params.id, req.body.comments);
+    console.log('✅ Vehículo actualizado:', vehicle);
+    if (!vehicle) {
+      return res.status(404).json({ message: 'Vehículo no encontrado' });
+    }else{
+      console.log('✅ Vehículo actualizado:', vehicle);
+    }
+
+    res.json(vehicle);
+  } catch (error) {
+    console.error('❌ Error actualizando vehículo:', error);
+    res.status(400).json({ message: error.message });
+  }
+
 });
 
 app.patch('/api/vehicles/:id/status', authMiddleware, async (req, res) => {
