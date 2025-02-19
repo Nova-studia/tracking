@@ -248,23 +248,23 @@ const VehiclesTableView = ({
   
     const getStatusBadge = (status) => {
       const styles = {
-        pending: 'bg-red-50 text-red-700',
-        assigned: 'bg-orange-50 text-orange-700',
-        loading: 'bg-blue-50 text-blue-700',
-        'in-transit': 'bg-indigo-50 text-indigo-700',
-        delivered: 'bg-green-50 text-green-700'
+        pending: 'bg-red-500 text-white',
+        assigned: 'bg-orange-500 text-white',
+        loading: 'bg-blue-500 text-white',
+        'in-transit': 'bg-indigo-500 text-white',
+        delivered: 'bg-green-500 text-white'
       };
-  
+    
       const textMap = {
-        pending: 'Pendiente',
-        assigned: 'Asignado',
-        loading: 'En Carga',
-        'in-transit': 'En Tránsito',
-        delivered: 'Entregado'
+        pending: 'PENDIENTE',
+        assigned: 'ASIGNADO',
+        loading: 'EN CARGA',
+        'in-transit': 'EN TRÁNSITO',
+        delivered: 'ENTREGADO'
       };
-  
+    
       return (
-        <span className={`px-2 py-1 text-xs font-medium rounded-full ${styles[status]}`}>
+        <span className={`inline-block px-3 py-1 text-xs font-bold uppercase tracking-wide rounded-md ${styles[status]}`}>
           {textMap[status]}
         </span>
       );
@@ -319,12 +319,7 @@ const VehiclesTableView = ({
                 <div className="text-slate-800">{getLocation(vehicle)}</div>
               </div>
             </div>
-  
-            <div className="space-y-1">
-              <div className="text-sm font-medium text-slate-600">Estado</div>
-              <div>{getProgressBar(vehicle.status)}</div>
-            </div>
-  
+   
             <div className="space-y-1">
               <div className="text-sm font-medium text-slate-600">Comentario</div>
               <input
