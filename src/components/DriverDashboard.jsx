@@ -108,6 +108,7 @@ const DriverDashboard = ({ driverId }) => {
   const [isViewPhotoModalOpen, setIsViewPhotoModalOpen] = useState(false);
   const [selectedVehicleId, setSelectedVehicleId] = useState('');
   const [selectedPhotos, setSelectedPhotos] = useState(null);
+
   useEffect(() => {
     const fetchAssignedVehicles = async () => {
       try {
@@ -116,7 +117,6 @@ const DriverDashboard = ({ driverId }) => {
           throw new Error('No se encontró token de autenticación');
         }
 
-        const API_URL = `${process.env.REACT_APP_API_URL}/api`;
         const response = await fetch(`${API_URL}/vehicles`, {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -321,6 +321,8 @@ const DriverDashboard = ({ driverId }) => {
               
               <div className="space-y-2 mb-4 text-slate-600">
                 <p><span className="font-medium">LOT:</span> {vehicle.LOT}</p>
+                <p><span className="font-medium">PIN:</span> {vehicle.PIN || '-'}</p>
+                <p><span className="font-medium">Subasta:</span> {vehicle.auctionHouse || '-'}</p>
                 <p><span className="font-medium">Ubicación:</span> {vehicle.lotLocation}</p>
                 <p><span className="font-medium">Cliente:</span> {vehicle.clientId?.name}</p>
                 {vehicle.year && <p><span className="font-medium">Año:</span> {vehicle.year}</p>}
@@ -384,6 +386,12 @@ const DriverDashboard = ({ driverId }) => {
                     LOT
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    PIN
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    Subasta
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     Cliente
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
@@ -415,6 +423,12 @@ const DriverDashboard = ({ driverId }) => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-slate-600">{vehicle.LOT}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-slate-600">{vehicle.PIN || '-'}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-slate-600">{vehicle.auctionHouse || '-'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-slate-600">{vehicle.clientId?.name}</div>
@@ -477,7 +491,6 @@ const DriverDashboard = ({ driverId }) => {
           setIsPhotoModalOpen(false);
           setSelectedVehicleId('');
         }}
-        on
         onSubmit={handlePhotoSubmit}
         vehicleId={selectedVehicleId}
       />
