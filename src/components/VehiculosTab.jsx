@@ -251,7 +251,7 @@ const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, o
             ))
           }
       </div>
-      <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
+      <div className="bg-white shadow-sm">
         <h2 className="text-xl font-semibold mb-4 text-slate-900">Lista de Vehículos</h2>
         <VehiclesTableView 
           vehicles={filteredVehicles}
