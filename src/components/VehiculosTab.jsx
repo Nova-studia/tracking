@@ -26,6 +26,7 @@ const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, o
   });
 
   const [localVehicles, setLocalVehicles] = useState(vehicles);
+  const [isFormOpen, setIsFormOpen] = useState(false);
 
   React.useEffect(() => {
     setLocalVehicles(vehicles);
@@ -73,7 +74,6 @@ const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, o
   }, [localVehicles, filters]);
 
   const handleSubmit = async () => {
-    // Cambiamos la validación para no requerir clientId
     if (!newVehicle.brand || !newVehicle.model || !newVehicle.lotLocation) {
       alert('Por favor complete los campos requeridos:\n- Marca\n- Modelo\n- Ubicación (Ciudad, Estado)');
       return;
@@ -93,11 +93,12 @@ const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, o
         state,
         lotLocation: `${city}, ${state}`,
         status: 'pending',
-        clientId: newVehicle.clientId || null  // Permitimos que sea null
+        clientId: newVehicle.clientId || null
       };
       
       const createdVehicle = await onAddVehicle(vehicleData);
       setLocalVehicles(prev => [...prev, createdVehicle]);
+      setIsFormOpen(false);
   
       setNewVehicle({
         clientId: '',
@@ -137,23 +138,100 @@ const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, o
     );
   };
 
-  const handleUpdateContentVehicle = async (vehicleId, vehicle) => {
-    try {
-      const updatedVehicle = await onUpdateStatus(vehicleId, vehicle);
-      handleVehicleUpdate(updatedVehicle);
-    } catch (error) {
-      alert('Error al actualizar vehículo: ' + error.message);
-    }
-  }
-
   return (
     <div className="space-y-6">
+      {/* Botón móvil para mostrar/ocultar formulario */}
+      <div className="md:hidden">
+        <button
+          onClick={() => setIsFormOpen(!isFormOpen)}
+          className="w-full px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors"
+        >
+          {isFormOpen ? 'Cerrar formulario' : 'Registrar Nuevo Vehículo'}
+        </button>
+      </div>
+
       {/* Formulario de Registro */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-        <div className="border-b border-slate-200 bg-slate-50 p-2">
-          <h2 className="font-semibold text-slate-900">Registrar Nuevo Vehículo</h2>
+      <div className={`bg-white rounded-xl shadow-sm border border-slate-200 ${isFormOpen ? 'block' : 'hidden md:block'}`}>
+        <div className="border-b border-slate-200 bg-slate-50 p-4">
+          <h2 className="font-semibold text-slate-900 text-lg">Registrar Nuevo Vehículo</h2>
         </div>
-        <div className="grid grid-cols-8 gap-px bg-slate-200">
+        
+        {/* Formulario móvil */}
+        <div className="md:hidden p-4 space-y-4">
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-slate-700">Cliente</label>
+            <ClientAutocomplete
+              clients={clients}
+              value={newVehicle.clientId}
+              onChange={(clientId) => handleInputChange('clientId', clientId)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-slate-700">Marca</label>
+            <input
+              type="text"
+              value={newVehicle.brand}
+              onChange={(e) => handleInputChange('brand', e.target.value)}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-400 text-sm"
+              placeholder="Marca del vehículo"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-slate-700">Modelo</label>
+            <input
+              type="text"
+              value={newVehicle.model}
+              onChange={(e) => handleInputChange('model', e.target.value)}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-400 text-sm"
+              placeholder="Modelo del vehículo"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-slate-700">Año</label>
+            <input
+              type="text"
+              value={newVehicle.year}
+              onChange={(e) => handleInputChange('year', e.target.value)}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-400 text-sm"
+              placeholder="Año del vehículo"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-slate-700">LOT</label>
+            <input
+              type="text"
+              value={newVehicle.LOT}
+              onChange={(e) => handleInputChange('LOT', e.target.value)}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-400 text-sm"
+              placeholder="Número de LOT"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-slate-700">Ubicación</label>
+            <input
+              type="text"
+              value={newVehicle.lotLocation}
+              onChange={(e) => handleInputChange('lotLocation', e.target.value)}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-400 text-sm"
+              placeholder="Ciudad, Estado"
+            />
+          </div>
+
+          <button
+            onClick={handleSubmit}
+            className="w-full px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors mt-4"
+          >
+            Registrar Vehículo
+          </button>
+        </div>
+
+        {/* Formulario desktop (original) */}
+        <div className="hidden md:grid grid-cols-8 gap-px bg-slate-200">
           <div className="bg-slate-50 p-2 text-sm font-medium text-slate-600">Cliente</div>
           <div className="bg-slate-50 p-2 text-sm font-medium text-slate-600">Marca</div>
           <div className="bg-slate-50 p-2 text-sm font-medium text-slate-600">Modelo</div>
@@ -233,23 +311,23 @@ const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, o
 
       <SearchBar onSearch={setFilters} />
       <div className="border-b border-slate-200">
-          {
-            extractUniqueLotLocations(vehicles).map((state, index) => (
-              <button
-                key={index}
-                onClick={() => {
-                  if(state === 'Todos'){
-                    setFilters(prev => ({ ...prev, searchText: '' }));
-                  }else{
-                    setFilters(prev => ({ ...prev, searchText: state }));
-                  }
-                }}
-                className="px-2 py-1 bg-slate-200 text-sm text-slate-900 rounded-full hover:bg-slate-100 transition-colors mr-2 mb-2"
-              >
-                {state}
-              </button>
-            ))
-          }
+        {
+          extractUniqueLotLocations(vehicles).map((state, index) => (
+            <button
+              key={index}
+              onClick={() => {
+                if(state === 'Todos'){
+                  setFilters(prev => ({ ...prev, searchText: '' }));
+                }else{
+                  setFilters(prev => ({ ...prev, searchText: state }));
+                }
+              }}
+              className="px-2 py-1 bg-slate-200 text-sm text-slate-900 rounded-full hover:bg-slate-100 transition-colors mr-2 mb-2"
+            >
+              {state}
+            </button>
+          ))
+        }
       </div>
       <div className="bg-white shadow-sm">
         <h2 className="text-xl font-semibold mb-4 text-slate-900">Lista de Vehículos</h2>
