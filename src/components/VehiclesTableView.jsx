@@ -208,7 +208,6 @@ const VehiclesTableView = ({
       (vehicle.city && vehicle.state ? `${vehicle.city}, ${vehicle.state}` : '-');
   };
 
-
   const [comments, setComments] = useState(() => vehicles.reduce((acc, vehicle) => ({
     ...acc,
     [vehicle._id]: vehicle.comments || ''
@@ -216,7 +215,6 @@ const VehiclesTableView = ({
 
   const handleCommentChange = (vehicleId, newComment) => {
     setComments(prev => ({ ...prev, [vehicleId]: newComment }));
-    // volver a poner el cursor al final del input
   };
 
   const handleKeyPress = async (event, vehicleId) => {
@@ -224,7 +222,8 @@ const VehiclesTableView = ({
       event.preventDefault();
       const newComments = comments[vehicleId];
       try {
-        const response = await fetch(`http://localhost:5000/api/vehicles/${vehicleId}`, {
+        const API_URL = `${process.env.REACT_APP_API_URL}/api`;
+        const response = await fetch(`${API_URL}/vehicles/${vehicleId}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -242,6 +241,111 @@ const VehiclesTableView = ({
     }
   };
 
+  // Card component for mobile view
+  // VehicleCard component para vista móvil
+  const VehicleCard = ({ vehicle }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+  
+    const getStatusBadge = (status) => {
+      const styles = {
+        pending: 'bg-red-50 text-red-700',
+        assigned: 'bg-orange-50 text-orange-700',
+        loading: 'bg-blue-50 text-blue-700',
+        'in-transit': 'bg-indigo-50 text-indigo-700',
+        delivered: 'bg-green-50 text-green-700'
+      };
+  
+      const textMap = {
+        pending: 'Pendiente',
+        assigned: 'Asignado',
+        loading: 'En Carga',
+        'in-transit': 'En Tránsito',
+        delivered: 'Entregado'
+      };
+  
+      return (
+        <span className={`px-2 py-1 text-xs font-medium rounded-full ${styles[status]}`}>
+          {textMap[status]}
+        </span>
+      );
+    };
+  
+    return (
+      <div className="bg-white rounded-xl shadow-sm mb-3 overflow-hidden hover:bg-slate-50 transition-colors">
+        <button 
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="w-full px-4 py-3 flex items-center justify-between"
+        >
+          <div className="flex flex-col items-start">
+            <div className="font-semibold text-slate-800">
+              {vehicle.brand} {vehicle.model} {vehicle.year}
+            </div>
+            <div className="text-sm text-slate-500 mt-0.5">{vehicle.LOT || '-'}</div>
+          </div>
+          <div className="flex items-center gap-3">
+            {getStatusBadge(vehicle.status)}
+            <svg 
+              className={`w-5 h-5 transform transition-transform text-slate-400 ${isExpanded ? 'rotate-180' : ''}`} 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </button>
+  
+        {isExpanded && (
+          <div className="px-4 pb-4 pt-2 space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <div className="text-sm font-medium text-slate-600">Cliente</div>
+                <div className="flex items-center">
+                  <span className="text-slate-800">{getClientName(vehicle)}</span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedVehicle(vehicle);
+                      setIsClientModalOpen(true);
+                    }}
+                    className="ml-2 p-1 text-slate-400 hover:text-slate-600"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-sm font-medium text-slate-600">Ubicación</div>
+                <div className="text-slate-800">{getLocation(vehicle)}</div>
+              </div>
+            </div>
+  
+            <div className="space-y-1">
+              <div className="text-sm font-medium text-slate-600">Estado</div>
+              <div>{getProgressBar(vehicle.status)}</div>
+            </div>
+  
+            <div className="space-y-1">
+              <div className="text-sm font-medium text-slate-600">Comentario</div>
+              <input
+                type="text"
+                value={comments[vehicle._id]}
+                onChange={(e) => handleCommentChange(vehicle._id, e.target.value)}
+                onKeyPress={(e) => handleKeyPress(e, vehicle._id)}
+                placeholder="Agregar comentario..."
+                className="w-full px-3 py-2 rounded-lg bg-slate-50 border-0 text-sm focus:ring-2 focus:ring-slate-200 outline-none"
+              />
+            </div>
+  
+            <div className="flex justify-center gap-2 pt-2">
+              {getActionButton(vehicle)}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const VehicleGroupTable = ({ vehicles, groupTitle, className }) => (
     <div className={`bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden mb-4 ${className}`}>
       <div className="border-b border-slate-200">
@@ -254,7 +358,8 @@ const VehiclesTableView = ({
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      {/* Desktop View */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full table-fixed border-collapse">
           <thead className="text-sm bg-slate-100">
             <tr className="border-b">
@@ -271,99 +376,89 @@ const VehiclesTableView = ({
             </tr>
           </thead>
           <tbody className="text-sm font-medium">
-            {vehicles.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-            .map((vehicle, index) => (
-              <tr 
-                key={vehicle._id} 
-                className={`border-b ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}
-              >
-                <td className="px-2 w-16">
-                  <div className="" title={new Date(vehicle.createdAt).toLocaleDateString()}>
-                    {new Date(vehicle.createdAt).toLocaleDateString()}
-                  </div>
-                </td>
-                <td className="px-2 py-1.5">
-                  <div className="" title={vehicle.LOT || '-'}>
-                    {vehicle.LOT || '-'}
-                  </div>
-                </td>
-                <td className="px-2 py-1.5">
-                  <div className="" title={getLocation(vehicle)}>
-                    {getLocation(vehicle)}
-                  </div>
-                </td>
-                <td className="px-2 py-1.5">
-                  <div className="flex items-center">
-                    <div className="" title={getClientName(vehicle)}>
-                      {getClientName(vehicle)}
+            {vehicles
+              .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+              .map((vehicle, index) => (
+                <tr 
+                  key={vehicle._id} 
+                  className={`border-b ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}
+                >
+                  <td className="px-2 py-1.5">
+                    <div title={new Date(vehicle.createdAt).toLocaleDateString()}>
+                      {new Date(vehicle.createdAt).toLocaleDateString()}
                     </div>
-                    <button
-                      onClick={() => {
-                        setSelectedVehicle(vehicle);
-                        setIsClientModalOpen(true);
-                      }}
-                      className="ml-2 p-1 text-slate-400 hover:text-slate-600"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </button>
-                  </div>
-                </td>
-                <td className="px-2 py-1.5">
-                  <div className="" title={vehicle.brand || '-'}>
-                    {vehicle.brand || '-'}
-                  </div>
-                </td>
-                <td className="px-2 py-1.5">
-                  <div className="" title={vehicle.model || '-'}>
-                    {vehicle.model || '-'}
-                  </div>
-                </td>
-                <td className="px-2 py-1.5">
-                  <div className="" title={vehicle.year || '-'}>
-                    {vehicle.year || '-'}
-                  </div>
-                </td>
-
-
-                <td className="px-2 py-1.5">
-                  {getProgressBar(vehicle.status)}
-                </td>
-
-                {/* input para ingresar un comentario al vehiculo */}
-                <td className="px-2 py-1.5 "
-                  style={{
-                    maxWidth: '200px',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}
-                >
-                  <input
-                    key={vehicle._id}
-                    id='comment'
-                    name='comments'
-                    type="text"
-                    value={comments[vehicle._id]}
-                    onChange={(e) => handleCommentChange(vehicle._id, e.target.value)}
-                    onKeyPress={(e) => handleKeyPress(e, vehicle._id)}
-                    className="w-full px-2 py-1.5 rounded border border-slate-200 text-sm focus:ring-1 focus:ring-slate-200 outline-none"
-                  />
-                </td>
-
-                <td className="px-2 py-1.5 "
-                  style={{
-                    maxWidth: '80px',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}
-                >
-                  <div className="flex justify-center gap-2">
-                    {getActionButton(vehicle)}
-                  </div>
-                </td>
-              </tr>
-            ))}
+                  </td>
+                  <td className="px-2 py-1.5">
+                    <div title={vehicle.LOT || '-'}>
+                      {vehicle.LOT || '-'}
+                    </div>
+                  </td>
+                  <td className="px-2 py-1.5">
+                    <div title={getLocation(vehicle)}>
+                      {getLocation(vehicle)}
+                    </div>
+                  </td>
+                  <td className="px-2 py-1.5">
+                    <div className="flex items-center">
+                      <div title={getClientName(vehicle)}>
+                        {getClientName(vehicle)}
+                      </div>
+                      <button
+                        onClick={() => {
+                          setSelectedVehicle(vehicle);
+                          setIsClientModalOpen(true);
+                        }}
+                        className="ml-2 p-1 text-slate-400 hover:text-slate-600"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </td>
+                  <td className="px-2 py-1.5">
+                    <div title={vehicle.brand || '-'}>
+                      {vehicle.brand || '-'}
+                    </div>
+                  </td>
+                  <td className="px-2 py-1.5">
+                    <div title={vehicle.model || '-'}>
+                      {vehicle.model || '-'}
+                    </div>
+                  </td>
+                  <td className="px-2 py-1.5">
+                    <div title={vehicle.year || '-'}>
+                      {vehicle.year || '-'}
+                    </div>
+                  </td>
+                  <td className="px-2 py-1.5">
+                    {getProgressBar(vehicle.status)}
+                  </td>
+                  <td className="px-2 py-1.5">
+                    <input
+                      type="text"
+                      value={comments[vehicle._id]}
+                      onChange={(e) => handleCommentChange(vehicle._id, e.target.value)}
+                      onKeyPress={(e) => handleKeyPress(e, vehicle._id)}
+                      className="w-full px-2 py-1.5 rounded border border-slate-200 text-sm focus:ring-1 focus:ring-slate-200 outline-none"
+                    />
+                  </td>
+                  <td className="px-2 py-1.5">
+                    <div className="flex justify-center gap-2">
+                      {getActionButton(vehicle)}
+                    </div>
+                  </td>
+                </tr>
+              ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile View */}
+      <div className="md:hidden px-4 py-2">
+        {vehicles
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+          .map(vehicle => (
+            <VehicleCard key={vehicle._id} vehicle={vehicle} />
+          ))}
       </div>
     </div>
   );
@@ -378,19 +473,20 @@ const VehiclesTableView = ({
         />
       )}
 
-      {drivers.sort((a, b)=> a.createdAt - b.createdAt)
-      .map(driver => {
-        const driverVehicles = groupedVehicles[driver._id] || [];
-        if (driverVehicles.length === 0) return null;
+      {drivers
+        .sort((a, b) => a.createdAt - b.createdAt)
+        .map(driver => {
+          const driverVehicles = groupedVehicles[driver._id] || [];
+          if (driverVehicles.length === 0) return null;
 
-        return (
-          <VehicleGroupTable 
-            key={driver._id}
-            vehicles={driverVehicles} 
-            groupTitle={`${driver.name} (${driverVehicles.length})`}
-          />
-        );
-      })}
+          return (
+            <VehicleGroupTable 
+              key={driver._id}
+              vehicles={driverVehicles} 
+              groupTitle={`${driver.name} (${driverVehicles.length})`}
+            />
+          );
+        })}
 
       {Object.values(groupedVehicles).every(group => group.length === 0) && (
         <div className="text-center py-4 bg-slate-50 rounded-lg border border-slate-200 text-sm">
@@ -425,7 +521,7 @@ VehiclesTableView.propTypes = {
   vehicles: PropTypes.arrayOf(
     PropTypes.shape({
       _id: PropTypes.string.isRequired,
-      clientId: PropTypes.oneOfType([  // Quitamos el .isRequired de aquí
+      clientId: PropTypes.oneOfType([
         PropTypes.string,
         PropTypes.shape({
           _id: PropTypes.string.isRequired,
@@ -444,8 +540,8 @@ VehiclesTableView.propTypes = {
       year: PropTypes.string,
       LOT: PropTypes.string,
       lotLocation: PropTypes.string,
-      city: PropTypes.string,        // Añadido
-      state: PropTypes.string,       // Añadido
+      city: PropTypes.string,
+      state: PropTypes.string,
       status: PropTypes.oneOf(['pending', 'assigned', 'loading', 'in-transit', 'delivered']).isRequired,
       loadingPhotos: PropTypes.shape({
         frontPhoto: PropTypes.shape({
@@ -482,7 +578,7 @@ VehiclesTableView.propTypes = {
   ).isRequired,
   onAssignDriver: PropTypes.func.isRequired,
   onUpdateStatus: PropTypes.func.isRequired,
-  onVehicleUpdate: PropTypes.func.isRequired  // Añadido
+  onVehicleUpdate: PropTypes.func.isRequired
 };
 
 export default VehiclesTableView;
