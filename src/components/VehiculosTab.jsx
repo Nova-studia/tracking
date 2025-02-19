@@ -12,6 +12,7 @@ const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, o
     dateRange: 'all'
   });
   
+  const [selectedState, setSelectedState] = useState('');
   const [newVehicle, setNewVehicle] = useState({
     clientId: '',
     brand: '',
@@ -19,7 +20,7 @@ const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, o
     year: '',
     LOT: '',
     PIN: '',
-    auctionHouse: 'Copart', // Valor por defecto
+    auctionHouse: 'Copart',
     lotLocation: '',
     city: '',
     state: '',
@@ -35,6 +36,11 @@ const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, o
   }, [vehicles]);
 
   const filteredVehicles = useMemo(() => {
+    // Si no hay estado seleccionado, retornar array vacío
+    if (!selectedState || selectedState === '') {
+      return [];
+    }
+
     return localVehicles.filter(vehicle => {
       if (vehicle.status === 'delivered' && filters.status !== 'delivered') {
         return false;
@@ -74,7 +80,7 @@ const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, o
   
       return matchesSearch && matchesStatus && matchesDate;
     });
-  }, [localVehicles, filters]);
+  }, [localVehicles, filters, selectedState]);
 
   const handleSubmit = async () => {
     if (!newVehicle.brand || !newVehicle.model || !newVehicle.lotLocation || !newVehicle.auctionHouse) {
@@ -266,7 +272,7 @@ const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, o
           </button>
         </div>
 
-        {/* Formulario desktop (original) */}
+        {/* Formulario desktop */}
         <div className="hidden md:grid grid-cols-9 gap-px bg-slate-200">
           <div className="bg-slate-50 p-2 text-sm font-medium text-slate-600">Cliente</div>
           <div className="bg-slate-50 p-2 text-sm font-medium text-slate-600">Subasta</div>
@@ -317,7 +323,6 @@ const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, o
               placeholder="Modelo"
             />
           </div>
-
           <div className="bg-white p-1">
             <input
               type="text"
@@ -327,6 +332,7 @@ const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, o
               placeholder="Año"
             />
           </div>
+
           <div className="bg-white p-1">
             <input
               type="text"
@@ -370,35 +376,46 @@ const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, o
 
       <SearchBar onSearch={setFilters} />
       <div className="border-b border-slate-200">
-        {
-          extractUniqueLotLocations(vehicles).map((state, index) => (
-            <button
-              key={index}
-              onClick={() => {
-                if(state === 'Todos'){
-                  setFilters(prev => ({ ...prev, searchText: '' }));
-                }else{
-                  setFilters(prev => ({ ...prev, searchText: state }));
-                }
-              }}
-              className="px-2 py-1 bg-slate-200 text-sm text-slate-900 rounded-full hover:bg-slate-100 transition-colors mr-2 mb-2"
-            >
-              {state}
-            </button>
-          ))
-        }
-      </div>
+  {
+    extractUniqueLotLocations(vehicles)
+      .filter(state => state !== 'Todos') // Añadimos este filtro para excluir 'Todos'
+      .map((state, index) => (
+        <button
+          key={index}
+          onClick={() => {
+            setSelectedState(state);
+            setFilters(prev => ({ ...prev, searchText: state }));
+          }}
+          className={`px-2 py-1 ${
+            selectedState === state 
+              ? 'bg-slate-900 text-white' 
+              : 'bg-slate-200 text-slate-900'
+          } text-sm rounded-full hover:bg-slate-800 hover:text-white transition-colors mr-2 mb-2`}
+        >
+          {state}
+        </button>
+      ))
+  }
+</div>
       <div className="bg-white shadow-sm">
-        <h2 className="text-xl font-semibold mb-4 text-slate-900">Lista de Vehículos</h2>
-        <VehiclesTableView 
-          vehicles={filteredVehicles}
-          clients={clients}
-          drivers={FilterDriversSelect(drivers, filters.searchText)}
-          onAssignDriver={onAssignDriver}
-          onUpdateStatus={onUpdateStatus}
-          onVehicleUpdate={handleVehicleUpdate}
-          setVehicles={setVehicles}
-        />
+        <h2 className="text-xl font-semibold mb-4 text-slate-900">
+          {selectedState ? `Lista de Vehículos - ${selectedState}` : 'Seleccione un estado para ver los vehículos'}
+        </h2>
+        {selectedState ? (
+          <VehiclesTableView 
+            vehicles={filteredVehicles}
+            clients={clients}
+            drivers={FilterDriversSelect(drivers, filters.searchText)}
+            onAssignDriver={onAssignDriver}
+            onUpdateStatus={onUpdateStatus}
+            onVehicleUpdate={handleVehicleUpdate}
+            setVehicles={setVehicles}
+          />
+        ) : (
+          <div className="text-center py-8 text-slate-500">
+            Por favor, seleccione un estado para ver los vehículos disponibles
+          </div>
+        )}
       </div>
     </div>
   );
@@ -451,6 +468,7 @@ VehiculosTab.propTypes = {
   onAddVehicle: PropTypes.func.isRequired,
   onUpdateStatus: PropTypes.func.isRequired,
   onAssignDriver: PropTypes.func.isRequired,
+  setVehicles: PropTypes.func.isRequired,
 };
 
 export default VehiculosTab;
