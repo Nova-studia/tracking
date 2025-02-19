@@ -45,7 +45,7 @@ const vehicleService = {
       
       // Validaciones explícitas
       if (!vehicle.auctionHouse) {
-        throw new Error('La casa de subasta es requerida');
+        throw new Error('La Subasta es requerida');
       }
   
       await vehicle.save();

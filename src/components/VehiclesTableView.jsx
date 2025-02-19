@@ -283,7 +283,7 @@ const VehiclesTableView = ({
               {vehicle.brand} {vehicle.model} {vehicle.year}
             </div>
             <div className="text-sm text-slate-500 mt-0.5">
-              LOT: {vehicle.LOT || '-'} | PIN: {vehicle.PIN || '-'}
+              {vehicle.LOT || '-'}
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -323,7 +323,7 @@ const VehiclesTableView = ({
                 <div className="text-slate-800">{getLocation(vehicle)}</div>
               </div>
               <div className="space-y-1">
-                <div className="text-sm font-medium text-slate-600">Casa de Subasta</div>
+                <div className="text-sm font-medium text-slate-600">Subasta</div>
                 <div className="text-slate-800">{vehicle.auctionHouse || '-'}</div>
               </div>
               <div className="space-y-1">
