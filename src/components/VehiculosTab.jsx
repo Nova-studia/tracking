@@ -5,7 +5,7 @@ import ClientAutocomplete from './ClientAutocomplete';
 import SearchBar from './SearchBar';
 import VehiclesTableView from './VehiclesTableView';
 
-const VehiculosTab = ({ vehicles, clients, drivers, onAddVehicle, onUpdateStatus, onAssignDriver }) => {
+const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, onUpdateStatus, onAssignDriver }) => {
   const [filters, setFilters] = useState({
     searchText: '',
     status: '',
@@ -21,7 +21,8 @@ const VehiculosTab = ({ vehicles, clients, drivers, onAddVehicle, onUpdateStatus
     lotLocation: '',
     city: '',
     state: '',
-    status: 'pending'
+    status: 'pending',
+    comments: ''
   });
 
   const [localVehicles, setLocalVehicles] = useState(vehicles);
@@ -107,7 +108,8 @@ const VehiculosTab = ({ vehicles, clients, drivers, onAddVehicle, onUpdateStatus
         lotLocation: '',
         city: '',
         state: '',
-        status: 'pending'
+        status: 'pending',
+        comments: ''
       });
     } catch (error) {
       alert('Error al crear vehículo: ' + error.message);
@@ -134,6 +136,15 @@ const VehiculosTab = ({ vehicles, clients, drivers, onAddVehicle, onUpdateStatus
       )
     );
   };
+
+  const handleUpdateContentVehicle = async (vehicleId, vehicle) => {
+    try {
+      const updatedVehicle = await onUpdateStatus(vehicleId, vehicle);
+      handleVehicleUpdate(updatedVehicle);
+    } catch (error) {
+      alert('Error al actualizar vehículo: ' + error.message);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -226,7 +237,13 @@ const VehiculosTab = ({ vehicles, clients, drivers, onAddVehicle, onUpdateStatus
             extractUniqueLotLocations(vehicles).map((state, index) => (
               <button
                 key={index}
-                onClick={() => setFilters(prev => ({ ...prev, searchText: state }))}
+                onClick={() => {
+                  if(state === 'Todos'){
+                    setFilters(prev => ({ ...prev, searchText: '' }));
+                  }else{
+                    setFilters(prev => ({ ...prev, searchText: state }));
+                  }
+                }}
                 className="px-2 py-1 bg-slate-200 text-sm text-slate-900 rounded-full hover:bg-slate-100 transition-colors mr-2 mb-2"
               >
                 {state}
@@ -234,9 +251,6 @@ const VehiculosTab = ({ vehicles, clients, drivers, onAddVehicle, onUpdateStatus
             ))
           }
       </div>
-      {
-        
-      }
       <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
         <h2 className="text-xl font-semibold mb-4 text-slate-900">Lista de Vehículos</h2>
         <VehiclesTableView 
@@ -246,6 +260,7 @@ const VehiculosTab = ({ vehicles, clients, drivers, onAddVehicle, onUpdateStatus
           onAssignDriver={onAssignDriver}
           onUpdateStatus={onUpdateStatus}
           onVehicleUpdate={handleVehicleUpdate}
+          setVehicles={setVehicles}
         />
       </div>
     </div>
