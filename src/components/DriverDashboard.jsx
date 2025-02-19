@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import PhotoUploadModal from './PhotoUploadModal';
 import PhotoViewModal from './PhotoViewModal';
+import CommentsModal from './CommentsModal';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { MessageSquare } from 'lucide-react';
 
 const API_URL = `${process.env.REACT_APP_API_URL}/api`;
 
@@ -108,6 +110,8 @@ const DriverDashboard = ({ driverId }) => {
   const [isViewPhotoModalOpen, setIsViewPhotoModalOpen] = useState(false);
   const [selectedVehicleId, setSelectedVehicleId] = useState('');
   const [selectedPhotos, setSelectedPhotos] = useState(null);
+  const [isCommentsModalOpen, setIsCommentsModalOpen] = useState(false);
+  const [selectedVehicleForComments, setSelectedVehicleForComments] = useState(null);
 
   useEffect(() => {
     const fetchAssignedVehicles = async () => {
@@ -251,6 +255,42 @@ const DriverDashboard = ({ driverId }) => {
     }
   };
 
+  const handleCommentUpdate = async (vehicleId, newComment) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/vehicles/${vehicleId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ comments: newComment })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al actualizar comentarios');
+      }
+
+      const updatedVehicle = await response.json();
+      
+      setAssignedVehicles(prev => 
+        prev.map(v => v._id === vehicleId ? updatedVehicle : v)
+      );
+
+      setCurrentTrips(prev => 
+        prev.map(v => v._id === vehicleId ? updatedVehicle : v)
+      );
+
+      setIsCommentsModalOpen(false);
+      setSelectedVehicleForComments(null);
+
+    } catch (error) {
+      console.error('Error updating comments:', error);
+      alert('Error al actualizar comentarios: ' + error.message);
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'assigned': return 'bg-yellow-100 text-yellow-800';
@@ -345,6 +385,18 @@ const DriverDashboard = ({ driverId }) => {
                   className="mt-4"
                 />
               )}
+
+              {/* Botón de comentarios */}
+              <button
+                onClick={() => {
+                  setSelectedVehicleForComments(vehicle);
+                  setIsCommentsModalOpen(true);
+                }}
+                className="w-full mt-2 px-4 py-2 bg-slate-600 text-white rounded hover:bg-slate-700 transition-colors flex items-center justify-center gap-2"
+              >
+                <MessageSquare className="w-4 h-4" />
+                Comentarios
+              </button>
 
               {vehicle.loadingPhotos && Object.keys(vehicle.loadingPhotos).length > 0 && (
                 <button
@@ -503,6 +555,17 @@ const DriverDashboard = ({ driverId }) => {
           setSelectedPhotos(null);
         }}
         photos={selectedPhotos}
+      />
+
+      {/* Modal de comentarios */}
+      <CommentsModal
+        isOpen={isCommentsModalOpen}
+        onClose={() => {
+          setIsCommentsModalOpen(false);
+          setSelectedVehicleForComments(null);
+        }}
+        onSubmit={handleCommentUpdate}
+        vehicle={selectedVehicleForComments}
       />
     </div>
   );

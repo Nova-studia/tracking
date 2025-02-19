@@ -1,8 +1,9 @@
-import { Pencil } from 'lucide-react';
+import { Pencil, MessageSquare } from 'lucide-react';
 import PropTypes from 'prop-types';
 import React, { useState } from 'react';
 import ClientEditModal from './ClientEditModal';
 import PhotoViewModal from './PhotoViewModal';
+import CommentsModal from './CommentsModal';
 
 const VehiclesTableView = ({ 
   vehicles, 
@@ -16,6 +17,7 @@ const VehiclesTableView = ({
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const [selectedPhotos, setSelectedPhotos] = useState(null);
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
+  const [isCommentsModalOpen, setIsCommentsModalOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState(null);
 
   const handleUpdateClient = async (clientId) => {
@@ -39,6 +41,28 @@ const VehiclesTableView = ({
       onVehicleUpdate(updatedVehicle);
     } catch (error) {
       console.error('Error updating client:', error);
+      throw error;
+    }
+  };
+
+  const handleUpdateComment = async (vehicleId, newComment) => {
+    try {
+      const API_URL = `${process.env.REACT_APP_API_URL}/api`;
+      const response = await fetch(`${API_URL}/vehicles/${vehicleId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ comments: newComment })
+      });
+      
+      if (!response.ok) throw new Error('Failed to update comments');
+      
+      const updatedVehicle = await response.json();
+      onVehicleUpdate(updatedVehicle);
+    } catch (error) {
+      console.error('Error updating comments:', error);
       throw error;
     }
   };
@@ -207,43 +231,6 @@ const VehiclesTableView = ({
       (vehicle.city && vehicle.state ? `${vehicle.city}, ${vehicle.state}` : '-');
   };
 
-  const [comments, setComments] = useState(() => vehicles.reduce((acc, vehicle) => ({
-    ...acc,
-    [vehicle._id]: vehicle.comments || ''
-  }), {}));
-
-  const handleCommentChange = (vehicleId, newComment) => {
-    setComments(prev => ({ ...prev, [vehicleId]: newComment }));
-  };
-
-  const handleCommentBlur = async (vehicleId) => {
-    const newComment = comments[vehicleId];
-    try {
-      const API_URL = `${process.env.REACT_APP_API_URL}/api`;
-      const response = await fetch(`${API_URL}/vehicles/${vehicleId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ comments: newComment })
-      });
-      if (!response.ok) throw new Error('Failed to update comments');
-      
-      const updatedVehicle = await response.json();
-      onVehicleUpdate(updatedVehicle);
-    } catch (error) {
-      console.error('Error updating comments:', error);
-    }
-  };
-
-  const handleKeyPress = (event, vehicleId) => {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      event.target.blur();
-    }
-  };
-
   // Card component for mobile view
   const VehicleCard = ({ vehicle }) => {
     const [isExpanded, setIsExpanded] = useState(false);
@@ -332,20 +319,18 @@ const VehiclesTableView = ({
               </div>
             </div>
    
-            <div className="space-y-1">
-              <div className="text-sm font-medium text-slate-600">Comentario</div>
-              <input
-                type="text"
-                value={comments[vehicle._id]}
-                onChange={(e) => handleCommentChange(vehicle._id, e.target.value)}
-                onKeyPress={(e) => handleKeyPress(e, vehicle._id)}
-                onBlur={() => handleCommentBlur(vehicle._id)}
-                placeholder="Agregar comentario..."
-                className="w-full px-3 py-2 rounded-lg bg-slate-50 border-0 text-sm focus:ring-2 focus:ring-slate-200 outline-none"
-              />
-            </div>
-  
-            <div className="flex justify-center gap-2 pt-2">
+            <div className="flex justify-center gap-2">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedVehicle(vehicle);
+                  setIsCommentsModalOpen(true);
+                }}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-slate-600 bg-slate-100 rounded-md hover:bg-slate-200"
+              >
+                <MessageSquare className="h-4 w-4" />
+                Comentarios
+              </button>
               {getActionButton(vehicle)}
             </div>
           </div>
@@ -381,12 +366,12 @@ const VehiclesTableView = ({
               <th className="px-2 py-1.5 text-left font-bold">MODELO</th>
               <th className="px-2 py-1.5 text-left font-bold">AÑO</th>
               <th className="px-2 py-1.5 text-left font-bold">STATUS</th>
-              <th className="px-2 py-1.5 text-left font-bold">COMENTARIO</th>
+              <th className="px-2 py-1.5 text-center font-bold">COMENTARIOS</th>
               <th className="px-2 py-1.5 text-center font-bold">ACCIONES</th>
             </tr>
           </thead>
           <tbody className="text-sm font-medium">
-            {vehicles
+          {vehicles
               .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
               .map((vehicle, index) => (
                 <tr 
@@ -453,15 +438,18 @@ const VehiclesTableView = ({
                     {getProgressBar(vehicle.status)}
                   </td>
                   <td className="px-2 py-1.5">
-                    <input
-                      type="text"
-                      value={comments[vehicle._id]}
-                      onChange={(e) => handleCommentChange(vehicle._id, e.target.value)}
-                      onKeyPress={(e) => handleKeyPress(e, vehicle._id)}
-                      onBlur={() => handleCommentBlur(vehicle._id)}
-                      className="w-full px-2 py-1.5 rounded border border-slate-200 text-sm focus:ring-1 focus:ring-slate-200 outline-none"
-                      placeholder="Agregar comentario..."
-                    />
+                    <div className="flex justify-center">
+                      <button
+                        onClick={() => {
+                          setSelectedVehicle(vehicle);
+                          setIsCommentsModalOpen(true);
+                        }}
+                        className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full"
+                        title={vehicle.comments || 'Sin comentarios'}
+                      >
+                        <MessageSquare className="h-5 w-5" />
+                      </button>
+                    </div>
                   </td>
                   <td className="px-2 py-1.5">
                     <div className="flex justify-center gap-2">
@@ -535,6 +523,16 @@ const VehiclesTableView = ({
         vehicle={selectedVehicle}
         clients={clients}
       />
+
+      <CommentsModal
+        isOpen={isCommentsModalOpen}
+        onClose={() => {
+          setIsCommentsModalOpen(false);
+          setSelectedVehicle(null);
+        }}
+        onSubmit={handleUpdateComment}
+        vehicle={selectedVehicle}
+      />
     </div>
   );
 };
@@ -584,7 +582,8 @@ VehiclesTableView.propTypes = {
           url: PropTypes.string,
           uploadedAt: PropTypes.string
         })
-      })
+      }),
+      comments: PropTypes.string
     })
   ).isRequired,
   clients: PropTypes.arrayOf(
