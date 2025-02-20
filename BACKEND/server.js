@@ -314,28 +314,39 @@ app.post('/api/vehicles/:id/photos',
         }
       }
 
-      // Subir nuevas fotos - CORRECCIÓN AQUÍ
+      // Subir nuevas fotos
       const photos = {};
       
       if (req.files) {
         for (const [key, fileArray] of Object.entries(req.files)) {
-          const file = fileArray[0];
-          
-          const result = await cloudinary.uploader.upload(file.path, {
-            folder: `vehicles/${req.params.id}`,
-            public_id: `${key}-${Date.now()}`,
-            transformation: [
-              { width: 1000, height: 1000, crop: 'limit' },
-              { quality: 'auto' },
-              { format: 'webp' }
-            ]
-          });
-  
-          photos[key] = {
-            url: result.secure_url,
-            publicId: result.public_id,
-            uploadedAt: new Date()
-          };
+          if (fileArray && fileArray[0]) {
+            const file = fileArray[0];
+            
+            // Convertir el buffer a base64
+            const b64 = Buffer.from(file.buffer).toString('base64');
+            const dataURI = `data:${file.mimetype};base64,${b64}`;
+            
+            try {
+              const result = await cloudinary.uploader.upload(dataURI, {
+                folder: `vehicles/${req.params.id}`,
+                public_id: `${key}-${Date.now()}`,
+                transformation: [
+                  { width: 1000, height: 1000, crop: 'limit' },
+                  { quality: 'auto' },
+                  { format: 'webp' }
+                ]
+              });
+
+              photos[key] = {
+                url: result.secure_url,
+                publicId: result.public_id,
+                uploadedAt: new Date()
+              };
+            } catch (uploadError) {
+              console.error('Error uploading to Cloudinary:', uploadError);
+              throw new Error('Error al subir la imagen a Cloudinary');
+            }
+          }
         }
       }
 
@@ -354,7 +365,7 @@ app.post('/api/vehicles/:id/photos',
       
     } catch (error) {
       console.error('Error in photo upload route:', error);
-      res.status(400).json({ message: error.message });
+      res.status(400).json({ message: error.message || 'Error al subir las fotos' });
     }
 });
 
