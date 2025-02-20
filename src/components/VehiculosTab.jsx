@@ -138,13 +138,6 @@ const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, o
         return;
       }
     }
-    if (field === 'PIN') {
-      const pinExists = vehicles.some(vehicle => vehicle.PIN === value);
-      if (pinExists) {
-        alert('Este número de PIN ya existe');
-        return;
-      }
-    }
     setNewVehicle(prev => ({ ...prev, [field]: value }));
   };
 
