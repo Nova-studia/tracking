@@ -287,8 +287,17 @@ const DriverDashboard = ({ driverId }) => {
     }
   };
 
-  const handleCommentUpdate = async (vehicleId, newComments) => {
+  const handleCommentUpdate = async (vehicleId, newComment) => {
     try {
+      if (!newComment?.trim()) {
+        throw new Error('El comentario es requerido');
+      }
+
+      const selectedVehicle = assignedVehicles.find(v => v._id === vehicleId);
+      if (!selectedVehicle) {
+        throw new Error('Vehículo no encontrado');
+      }
+
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_URL}/vehicles/${vehicleId}/status`, {
         method: 'PATCH',
@@ -297,8 +306,8 @@ const DriverDashboard = ({ driverId }) => {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          status: selectedVehicleForComments.status,
-          comment: newComments[newComments.length - 1].comment
+          status: selectedVehicle.status,
+          comment: newComment.trim()
         })
       });
 
@@ -308,7 +317,7 @@ const DriverDashboard = ({ driverId }) => {
       }
 
       const updatedVehicle = await response.json();
-      
+
       setAssignedVehicles(prev => 
         prev.map(v => v._id === vehicleId ? updatedVehicle : v)
       );
@@ -317,12 +326,10 @@ const DriverDashboard = ({ driverId }) => {
         prev.map(v => v._id === vehicleId ? updatedVehicle : v)
       );
 
-      setIsCommentsModalOpen(false);
-      setSelectedVehicleForComments(null);
-
+      return updatedVehicle;
     } catch (error) {
       console.error('Error updating comments:', error);
-      alert('Error al actualizar comentarios: ' + error.message);
+      throw error;
     }
   };
 
@@ -338,7 +345,7 @@ const DriverDashboard = ({ driverId }) => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-red-500 text-center">
-          <p className="text-xl font-semibold">Error: {error}</p>
+          <p className="text-xl font-semibold">{error}</p>
           <button
             onClick={() => window.location.reload()}
             className="mt-4 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800"
@@ -353,7 +360,7 @@ const DriverDashboard = ({ driverId }) => {
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-medium text-slate-900">Panel de Conductor</h1>
+        <h1 className="text-2xl font-medium text-slate-900 mb-6">Panel de Conductor</h1>
         <p className="text-sm text-slate-600 mt-1">
           {currentTrips.length} viajes activos · {completedTrips.length} completados
         </p>
