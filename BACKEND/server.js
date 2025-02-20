@@ -276,7 +276,22 @@ app.patch('/api/vehicles/:id/status', authMiddleware, async (req, res) => {
       return res.status(403).json({ message: 'No autorizado' });
     }
 
-    const updatedVehicle = await vehicleService.updateVehicleStatus(req.params.id, req.body.status);
+    // Actualizar el estado y agregar el comentario al historial
+    const updatedVehicle = await Vehicle.findByIdAndUpdate(
+      req.params.id,
+      { 
+        $set: { status: req.body.status },
+        $push: { 
+          travelComments: {
+            comment: req.body.comment,
+            status: req.body.status,
+            createdAt: new Date()
+          }
+        }
+      },
+      { new: true, runValidators: true }
+    ).populate(['clientId', 'driverId']);
+
     res.json(updatedVehicle);
   } catch (error) {
     res.status(400).json({ message: error.message });

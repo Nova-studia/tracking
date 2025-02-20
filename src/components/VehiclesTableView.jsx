@@ -1,6 +1,6 @@
-import { Pencil, MessageSquare } from 'lucide-react';
-import PropTypes from 'prop-types';
 import React, { useState } from 'react';
+import PropTypes from 'prop-types';
+import { MessageSquare, Pencil } from 'lucide-react';
 import ClientEditModal from './ClientEditModal';
 import PhotoViewModal from './PhotoViewModal';
 import CommentsModal from './CommentsModal';
@@ -12,7 +12,7 @@ const VehiclesTableView = ({
   onAssignDriver, 
   onUpdateStatus,
   onVehicleUpdate,
-  setVehicles
+  setVehicles 
 }) => {
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const [selectedPhotos, setSelectedPhotos] = useState(null);
@@ -20,6 +20,54 @@ const VehiclesTableView = ({
   const [isCommentsModalOpen, setIsCommentsModalOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState(null);
 
+  const handleUpdateComment = async (vehicleId, newComment) => {
+    try {
+      const API_URL = `${process.env.REACT_APP_API_URL}/api`;
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        throw new Error('No se encontró token de autenticación');
+      }
+  
+      // Encontrar el vehículo actual
+      const selectedVehicle = vehicles.find(v => v._id === vehicleId);
+      if (!selectedVehicle) {
+        throw new Error('Vehículo no encontrado');
+      }
+  
+      const response = await fetch(`${API_URL}/vehicles/${vehicleId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          status: selectedVehicle.status,
+          comment: newComment,
+          // Agregar el campo travelComments
+          travelComments: [...(selectedVehicle.travelComments || []), {
+            comment: newComment,
+            status: selectedVehicle.status,
+            createdAt: new Date()
+          }]
+        })
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al actualizar comentarios');
+      }
+  
+      const updatedVehicle = await response.json();
+      onVehicleUpdate(updatedVehicle);
+      return updatedVehicle;
+  
+    } catch (error) {
+      console.error('Error updating comments:', error);
+      throw new Error('Error al actualizar comentarios');
+    }
+  };
+  
   const handleUpdateClient = async (clientId) => {
     try {
       const API_URL = `${process.env.REACT_APP_API_URL}/api`;
@@ -41,28 +89,6 @@ const VehiclesTableView = ({
       onVehicleUpdate(updatedVehicle);
     } catch (error) {
       console.error('Error updating client:', error);
-      throw error;
-    }
-  };
-
-  const handleUpdateComment = async (vehicleId, newComment) => {
-    try {
-      const API_URL = `${process.env.REACT_APP_API_URL}/api`;
-      const response = await fetch(`${API_URL}/vehicles/${vehicleId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ comments: newComment })
-      });
-      
-      if (!response.ok) throw new Error('Failed to update comments');
-      
-      const updatedVehicle = await response.json();
-      onVehicleUpdate(updatedVehicle);
-    } catch (error) {
-      console.error('Error updating comments:', error);
       throw error;
     }
   };
@@ -169,7 +195,8 @@ const VehiclesTableView = ({
               }, 100);
             }
           }}
-          className="px-2 py-1 rounded text-sm font-medium bg-white border border-slate-200 text-slate-800 w-24 hover:border-slate-300 focus:ring-1 focus:ring-slate-200"
+          className="px-2 py-1 rounded text-sm font-medium bg-white border border
+          border-slate-200 text-slate-800 w-24 hover:border-slate-300 focus:ring-1 focus:ring-slate-200"
         >
           <option value="">Asignar</option>
           {drivers
@@ -231,7 +258,6 @@ const VehiclesTableView = ({
       (vehicle.city && vehicle.state ? `${vehicle.city}, ${vehicle.state}` : '-');
   };
 
-  // Card component for mobile view
   const VehicleCard = ({ vehicle }) => {
     const [isExpanded, setIsExpanded] = useState(false);
   
@@ -484,7 +510,7 @@ const VehiclesTableView = ({
       )}
 
       {drivers
-        .sort((a, b) => a.createdAt - b.createdAt)
+        .sort((a, b) => a.name.localeCompare(b.name))
         .map(driver => {
           const driverVehicles = groupedVehicles[driver._id] || [];
           if (driverVehicles.length === 0) return null;
@@ -546,14 +572,16 @@ VehiclesTableView.propTypes = {
         PropTypes.shape({
           _id: PropTypes.string.isRequired,
           name: PropTypes.string.isRequired
-        })
+        }),
+        PropTypes.oneOf([null])
       ]),
       driverId: PropTypes.oneOfType([
         PropTypes.string,
         PropTypes.shape({
           _id: PropTypes.string.isRequired,
           name: PropTypes.string.isRequired
-        })
+        }),
+        PropTypes.oneOf([null])
       ]),
       brand: PropTypes.string.isRequired,
       model: PropTypes.string.isRequired,
@@ -583,7 +611,11 @@ VehiclesTableView.propTypes = {
           uploadedAt: PropTypes.string
         })
       }),
-      comments: PropTypes.string
+      travelComments: PropTypes.arrayOf(PropTypes.shape({
+        comment: PropTypes.string.isRequired,
+        status: PropTypes.string.isRequired,
+        createdAt: PropTypes.oneOfType([PropTypes.string, PropTypes.instanceOf(Date)]).isRequired
+      }))
     })
   ).isRequired,
   clients: PropTypes.arrayOf(
