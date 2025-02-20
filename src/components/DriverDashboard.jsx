@@ -208,50 +208,49 @@ const DriverDashboard = ({ driverId }) => {
       if (!selectedVehicleId) {
         throw new Error('No hay vehículo seleccionado');
       }
-
+  
       const token = localStorage.getItem('token');
       
-      // Verificar que formData contiene todas las fotos requeridas
-      let hasAllPhotos = true;
-      ['frontPhoto', 'backPhoto', 'leftPhoto', 'rightPhoto'].forEach(key => {
-        if (!formData.has(key)) {
-          hasAllPhotos = false;
-        }
-      });
-
-      if (!hasAllPhotos) {
-        throw new Error('Se requieren las 4 fotos');
+      // Verificar que formData tenga contenido
+      if (!formData || Array.from(formData.entries()).length === 0) {
+        throw new Error('No se han seleccionado fotos');
       }
-
+  
+      // Agregar logs para debug
+      console.log('Enviando fotos para vehículo:', selectedVehicleId);
+      console.log('FormData entries:', Array.from(formData.entries()));
+  
       const response = await fetch(`${API_URL}/vehicles/${selectedVehicleId}/photos`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
+          // Importante: NO incluir 'Content-Type' cuando se envía FormData
         },
         body: formData
       });
-
+  
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('Error response:', errorData);
         throw new Error(errorData.message || 'Error al subir las fotos');
       }
-
+  
       const updatedVehicle = await response.json();
       
       setAssignedVehicles(prev => 
         prev.map(v => v._id === selectedVehicleId ? updatedVehicle : v)
       );
-
+  
       setCurrentTrips(prev => 
         prev.map(v => v._id === selectedVehicleId ? updatedVehicle : v)
       );
-
+  
       setIsPhotoModalOpen(false);
       setSelectedVehicleId('');
-
+  
     } catch (error) {
-      console.error('Error in photo submission:', error);
-      alert('Error al procesar las fotos: ' + error.message);
+      console.error('Error detallado:', error);
+      throw new Error(error.message || 'Error al subir las fotos');
     }
   };
 

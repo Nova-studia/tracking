@@ -1,4 +1,3 @@
-// Vehicle.js
 const mongoose = require('mongoose');
 
 const vehicleSchema = new mongoose.Schema({
@@ -40,7 +39,6 @@ const vehicleSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
-
   LOT: {
     type: String,
     trim: true,
@@ -50,11 +48,10 @@ const vehicleSchema = new mongoose.Schema({
       validator: async function(lot) {
         if (!lot) return true; // Permitir LOT vacío si no es requerido
         
-        // Buscar si existe otro vehículo con el mismo LOT
         const Vehicle = this.constructor;
         const exists = await Vehicle.findOne({ 
           LOT: lot,
-          _id: { $ne: this._id } // Excluir el documento actual en actualizaciones
+          _id: { $ne: this._id }
         });
         return !exists;
       },
@@ -85,18 +82,22 @@ const vehicleSchema = new mongoose.Schema({
   loadingPhotos: {
     frontPhoto: {
       url: String,
+      publicId: String, // ID de Cloudinary
       uploadedAt: Date
     },
     backPhoto: {
       url: String,
+      publicId: String, // ID de Cloudinary
       uploadedAt: Date
     },
     leftPhoto: {
       url: String,
+      publicId: String, // ID de Cloudinary
       uploadedAt: Date
     },
     rightPhoto: {
       url: String,
+      publicId: String, // ID de Cloudinary
       uploadedAt: Date
     }
   },
@@ -166,12 +167,12 @@ vehicleSchema.pre('findOneAndUpdate', async function(next) {
   next();
 });
 
-// Índices para mejorar el rendimiento de las consultas
+// Índices para optimizar consultas
 vehicleSchema.index({ clientId: 1, status: 1 });
 vehicleSchema.index({ driverId: 1, status: 1 });
 vehicleSchema.index({ createdAt: -1 });
-vehicleSchema.index({ LOT: 1 }, { unique: true, sparse: true }); // Índice único para LOT
-vehicleSchema.index({ PIN: 1 }); // Índice normal para PIN
-vehicleSchema.index({ auctionHouse: 1 }); // Índice para casa de subasta
+vehicleSchema.index({ LOT: 1 }, { unique: true, sparse: true });
+vehicleSchema.index({ PIN: 1 });
+vehicleSchema.index({ auctionHouse: 1 });
 
 module.exports = mongoose.model('Vehicle', vehicleSchema);

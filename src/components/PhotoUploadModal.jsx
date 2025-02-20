@@ -36,20 +36,47 @@ const PhotoUploadModal = ({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!vehicleId) return;
+    if (!vehicleId) {
+      alert('ID de vehículo no proporcionado');
+      return;
+    }
     
     setLoading(true);
-
+  
     try {
-      // Crear FormData con las fotos
       const formData = new FormData();
+      
+      // Verificar que haya fotos seleccionadas
+      let hasPhotos = false;
       Object.entries(photos).forEach(([key, file]) => {
-        if (file) formData.append(key, file);
+        if (file) {
+          formData.append(key, file);
+          hasPhotos = true;
+        }
       });
-
+  
+      if (!hasPhotos) {
+        throw new Error('Por favor, seleccione al menos una foto');
+      }
+  
       await onSubmit(formData);
+      
+      // Limpiar el estado después de una subida exitosa
+      setPhotos({
+        frontPhoto: null,
+        backPhoto: null,
+        leftPhoto: null,
+        rightPhoto: null
+      });
+      setPreviews({
+        frontPhoto: null,
+        backPhoto: null,
+        leftPhoto: null,
+        rightPhoto: null
+      });
+  
     } catch (error) {
-      console.error('Error uploading photos:', error);
+      console.error('Error detallado en PhotoUploadModal:', error);
       alert('Error al subir las fotos: ' + error.message);
     } finally {
       setLoading(false);
