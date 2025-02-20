@@ -298,6 +298,11 @@ app.post('/api/vehicles/:id/photos',
   uploadMiddleware,
   async (req, res) => {
     try {
+      // Log para debug
+      console.log('Iniciando subida de fotos');
+      console.log('Files recibidos:', req.files);
+      console.log('Headers:', req.headers);
+
       const vehicle = await Vehicle.findById(req.params.id).populate('driverId');
       
       if (!vehicle) {
@@ -314,38 +319,73 @@ app.post('/api/vehicles/:id/photos',
         }
       }
 
-      // Subir nuevas fotos
+      // Validar archivos recibidos
+      if (!req.files || Object.keys(req.files).length === 0) {
+        return res.status(400).json({ message: 'No se recibieron archivos' });
+      }
+
       const photos = {};
       
-      if (req.files) {
-        for (const [key, fileArray] of Object.entries(req.files)) {
-          if (fileArray && fileArray[0]) {
-            const file = fileArray[0];
-            
-            // Convertir el buffer a base64
+      for (const [key, fileArray] of Object.entries(req.files)) {
+        if (fileArray && fileArray[0]) {
+          const file = fileArray[0];
+          
+          try {
+            // Verificar el tipo de archivo
+            if (!file.mimetype.startsWith('image/')) {
+              throw new Error(`Archivo ${key} no es una imagen válida`);
+            }
+
+            // Verificar tamaño (ejemplo: máximo 5MB)
+            const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+            if (file.size > MAX_SIZE) {
+              throw new Error(`Archivo ${key} excede el tamaño máximo permitido`);
+            }
+
+            // Convertir a base64 con manejo de errores
             const b64 = Buffer.from(file.buffer).toString('base64');
+            if (!b64) {
+              throw new Error(`Error al convertir archivo ${key} a base64`);
+            }
+
             const dataURI = `data:${file.mimetype};base64,${b64}`;
             
-            try {
-              const result = await cloudinary.uploader.upload(dataURI, {
-                folder: `vehicles/${req.params.id}`,
-                public_id: `${key}-${Date.now()}`,
-                transformation: [
-                  { width: 1000, height: 1000, crop: 'limit' },
-                  { quality: 'auto' },
-                  { format: 'webp' }
-                ]
-              });
-
-              photos[key] = {
-                url: result.secure_url,
-                publicId: result.public_id,
-                uploadedAt: new Date()
-              };
-            } catch (uploadError) {
-              console.error('Error uploading to Cloudinary:', uploadError);
-              throw new Error('Error al subir la imagen a Cloudinary');
+            // Subir a Cloudinary con retry
+            let retries = 3;
+            let uploadResult;
+            
+            while (retries > 0) {
+              try {
+                uploadResult = await cloudinary.uploader.upload(dataURI, {
+                  folder: `vehicles/${req.params.id}`,
+                  public_id: `${key}-${Date.now()}`,
+                  transformation: [
+                    { width: 1000, height: 1000, crop: 'limit' },
+                    { quality: 'auto' },
+                    { format: 'webp' }
+                  ],
+                  timeout: 60000 // 60 segundos timeout
+                });
+                break; // Si la subida fue exitosa, salir del ciclo
+              } catch (err) {
+                retries--;
+                if (retries === 0) throw err;
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Esperar 1 segundo antes de reintentar
+              }
             }
+
+            photos[key] = {
+              url: uploadResult.secure_url,
+              publicId: uploadResult.public_id,
+              uploadedAt: new Date()
+            };
+
+          } catch (uploadError) {
+            console.error(`Error procesando archivo ${key}:`, uploadError);
+            return res.status(400).json({ 
+              message: `Error al procesar archivo ${key}: ${uploadError.message}`,
+              field: key
+            });
           }
         }
       }
@@ -364,8 +404,11 @@ app.post('/api/vehicles/:id/photos',
       res.json(updatedVehicle);
       
     } catch (error) {
-      console.error('Error in photo upload route:', error);
-      res.status(400).json({ message: error.message || 'Error al subir las fotos' });
+      console.error('Error detallado en la ruta de subida:', error);
+      res.status(500).json({ 
+        message: 'Error al subir las fotos',
+        detail: error.message
+      });
     }
 });
 
