@@ -396,14 +396,14 @@ const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, o
         </h2>
         {selectedState ? (
           <VehiclesTableView 
-            vehicles={filteredVehicles}
-            clients={clients}
-            drivers={FilterDriversSelect(drivers, filters.searchText)}
-            onAssignDriver={onAssignDriver}
-            onUpdateStatus={onUpdateStatus}
-            onVehicleUpdate={handleVehicleUpdate}
-            setVehicles={setVehicles}
-          />
+          vehicles={filteredVehicles}
+          clients={clients}
+          drivers={FilterDriversSelect(drivers, filters.searchText)}
+          onAssignDriver={onAssignDriver}
+          onUpdateStatus={(vehicleId, status, comment) => onUpdateStatus(vehicleId, status, comment)}
+          onVehicleUpdate={handleVehicleUpdate}
+          setVehicles={setVehicles}
+        />
         ) : (
           <div className="text-center py-8 text-slate-500">
             Por favor, seleccione un estado para ver los vehículos disponibles

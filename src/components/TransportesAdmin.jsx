@@ -209,15 +209,18 @@ const TransportesAdmin = () => {
     }
   };
 
-  const handleUpdateStatus = async (vehicleId, status) => {
+  const handleUpdateStatus = async (vehicleId, status, comment) => {
     try {
       console.log('Actualizando estado:', vehicleId, status);
       const response = await fetch(`${API_URL}/vehicles/${vehicleId}/status`, {
         method: 'PATCH',
         headers: getAuthHeaders(),
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ 
+          status,
+          comment: comment || `Estado actualizado a ${status}`  // Comentario por defecto si no se proporciona
+        }),
       });
-
+  
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Error al actualizar estado');

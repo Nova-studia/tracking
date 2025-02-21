@@ -29,7 +29,6 @@ const VehiclesTableView = ({
         throw new Error('No se encontró token de autenticación');
       }
   
-      // Encontrar el vehículo actual
       const selectedVehicle = vehicles.find(v => v._id === vehicleId);
       if (!selectedVehicle) {
         throw new Error('Vehículo no encontrado');
@@ -44,7 +43,6 @@ const VehiclesTableView = ({
         body: JSON.stringify({
           status: selectedVehicle.status,
           comment: newComment,
-          // Agregar el campo travelComments
           travelComments: [...(selectedVehicle.travelComments || []), {
             comment: newComment,
             status: selectedVehicle.status,
@@ -191,12 +189,11 @@ const VehiclesTableView = ({
             onAssignDriver(vehicle._id, e.target.value);
             if (e.target.value) {
               setTimeout(() => {
-                onUpdateStatus(vehicle._id, 'assigned');
+                onUpdateStatus(vehicle._id, 'assigned', 'Conductor asignado al vehículo');
               }, 100);
             }
           }}
-          className="px-2 py-1 rounded text-sm font-medium bg-white border border
-          border-slate-200 text-slate-800 w-24 hover:border-slate-300 focus:ring-1 focus:ring-slate-200"
+          className="px-2 py-1 rounded text-sm font-medium bg-white border border-slate-200 text-slate-800 w-24 hover:border-slate-300 focus:ring-1 focus:ring-slate-200"
         >
           <option value="">Asignar</option>
           {drivers
@@ -217,17 +214,20 @@ const VehiclesTableView = ({
       assigned: {
         action: 'loading',
         text: 'Iniciar Carga',
-        className: 'bg-orange-500 hover:bg-orange-600'
+        className: 'bg-orange-500 hover:bg-orange-600',
+        comment: 'Iniciando carga del vehículo'
       },
       loading: {
         action: 'in-transit',
         text: 'Iniciar Viaje',
-        className: 'bg-green-500 hover:bg-green-600'
+        className: 'bg-green-500 hover:bg-green-600',
+        comment: 'Iniciando viaje del vehículo'
       },
       'in-transit': {
         action: 'delivered',
         text: 'Entregar',
-        className: 'bg-blue-500 hover:bg-blue-600'
+        className: 'bg-blue-500 hover:bg-blue-600',
+        comment: 'Vehículo entregado al destino'
       }
     };
 
@@ -236,7 +236,7 @@ const VehiclesTableView = ({
       buttons.push(
         <button
           key="status-button"
-          onClick={() => onUpdateStatus(vehicle._id, config.action)}
+          onClick={() => onUpdateStatus(vehicle._id, config.action, config.comment)}
           className={`px-2 py-1 rounded text-white text-sm font-medium transition-colors w-24 ${config.className}`}
         >
           {config.text}
