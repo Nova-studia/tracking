@@ -5,7 +5,7 @@ import PhotoViewModal from './PhotoViewModal';
 import CommentsModal from './CommentsModal';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { MessageSquare, Camera, Truck } from 'lucide-react';
+import { MessageSquare, Camera, Truck, ChevronDown, ChevronUp } from 'lucide-react';
 
 const API_URL = `${process.env.REACT_APP_API_URL}/api`;
 
@@ -40,6 +40,7 @@ const StatusUpdate = ({ vehicle, onUpdate }) => {
 };
 
 const VehicleCard = ({ vehicle, onPhotoUpload, onViewPhotos, onCommentsOpen, onStatusUpdate }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
   const handlePhotoUpload = async (formData) => {
@@ -60,7 +61,6 @@ const VehicleCard = ({ vehicle, onPhotoUpload, onViewPhotos, onCommentsOpen, onS
 
       const updatedVehicle = await response.json();
       
-      // Automatically update status to loading after successful photo upload
       await onStatusUpdate(vehicle._id, 'loading', 'Fotos cargadas y vehículo listo para transporte');
       
       onPhotoUpload(updatedVehicle);
@@ -71,71 +71,124 @@ const VehicleCard = ({ vehicle, onPhotoUpload, onViewPhotos, onCommentsOpen, onS
     }
   };
 
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'assigned':
+        return 'bg-green-400';
+      case 'loading':
+        return 'bg-cyan-300';
+      case 'in-transit':
+        return 'bg-blue-500';
+      case 'delivered':
+        return 'bg-black';
+      default:
+        return 'bg-gray-500';
+    }
+  };
+
+  const getStatusText = (status) => {
+    switch (status) {
+      case 'assigned':
+        return 'ASIGNADO';
+      case 'loading':
+        return 'EN CARGA';
+      case 'in-transit':
+        return 'EN TRÁNSITO';
+      case 'delivered':
+        return 'ENTREGADO';
+      default:
+        return 'PENDIENTE';
+    }
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-4">
-      <div className="flex justify-between items-start mb-4">
-        <h3 className="font-medium text-slate-900">
-          {vehicle.brand} {vehicle.model}
-        </h3>
-        <span className={`px-2 py-1 text-xs rounded-full ${
-          vehicle.status === 'assigned' ? 'bg-yellow-100 text-yellow-800' : 
-          vehicle.status === 'loading' ? 'bg-orange-100 text-orange-800' : 
-          'bg-green-100 text-green-800'
-        }`}>
-          {vehicle.status === 'assigned' ? 'ASIGNADO' :
-           vehicle.status === 'loading' ? 'EN CARGA' : 'EN TRÁNSITO'}
-        </span>
-      </div>
-      
-      <div className="text-sm text-slate-600 space-y-2 mb-4">
-        <p><span className="font-medium">LOT:</span> {vehicle.LOT}</p>
-        <p><span className="font-medium">PIN:</span> {vehicle.PIN || '-'}</p>
-        <p><span className="font-medium">Subasta:</span> {vehicle.auctionHouse}</p>
-        <p><span className="font-medium">Ubicación:</span> {vehicle.lotLocation}</p>
-        <p><span className="font-medium">Cliente:</span> {vehicle.clientId?.name}</p>
-        {vehicle.year && <p><span className="font-medium">Año:</span> {vehicle.year}</p>}
-      </div>
-
-      <div className="flex flex-col gap-2">
-        {vehicle.status === 'assigned' && (
-          <button
-            onClick={() => onPhotoUpload()}
-            disabled={isUploading}
-            className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            <Camera className="w-4 h-4" />
-            {isUploading ? 'Subiendo...' : 'Cargar Fotos'}
-          </button>
-        )}
-
-        <StatusUpdate 
-          vehicle={vehicle} 
-          onUpdate={onStatusUpdate}
-        />
-
-        <div className="flex gap-2">
-          {vehicle.loadingPhotos && Object.keys(vehicle.loadingPhotos).length > 0 && (
-            <button
-              onClick={() => onViewPhotos(vehicle.loadingPhotos)}
-              className="flex-1 px-3 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 text-sm"
-            >
-              Ver Fotos
-            </button>
+    <div className="bg-white rounded-lg shadow-sm border border-slate-100 overflow-hidden">
+      {/* Header - Always visible */}
+      <div 
+        className="p-4 flex items-center justify-between cursor-pointer"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div className="flex items-center space-x-3">
+          <div className="flex flex-col">
+            <span className="font-medium text-slate-900">{vehicle.brand} {vehicle.model}</span>
+            <span className="text-sm text-slate-500">LOT: {vehicle.LOT}</span>
+          </div>
+        </div>
+        <div className="flex items-center space-x-3">
+          <span className={`px-6 py-1.5 text-sm text-white rounded-sm ${getStatusColor(vehicle.status)}`}>
+            {getStatusText(vehicle.status)}
+          </span>
+          {isExpanded ? (
+            <ChevronUp className="w-5 h-5 text-slate-500" />
+          ) : (
+            <ChevronDown className="w-5 h-5 text-slate-500" />
           )}
-          <button
-            onClick={() => onCommentsOpen(vehicle)}
-            className="flex-1 px-3 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 text-sm flex items-center justify-center gap-1"
-          >
-            <MessageSquare className="w-4 h-4" />
-            Comentarios
-          </button>
         </div>
       </div>
+
+      {/* Expandable Content */}
+      {isExpanded && (
+        <div className="px-4 pb-4 border-t border-slate-100">
+          <div className="text-sm text-slate-600 space-y-2 mt-4 mb-4">
+            <p><span className="font-medium">PIN:</span> {vehicle.PIN || '-'}</p>
+            <p><span className="font-medium">Subasta:</span> {vehicle.auctionHouse}</p>
+            <p><span className="font-medium">Ubicación:</span> {vehicle.lotLocation}</p>
+            <p><span className="font-medium">Cliente:</span> {vehicle.clientId?.name}</p>
+            {vehicle.year && <p><span className="font-medium">Año:</span> {vehicle.year}</p>}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            {vehicle.status === 'assigned' && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPhotoUpload();
+                }}
+                disabled={isUploading}
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <Camera className="w-4 h-4" />
+                {isUploading ? 'Subiendo...' : 'Cargar Fotos'}
+              </button>
+            )}
+
+            <StatusUpdate 
+              vehicle={vehicle} 
+              onUpdate={onStatusUpdate}
+            />
+
+            <div className="flex gap-2">
+              {vehicle.loadingPhotos && Object.keys(vehicle.loadingPhotos).length > 0 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onViewPhotos(vehicle.loadingPhotos);
+                  }}
+                  className="flex-1 px-3 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 text-sm"
+                >
+                  Ver Fotos
+                </button>
+              )}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCommentsOpen(vehicle);
+                }}
+                className="flex-1 px-3 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 text-sm flex items-center justify-center gap-1"
+              >
+                <MessageSquare className="w-4 h-4" />
+                Comentarios
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 const DriverDashboard = ({ driverId }) => {
+  const [activeTab, setActiveTab] = useState('current');
   const [assignedVehicles, setAssignedVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -266,7 +319,6 @@ const DriverDashboard = ({ driverId }) => {
 
       const updatedVehicle = await response.json();
       
-      // Automatically update status to loading
       await handleStatusUpdate(selectedVehicleId, 'loading', 'Fotos cargadas y vehículo listo para transporte');
       
       setAssignedVehicles(prev => 
@@ -343,7 +395,7 @@ const DriverDashboard = ({ driverId }) => {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center p-4">
         <div className="text-red-500 text-center">
           <p className="text-xl font-semibold">{error}</p>
           <button
@@ -358,19 +410,68 @@ const DriverDashboard = ({ driverId }) => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-4 sm:p-6">
+    <div className="max-w-lg mx-auto p-4">
       <div className="mb-6">
-        <h1 className="text-2xl font-medium text-slate-900 mb-6">Panel de Conductor</h1>
+        <h1 className="text-xl font-medium text-slate-900">Panel de Conductor</h1>
         <p className="text-sm text-slate-600 mt-1">
           {currentTrips.length} viajes activos · {completedTrips.length} completados
         </p>
       </div>
 
-      {/* Active Trips */}
-      <div className="mb-8">
-        <h2 className="text-lg font-medium text-slate-900 mb-4">Viajes Activos</h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {currentTrips.map((vehicle) => (
+      {/* Tab Navigation */}
+      <div className="flex border-b border-slate-200 mb-4">
+        <button
+          className={`flex-1 py-2 text-sm font-medium border-b-2 ${
+            activeTab === 'current'
+              ? 'border-blue-500 text-blue-600'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+          onClick={() => setActiveTab('current')}
+        >
+          Viajes Activos
+        </button>
+        <button
+          className={`flex-1 py-2 text-sm font-medium border-b-2 ${
+            activeTab === 'completed'
+              ? 'border-blue-500 text-blue-600'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+          onClick={() => setActiveTab('completed')}
+        >
+          Historial
+        </button>
+      </div>
+
+      {/* Content */}
+      <div className="space-y-4">
+        {activeTab === 'current' ? (
+          currentTrips.length > 0 ? (
+            currentTrips.map((vehicle) => (
+              <VehicleCard
+                key={vehicle._id}
+                vehicle={vehicle}
+                onPhotoUpload={() => {
+                  setSelectedVehicleId(vehicle._id);
+                  setIsPhotoModalOpen(true);
+                }}
+                onViewPhotos={(photos) => {
+                  setSelectedPhotos(photos);
+                  setIsViewPhotoModalOpen(true);
+                }}
+                onCommentsOpen={(vehicle) => {
+                  setSelectedVehicleForComments(vehicle);
+                  setIsCommentsModalOpen(true);
+                }}
+                onStatusUpdate={handleStatusUpdate}
+              />
+            ))
+          ) : (
+            <div className="text-center py-8 text-slate-500 bg-slate-50 rounded-lg">
+              No hay viajes activos
+            </div>
+          )
+        ) : completedTrips.length > 0 ? (
+          completedTrips.map((vehicle) => (
             <VehicleCard
               key={vehicle._id}
               vehicle={vehicle}
@@ -388,83 +489,12 @@ const DriverDashboard = ({ driverId }) => {
               }}
               onStatusUpdate={handleStatusUpdate}
             />
-          ))}
-          
-          {currentTrips.length === 0 && (
-            <div className="col-span-full text-center py-8 text-slate-500 bg-slate-50 rounded-lg">
-              No hay viajes activos
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Completed Trips */}
-      <div>
-        <h2 className="text-lg font-medium text-slate-900 mb-4">Historial de Entregas</h2>
-        <div className="overflow-x-auto bg-white rounded-lg shadow-sm border border-slate-100">
-          <table className="min-w-full divide-y divide-slate-200">
-            <thead>
-              <tr className="bg-slate-50">
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Fecha</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Vehículo</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">LOT</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">PIN</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Subasta</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Cliente</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Ubicación</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {completedTrips.map((vehicle) => (
-                <tr key={vehicle._id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 text-sm text-slate-900">
-                    {format(new Date(vehicle.updatedAt), "d MMM yyyy", { locale: es })}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-slate-900">
-                    {vehicle.brand} {vehicle.model} {vehicle.year}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-slate-600">{vehicle.LOT}</td>
-                  <td className="px-4 py-3 text-sm text-slate-600">{vehicle.PIN || '-'}</td>
-                  <td className="px-4 py-3 text-sm text-slate-600">{vehicle.auctionHouse}</td>
-                  <td className="px-4 py-3 text-sm text-slate-600">{vehicle.clientId?.name}</td>
-                  <td className="px-4 py-3 text-sm text-slate-600">{vehicle.lotLocation}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-2">
-                      {vehicle.loadingPhotos && Object.keys(vehicle.loadingPhotos).length > 0 && (
-                        <button
-                          onClick={() => {
-                            setSelectedPhotos(vehicle.loadingPhotos);
-                            setIsViewPhotoModalOpen(true);
-                          }}
-                          className="text-sm text-blue-600 hover:text-blue-800"
-                        >
-                          Ver Fotos
-                        </button>
-                      )}
-                      <button
-                        onClick={() => {
-                          setSelectedVehicleForComments(vehicle);
-                          setIsCommentsModalOpen(true);
-                        }}
-                        className="text-sm text-slate-600 hover:text-slate-800 flex items-center gap-1"
-                      >
-                        <MessageSquare className="w-4 h-4" />
-                        Comentarios
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          
-          {completedTrips.length === 0 && (
-            <div className="text-center py-8 text-slate-500">
-              No hay entregas completadas
-            </div>
-          )}
-        </div>
+          ))
+        ) : (
+          <div className="text-center py-8 text-slate-500 bg-slate-50 rounded-lg">
+            No hay viajes completados
+          </div>
+        )}
       </div>
 
       {/* Modals */}

@@ -5,7 +5,6 @@ import DriverDashboard from './components/DriverDashboard';
 
 function App() {
   const [auth, setAuth] = useState(() => {
-    // Intentar recuperar la información de autenticación del localStorage
     const savedAuth = localStorage.getItem('userData');
     return savedAuth ? JSON.parse(savedAuth) : null;
   });
@@ -22,8 +21,6 @@ function App() {
       }
 
       try {
-        // Aquí podrías hacer una petición al servidor para validar el token
-        // Por ahora solo verificamos que existe el token y los datos del usuario
         const userData = localStorage.getItem('userData');
         if (!userData) {
           throw new Error('No user data found');
@@ -66,9 +63,9 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen">
       {/* Header */}
-      <div className="bg-slate-900 text-white">
+      <header className="bg-slate-900 text-white">
         <div className="container mx-auto px-4">
           <div className="h-16 flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -96,17 +93,19 @@ function App() {
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        {auth.role === 'admin' ? (
-          <TransportesAdmin />
-        ) : (
-          <DriverDashboard 
-            driverId={auth.driverId || auth.id} 
-          />
-        )}
+      <main className="flex-grow bg-gray-50">
+        <div className="container mx-auto px-4 py-8">
+          {auth.role === 'admin' ? (
+            <TransportesAdmin />
+          ) : (
+            <DriverDashboard 
+              driverId={auth.driverId || auth.id} 
+            />
+          )}
+        </div>
       </main>
 
       {/* Footer */}
