@@ -44,10 +44,10 @@ const initializeSystem = async () => {
 const initializeStates = async () => {
   try {
     const states = [
-      'Georgia', 'North Carolina', 'Tennessee', 'Kentucky', 'Illinois',
-      'Missouri', 'Kansas', 'Oklahoma', 'Alabama', 'South Carolina',
-      'Florida', 'Mississipi', 'Ohio', 'Louisiana', 'Michigan',
-      'Arkansas', 'Texas'
+      'GA', 'NC', 'TN', 'KY', 'IL',
+      'MO', 'KS', 'OK', 'AL', 'SC',
+      'FL', 'MS', 'OH', 'LA', 'MI',
+      'AR', 'TX'
     ];
 
     for (const state of states) {
