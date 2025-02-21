@@ -315,6 +315,17 @@ const VehiclesTableView = ({
         {isExpanded && (
           <div className="px-4 pb-4 pt-2 space-y-4">
             <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+  <div className="text-sm font-medium text-slate-600">
+    {vehicle.status === 'delivered' ? 'Fecha de Entrega' : 'Fecha de Asignación'}
+  </div>
+  <div className="text-slate-800">
+    {vehicle.status === 'delivered' ? 
+      new Date(vehicle.updatedAt).toLocaleDateString() : 
+      new Date(vehicle.createdAt).toLocaleDateString()
+    }
+  </div>
+</div>
               <div className="space-y-1">
                 <div className="text-sm font-medium text-slate-600">Cliente</div>
                 <div className="flex items-center">
@@ -405,10 +416,16 @@ const VehiclesTableView = ({
                   className={`border-b ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}
                 >
                   <td className="px-2 py-1.5">
-                    <div title={new Date(vehicle.createdAt).toLocaleDateString()}>
-                      {new Date(vehicle.createdAt).toLocaleDateString()}
-                    </div>
-                  </td>
+  <div title={vehicle.status === 'delivered' ? 
+    `Entregado: ${new Date(vehicle.updatedAt).toLocaleDateString()}` : 
+    `Asignado: ${new Date(vehicle.createdAt).toLocaleDateString()}`
+  }>
+    {vehicle.status === 'delivered' ? 
+      `Entregado: ${new Date(vehicle.updatedAt).toLocaleDateString()}` : 
+      new Date(vehicle.createdAt).toLocaleDateString()
+    }
+  </div>
+</td>
                   <td className="px-2 py-1.5">
                     <div title={vehicle.LOT || '-'}>
                       {vehicle.LOT || '-'}
