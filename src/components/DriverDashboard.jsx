@@ -130,12 +130,13 @@ const VehicleCard = ({ vehicle, onPhotoUpload, onViewPhotos, onCommentsOpen, onS
       {isExpanded && (
         <div className="px-4 pb-4 border-t border-slate-100">
           <div className="text-sm text-slate-600 space-y-2 mt-4 mb-4">
-            <p><span className="font-medium">PIN:</span> {vehicle.PIN || '-'}</p>
-            <p><span className="font-medium">Subasta:</span> {vehicle.auctionHouse}</p>
-            <p><span className="font-medium">Ubicación:</span> {vehicle.lotLocation}</p>
-            <p><span className="font-medium">Cliente:</span> {vehicle.clientId?.name}</p>
-            {vehicle.year && <p><span className="font-medium">Año:</span> {vehicle.year}</p>}
-          </div>
+  <p><span className="font-medium">Fecha de asignación:</span> {format(new Date(vehicle.createdAt), 'dd/MM/yyyy', { locale: es })}</p>
+  <p><span className="font-medium">PIN:</span> {vehicle.PIN || '-'}</p>
+  <p><span className="font-medium">Subasta:</span> {vehicle.auctionHouse}</p>
+  <p><span className="font-medium">Ubicación:</span> {vehicle.lotLocation}</p>
+  <p><span className="font-medium">Cliente:</span> {vehicle.clientId?.name}</p>
+  {vehicle.year && <p><span className="font-medium">Año:</span> {vehicle.year}</p>}
+</div>
 
           <div className="flex flex-col gap-2">
             {vehicle.status === 'assigned' && (
