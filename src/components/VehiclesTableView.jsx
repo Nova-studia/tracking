@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import { MessageSquare, Pencil, Trash2 } from 'lucide-react';
+import { MessageSquare, Pencil, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import ClientEditModal from './ClientEditModal';
 import PhotoViewModal from './PhotoViewModal';
 import CommentsModal from './CommentsModal';
@@ -284,114 +284,102 @@ const VehiclesTableView = ({
   const VehicleCard = ({ vehicle }) => {
     const [isExpanded, setIsExpanded] = useState(false);
   
-    const getStatusBadge = (status) => {
-      const styles = {
-        pending: 'bg-red-500 text-white',
-        assigned: 'bg-orange-500 text-white',
-        loading: 'bg-blue-500 text-white',
-        'in-transit': 'bg-indigo-500 text-white',
-        delivered: 'bg-green-500 text-white'
-      };
-    
-      const textMap = {
-        pending: 'PENDIENTE',
-        assigned: 'ASIGNADO',
-        loading: 'EN CARGA',
-        'in-transit': 'EN TRÁNSITO',
-        delivered: 'ENTREGADO'
-      };
-    
-      return (
-        <span className={`inline-block px-3 py-1 text-xs font-bold uppercase tracking-wide rounded-md ${styles[status]}`}>
-          {textMap[status]}
-        </span>
-      );
+    const getStatusColor = (status) => {
+      switch (status) {
+        case 'pending':
+          return 'bg-red-500';
+        case 'assigned':
+          return 'bg-green-400';
+        case 'loading':
+          return 'bg-cyan-300';
+        case 'in-transit':
+          return 'bg-blue-500';
+        case 'delivered':
+          return 'bg-black';
+        default:
+          return 'bg-gray-500';
+      }
+    };
+  
+    const getStatusText = (status) => {
+      switch (status) {
+        case 'pending':
+          return 'PENDIENTE';
+        case 'assigned':
+          return 'ASIGNADO';
+        case 'loading':
+          return 'EN CARGA';
+        case 'in-transit':
+          return 'EN TRÁNSITO';
+        case 'delivered':
+          return 'ENTREGADO';
+        default:
+          return 'PENDIENTE';
+      }
     };
   
     return (
-      <div className="bg-white rounded-xl shadow-sm mb-3 overflow-hidden hover:bg-slate-50 transition-colors">
-        <button 
+      <div className="bg-white rounded-lg shadow-sm border border-slate-100 overflow-hidden">
+        <div 
+          className="p-3 flex items-center justify-between cursor-pointer space-x-1"
           onClick={() => setIsExpanded(!isExpanded)}
-          className="w-full px-4 py-3 flex items-center justify-between"
         >
-          <div className="flex flex-col items-start">
-            <div className="font-semibold text-slate-800">
-              {vehicle.brand} {vehicle.model} {vehicle.year}
-            </div>
-            <div className="text-sm text-slate-500 mt-0.5">
-              {vehicle.LOT || '-'}
-            </div>
+          <div className="flex items-center space-x-3">
+          <div className="flex flex-col">
+  <span className="font-medium text-slate-900">{vehicle.brand} {vehicle.model} {vehicle.year}</span>
+  <span className="text-sm text-slate-500">LOT: {vehicle.LOT}</span>
+  <span className="text-sm text-slate-500">{new Date(vehicle.createdAt).toLocaleDateString()}</span>
+  <span className="text-sm text-slate-500">{getLocation(vehicle)}</span>
+</div>
           </div>
-          <div className="flex items-center gap-3">
-            {getStatusBadge(vehicle.status)}
-            <svg 
-              className={`w-5 h-5 transform transition-transform text-slate-400 ${isExpanded ? 'rotate-180' : ''}`} 
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
+          <div className="flex items-center space-x-3">
+            <span className={`px-6 py-1.5 text-sm text-white rounded-sm ${getStatusColor(vehicle.status)}`}>
+              {getStatusText(vehicle.status)}
+            </span>
+            {isExpanded ? (
+              <ChevronUp className="w-5 h-5 text-slate-500" />
+            ) : (
+              <ChevronDown className="w-5 h-5 text-slate-500" />
+            )}
           </div>
-        </button>
+        </div>
   
         {isExpanded && (
-          <div className="px-4 pb-4 pt-2 space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-  <div className="text-sm font-medium text-slate-600">
-    {vehicle.status === 'delivered' ? 'Fecha de Entrega' : 'Fecha de Asignación'}
-  </div>
-  <div className="text-slate-800">
-    {vehicle.status === 'delivered' ? 
-      new Date(vehicle.updatedAt).toLocaleDateString() : 
-      new Date(vehicle.createdAt).toLocaleDateString()
-    }
-  </div>
-</div>
-              <div className="space-y-1">
-                <div className="text-sm font-medium text-slate-600">Cliente</div>
-                <div className="flex items-center">
-                  <span className="text-slate-800">{getClientName(vehicle)}</span>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedVehicle(vehicle);
-                      setIsClientModalOpen(true);
-                    }}
-                    className="ml-2 p-1 text-slate-400 hover:text-slate-600"
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-              <div className="space-y-1">
-                <div className="text-sm font-medium text-slate-600">Ubicación</div>
-                <div className="text-slate-800">{getLocation(vehicle)}</div>
-              </div>
-              <div className="space-y-1">
-                <div className="text-sm font-medium text-slate-600">Subasta</div>
-                <div className="text-slate-800">{vehicle.auctionHouse || '-'}</div>
-              </div>
-              <div className="space-y-1">
-                <div className="text-sm font-medium text-slate-600">PIN</div>
-                <div className="text-slate-800">{vehicle.PIN || '-'}</div>
-              </div>
+          <div className="px-4 pb-4 border-t border-slate-100">
+            <div className="text-sm text-slate-600 space-y-2 mt-4 mb-4">
+              <p><span className="font-medium">Fecha de asignación:</span> {new Date(vehicle.createdAt).toLocaleDateString()}</p>
+              <p><span className="font-medium">Subasta:</span> {vehicle.auctionHouse || '-'}</p>
+              <p><span className="font-medium">PIN:</span> {vehicle.PIN || '-'}</p>
+              <p><span className="font-medium">Cliente:</span> {getClientName(vehicle)}</p>
             </div>
-   
-            <div className="flex justify-center gap-2">
+  
+            <div className="flex flex-col gap-2">
+              {vehicle.loadingPhotos && Object.keys(vehicle.loadingPhotos).length > 0 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedPhotos(vehicle.loadingPhotos);
+                    setIsPhotoModalOpen(true);
+                  }}
+                  className="flex-1 px-3 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 text-sm"
+                >
+                  Ver Fotos
+                </button>
+              )}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setSelectedVehicle(vehicle);
                   setIsCommentsModalOpen(true);
                 }}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-slate-600 bg-slate-100 rounded-md hover:bg-slate-200"
+                className="flex-1 px-3 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 text-sm flex items-center justify-center gap-1"
               >
-                <MessageSquare className="h-4 w-4" />
+                <MessageSquare className="w-4 h-4" />
                 Comentarios
               </button>
-              {getActionButton(vehicle)}
+              <div className="flex justify-center gap-2 mt-2">
+                {getActionButton(vehicle)}
+              </div>
             </div>
           </div>
         )}
@@ -496,7 +484,7 @@ const VehiclesTableView = ({
       </div>
 
       {/* Mobile View */}
-      <div className="md:hidden px-4 py-2">
+      <div className="md:hidden">
         {vehicles
           .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
           .map(vehicle => (
