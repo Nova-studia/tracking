@@ -42,10 +42,12 @@ const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, o
     }
 
     return localVehicles.filter(vehicle => {
-      if (vehicle.status === 'delivered' && filters.status !== 'delivered') {
+      // Filtrar por estado seleccionado (si no es 'Todos')
+      if (selectedState !== 'Todos' && !vehicle.state.includes(selectedState)) {
         return false;
       }
-  
+
+      // Filtrar por texto de búsqueda
       const searchText = filters.searchText.toLowerCase();
       const matchesSearch = filters.searchText === '' || 
         vehicle.LOT?.toLowerCase().includes(searchText) ||
@@ -53,9 +55,23 @@ const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, o
         vehicle.brand?.toLowerCase().includes(searchText) ||
         vehicle.model?.toLowerCase().includes(searchText) ||
         vehicle.lotLocation?.toLowerCase().includes(searchText);
-  
-      const matchesStatus = filters.status === '' || vehicle.status === filters.status;
-  
+
+      // Si hay texto de búsqueda y coincide, mostrar el vehículo sin importar su estado
+      if (filters.searchText !== '' && matchesSearch) {
+        return true;
+      }
+
+      // Si no hay búsqueda específica, ocultar entregados a menos que se seleccione específicamente
+      if (vehicle.status === 'delivered' && filters.status !== 'delivered') {
+        return false;
+      }
+
+      // Filtrar por status (si hay uno seleccionado)
+      if (filters.status && vehicle.status !== filters.status) {
+        return false;
+      }
+
+      // Filtrar por fecha
       let matchesDate = true;
       if (filters.dateRange !== 'all') {
         const vehicleDate = new Date(vehicle.createdAt);
@@ -77,10 +93,10 @@ const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, o
             break;
         }
       }
-  
-      return matchesSearch && matchesStatus && matchesDate;
+
+      return matchesSearch && matchesDate;
     });
-  }, [localVehicles, filters, selectedState]);
+}, [localVehicles, filters, selectedState]);
 
   const handleSubmit = async () => {
     if (!newVehicle.brand || !newVehicle.model || !newVehicle.lotLocation || !newVehicle.auctionHouse) {
@@ -369,9 +385,22 @@ const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, o
 
       <SearchBar onSearch={setFilters} />
       <div className="border-b border-slate-200">
+  <button
+    onClick={() => {
+      setSelectedState('Todos');
+      setFilters(prev => ({ ...prev, searchText: '' }));
+    }}
+    className={`px-2 py-1 ${
+      selectedState === 'Todos' 
+        ? 'bg-slate-900 text-white' 
+        : 'bg-slate-200 text-slate-900'
+    } text-sm rounded-full hover:bg-slate-800 hover:text-white transition-colors mr-2 mb-2`}
+  >
+    Todos
+  </button>
   {
     extractUniqueLotLocations(vehicles)
-      .filter(state => state !== 'Todos') // Añadimos este filtro para excluir 'Todos'
+      .filter(state => state !== 'Todos')
       .map((state, index) => (
         <button
           key={index}
@@ -391,9 +420,9 @@ const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, o
   }
 </div>
       <div className="bg-white shadow-sm">
-        <h2 className="text-xl font-semibold mb-4 text-slate-900">
-          {selectedState ? `Lista de Vehículos - ${selectedState}` : 'Seleccione un estado para ver los vehículos'}
-        </h2>
+      <h2 className="text-xl font-semibold mb-4 text-slate-900">
+  {selectedState ? (selectedState === 'Todos' ? 'Lista de Todos los Vehículos' : `Lista de Vehículos - ${selectedState}`) : 'Seleccione un estado para ver los vehículos'}
+</h2>
         {selectedState ? (
           <VehiclesTableView 
           vehicles={filteredVehicles}
