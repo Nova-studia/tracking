@@ -5,7 +5,7 @@ import ClientAutocomplete from './ClientAutocomplete';
 import SearchBar from './SearchBar';
 import VehiclesTableView from './VehiclesTableView';
 
-const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, onUpdateStatus, onAssignDriver }) => {
+const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, onUpdateStatus, onAssignDriver, onDeleteVehicle }) => {
   const [filters, setFilters] = useState({
     searchText: '',
     status: '',
@@ -402,6 +402,7 @@ const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, o
           onAssignDriver={onAssignDriver}
           onUpdateStatus={(vehicleId, status, comment) => onUpdateStatus(vehicleId, status, comment)}
           onVehicleUpdate={handleVehicleUpdate}
+          onDeleteVehicle={onDeleteVehicle}  // Agregar esta línea
           setVehicles={setVehicles}
         />
         ) : (

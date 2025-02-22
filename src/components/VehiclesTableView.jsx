@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import { MessageSquare, Pencil } from 'lucide-react';
+import { MessageSquare, Pencil, Trash2 } from 'lucide-react';
 import ClientEditModal from './ClientEditModal';
 import PhotoViewModal from './PhotoViewModal';
 import CommentsModal from './CommentsModal';
@@ -12,6 +12,7 @@ const VehiclesTableView = ({
   onAssignDriver, 
   onUpdateStatus,
   onVehicleUpdate,
+  onDeleteVehicle,  // Agregar esta línea
   setVehicles 
 }) => {
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
@@ -153,9 +154,31 @@ const VehiclesTableView = ({
     );
   };
 
+  const handleDelete = async (vehicleId) => {
+    if (window.confirm('¿Estás seguro de que deseas eliminar este vehículo? Esta acción no se puede deshacer.')) {
+      try {
+        await onDeleteVehicle(vehicleId);
+      } catch (error) {
+        alert('Error al eliminar vehículo: ' + error.message);
+      }
+    }
+  };
+  
   const getActionButton = (vehicle) => {
     const buttons = [];
-
+    
+    // Agregar botón de eliminar para todos los vehículos
+    buttons.push(
+      <button
+        key="delete-button"
+        onClick={() => handleDelete(vehicle._id)}
+        className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors flex items-center justify-center gap-1"
+        title="Eliminar vehículo"
+      >
+        <Trash2 className="h-4 w-4" />
+      </button>
+    );
+  
     if (vehicle.loadingPhotos && Object.keys(vehicle.loadingPhotos).length > 0) {
       buttons.push(
         <button
@@ -387,122 +410,89 @@ const VehiclesTableView = ({
           </div>
         </div>
       </div>
-
+  
       {/* Desktop View */}
-      <div className="hidden md:block overflow-x-auto">
-        <table className="w-full table-fixed border-collapse">
-          <thead className="text-sm bg-slate-100">
-            <tr className="border-b">
-              <th className="px-2 py-1.5 text-left font-bold">FECHA</th>
-              <th className="px-2 py-1.5 text-left font-bold">LOT</th>
-              <th className="px-2 py-1.5 text-left font-bold">PIN</th>
-              <th className="px-2 py-1.5 text-left font-bold">SUBASTA</th>
-              <th className="px-2 py-1.5 text-left font-bold">UBICACIÓN</th>
-              <th className="px-2 py-1.5 text-left font-bold">CLIENTE</th>
-              <th className="px-2 py-1.5 text-left font-bold">MARCA</th>
-              <th className="px-2 py-1.5 text-left font-bold">MODELO</th>
-              <th className="px-2 py-1.5 text-left font-bold">AÑO</th>
-              <th className="px-2 py-1.5 text-left font-bold">STATUS</th>
-              <th className="px-2 py-1.5 text-center font-bold">COMENTARIOS</th>
-              <th className="px-2 py-1.5 text-center font-bold">ACCIONES</th>
-            </tr>
-          </thead>
-          <tbody className="text-sm font-medium">
-          {vehicles
-              .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-              .map((vehicle, index) => (
-                <tr 
-                  key={vehicle._id} 
-                  className={`border-b ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}
-                >
-                  <td className="px-2 py-1.5">
-  <div title={vehicle.status === 'delivered' ? 
-    `Entregado: ${new Date(vehicle.updatedAt).toLocaleDateString()}` : 
-    `Asignado: ${new Date(vehicle.createdAt).toLocaleDateString()}`
-  }>
-    {vehicle.status === 'delivered' ? 
-      `Entregado: ${new Date(vehicle.updatedAt).toLocaleDateString()}` : 
-      new Date(vehicle.createdAt).toLocaleDateString()
-    }
-  </div>
-</td>
-                  <td className="px-2 py-1.5">
-                    <div title={vehicle.LOT || '-'}>
-                      {vehicle.LOT || '-'}
-                    </div>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <div title={vehicle.PIN || '-'}>
-                      {vehicle.PIN || '-'}
-                    </div>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <div title={vehicle.auctionHouse || '-'}>
-                      {vehicle.auctionHouse || '-'}
-                    </div>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <div title={getLocation(vehicle)}>
-                      {getLocation(vehicle)}
-                    </div>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <div className="flex items-center">
-                      <div title={getClientName(vehicle)}>
-                        {getClientName(vehicle)}
-                      </div>
-                      <button
-                        onClick={() => {
-                          setSelectedVehicle(vehicle);
-                          setIsClientModalOpen(true);
-                        }}
-                        className="ml-2 p-1 text-slate-400 hover:text-slate-600"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <div title={vehicle.brand || '-'}>
-                      {vehicle.brand || '-'}
-                    </div>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <div title={vehicle.model || '-'}>
-                      {vehicle.model || '-'}
-                    </div>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <div title={vehicle.year || '-'}>
-                      {vehicle.year || '-'}
-                    </div>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    {getProgressBar(vehicle.status)}
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <div className="flex justify-center">
-                      <button
-                        onClick={() => {
-                          setSelectedVehicle(vehicle);
-                          setIsCommentsModalOpen(true);
-                        }}
-                        className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full"
-                        title={vehicle.comments || 'Sin comentarios'}
-                      >
-                        <MessageSquare className="h-5 w-5" />
-                      </button>
-                    </div>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <div className="flex justify-center gap-2">
-                      {getActionButton(vehicle)}
-                    </div>
-                  </td>
+      <div className="hidden md:block">
+        <div className="w-full overflow-x-auto" style={{ maxWidth: '100%' }}>
+          <div className="min-w-max">
+            <table className="w-full border-collapse">
+              <thead className="text-sm bg-slate-100">
+                <tr className="border-b whitespace-nowrap">
+                  <th className="px-4 py-2 text-left font-bold">FECHA</th>
+                  <th className="px-4 py-2 text-left font-bold">LOT</th>
+                  <th className="px-4 py-2 text-left font-bold">PIN</th>
+                  <th className="px-4 py-2 text-left font-bold">SUBASTA</th>
+                  <th className="px-4 py-2 text-left font-bold">UBICACIÓN</th>
+                  <th className="px-4 py-2 text-left font-bold min-w-[150px]">CLIENTE</th>
+                  <th className="px-4 py-2 text-left font-bold">MARCA</th>
+                  <th className="px-4 py-2 text-left font-bold">MODELO</th>
+                  <th className="px-4 py-2 text-left font-bold">AÑO</th>
+                  <th className="px-4 py-2 text-left font-bold min-w-[120px]">STATUS</th>
+                  <th className="px-4 py-2 text-center font-bold">COMENTARIOS</th>
+                  <th className="px-4 py-2 text-center font-bold min-w-[180px]">ACCIONES</th>
                 </tr>
-              ))}
-          </tbody>
-        </table>
+              </thead>
+              <tbody className="text-sm font-medium">
+                {vehicles
+                  .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                  .map((vehicle, index) => (
+                    <tr 
+                      key={vehicle._id} 
+                      className={`border-b whitespace-nowrap ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}
+                    >
+                      <td className="px-4 py-2">
+                        {vehicle.status === 'delivered' ? 
+                          `Entregado: ${new Date(vehicle.updatedAt).toLocaleDateString()}` : 
+                          new Date(vehicle.createdAt).toLocaleDateString()
+                        }
+                      </td>
+                      <td className="px-4 py-2">{vehicle.LOT || '-'}</td>
+                      <td className="px-4 py-2">{vehicle.PIN || '-'}</td>
+                      <td className="px-4 py-2">{vehicle.auctionHouse || '-'}</td>
+                      <td className="px-4 py-2">{getLocation(vehicle)}</td>
+                      <td className="px-4 py-2">
+                        <div className="flex items-center">
+                          <span className="truncate">{getClientName(vehicle)}</span>
+                          <button
+                            onClick={() => {
+                              setSelectedVehicle(vehicle);
+                              setIsClientModalOpen(true);
+                            }}
+                            className="ml-2 p-1 text-slate-400 hover:text-slate-600 flex-shrink-0"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                      <td className="px-4 py-2">{vehicle.brand || '-'}</td>
+                      <td className="px-4 py-2">{vehicle.model || '-'}</td>
+                      <td className="px-4 py-2">{vehicle.year || '-'}</td>
+                      <td className="px-4 py-2">{getProgressBar(vehicle.status)}</td>
+                      <td className="px-4 py-2">
+                        <div className="flex justify-center">
+                          <button
+                            onClick={() => {
+                              setSelectedVehicle(vehicle);
+                              setIsCommentsModalOpen(true);
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full"
+                            title={vehicle.comments || 'Sin comentarios'}
+                          >
+                            <MessageSquare className="h-5 w-5" />
+                          </button>
+                        </div>
+                      </td>
+                      <td className="px-4 py-2">
+                        <div className="flex justify-center gap-2">
+                          {getActionButton(vehicle)}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       {/* Mobile View */}
@@ -651,6 +641,7 @@ VehiclesTableView.propTypes = {
   onAssignDriver: PropTypes.func.isRequired,
   onUpdateStatus: PropTypes.func.isRequired,
   onVehicleUpdate: PropTypes.func.isRequired,
+  onDeleteVehicle: PropTypes.func.isRequired,  // Nueva prop agregada
   setVehicles: PropTypes.func.isRequired
 };
 

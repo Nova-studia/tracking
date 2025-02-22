@@ -450,6 +450,34 @@ app.patch('/api/vehicles/:id/client', authMiddleware, roleMiddleware(['admin']),
   }
 });
 
+// Ruta para eliminar vehículo
+app.delete('/api/vehicles/:id', authMiddleware, roleMiddleware(['admin']), async (req, res) => {
+  try {
+    // Primero verificamos si el vehículo existe
+    const vehicle = await Vehicle.findById(req.params.id);
+    if (!vehicle) {
+      return res.status(404).json({ message: 'Vehículo no encontrado' });
+    }
+
+    // Si el vehículo tiene fotos en Cloudinary, las eliminamos
+    if (vehicle.loadingPhotos) {
+      for (const photo of Object.values(vehicle.loadingPhotos)) {
+        if (photo.publicId) {
+          await cloudinary.uploader.destroy(photo.publicId);
+        }
+      }
+    }
+
+    // Eliminamos el vehículo
+    await Vehicle.findByIdAndDelete(req.params.id);
+
+    res.json({ message: 'Vehículo eliminado exitosamente' });
+  } catch (error) {
+    console.error('Error al eliminar vehículo:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Rutas de estados
 app.get('/api/states', async (req, res) => {
   try {

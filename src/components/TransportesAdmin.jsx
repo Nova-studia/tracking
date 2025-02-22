@@ -239,6 +239,26 @@ const TransportesAdmin = () => {
     }
   };
 
+  const handleDeleteVehicle = async (vehicleId) => {
+    try {
+      const response = await fetch(`${API_URL}/vehicles/${vehicleId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al eliminar vehículo');
+      }
+  
+      setVehicles(prevVehicles => prevVehicles.filter(vehicle => vehicle._id !== vehicleId));
+      return true;
+    } catch (error) {
+      console.error('Error deleting vehicle:', error);
+      throw error;
+    }
+  };
+
   const handleAssignDriver = async (vehicleId, driverId) => {
     try {
       // Primero asignamos el conductor
@@ -354,6 +374,7 @@ const TransportesAdmin = () => {
             onAddVehicle={handleAddVehicle}
             onUpdateStatus={handleUpdateStatus}
             onAssignDriver={handleAssignDriver}
+            onDeleteVehicle={handleDeleteVehicle}
           />
         )}
       </div>
