@@ -11,14 +11,18 @@ function App() {
 
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState(() => {
-    const savedNotifications = localStorage.getItem('notifications');
+    const savedNotifications = localStorage.getItem('notificationsData');
     return savedNotifications ? JSON.parse(savedNotifications) : [];
   });
   
   const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem('notifications', JSON.stringify(notifications));
+    if (notifications.length > 0) {
+      localStorage.setItem('notificationsData', JSON.stringify(notifications));
+    } else {
+      localStorage.removeItem('notificationsData');
+    }
   }, [notifications]);
 
   useEffect(() => {
@@ -116,24 +120,28 @@ function App() {
     <div className="py-2">
       <div className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 flex justify-between items-center">
         <span>Notificaciones</span>
-        <button
-  onClick={() => setShowNotifications(!showNotifications)}
-  className="p-2 rounded-full hover:bg-slate-800 transition-colors relative"
+        <button 
+  onClick={() => {
+    setNotifications([]);
+    localStorage.removeItem('notificationsData');
+  }}
+  className="text-xs text-red-500 hover:text-red-700"
 >
-          Eliminar todas
-        </button>
+  Eliminar todas
+</button>
       </div>
       <div className="max-h-60 overflow-y-auto">
         {notifications.map((notification, index) => (
           <div key={index} className="px-4 py-3 text-sm border-b hover:bg-gray-50 relative">
             <button 
-              onClick={() => {
-                const newNotifications = [...notifications];
-                newNotifications.splice(index, 1);
-                setNotifications(newNotifications);
-              }}
-              className="absolute top-1 right-1 text-gray-400 hover:text-gray-600"
-            >
+  onClick={() => {
+    const newNotifications = [...notifications];
+    newNotifications.splice(index, 1);
+    setNotifications(newNotifications);
+    localStorage.setItem('notificationsData', JSON.stringify(newNotifications));
+  }}
+  className="absolute top-1 right-1 text-gray-400 hover:text-gray-600"
+>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>

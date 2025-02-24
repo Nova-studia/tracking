@@ -62,13 +62,19 @@ const VehiclesTableView = ({
       onVehicleUpdate(updatedVehicle);
       
       // Agregar notificación
-      setNotifications(prev => [...prev, {
+      const newNotification = {
         lotInfo: `${selectedVehicle.LOT || 'LOT'} - ${selectedVehicle.brand} ${selectedVehicle.model}`,
         message: newComment.length > 50 ? `${newComment.substring(0, 50)}...` : newComment,
         time: new Date().toLocaleString(),
         vehicleId: vehicleId,
         image: selectedVehicle.loadingPhotos?.frontPhoto?.url || null
-      }]);
+      };
+      
+      setNotifications(prev => {
+        const updatedNotifications = [...prev, newNotification];
+        localStorage.setItem('notificationsData', JSON.stringify(updatedNotifications));
+        return updatedNotifications;
+      });
       
       return updatedVehicle;
   
