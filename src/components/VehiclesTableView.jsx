@@ -379,33 +379,6 @@ const VehiclesTableView = ({
                 Comentarios
               </button>
               <div className="flex justify-center gap-2 mt-2">
-  {vehicle.status === 'pending' || vehicle.status === 'assigned' || vehicle.status === 'loading' ? (
-    <select
-      value={vehicle.driverId ? (typeof vehicle.driverId === 'object' ? vehicle.driverId._id : vehicle.driverId) : ''}
-      onChange={(e) => {
-        e.stopPropagation();
-        onAssignDriver(vehicle._id, e.target.value);
-        if (e.target.value && vehicle.status === 'pending') {
-          setTimeout(() => {
-            onUpdateStatus(vehicle._id, 'assigned', 'Conductor asignado al vehículo');
-          }, 100);
-        }
-      }}
-      className="flex-1 px-3 py-2 rounded text-sm font-medium bg-white border border-slate-200 text-slate-800 hover:border-slate-300 focus:ring-1 focus:ring-slate-200"
-    >
-      <option value="">
-        {vehicle.status === 'pending' ? 'Asignar' : 'Reasignar'}
-      </option>
-      {drivers
-        .filter(driver => driver.isActive)
-        .map(driver => (
-          <option key={driver._id} value={driver._id}>
-            {driver.name}
-          </option>
-        ))
-      }
-    </select>
-  ) : null}
   {getActionButton(vehicle)}
 </div>
             </div>
