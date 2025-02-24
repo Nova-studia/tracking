@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 
 const PhotoUploadModal = ({ isOpen, onClose, onSubmit }) => {
@@ -192,14 +192,13 @@ const PhotoUploadModal = ({ isOpen, onClose, onSubmit }) => {
                       <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                       </svg>
-                      <span className="mt-2 text-sm text-gray-500">Tomar foto</span>
+                      <span className="mt-2 text-sm text-gray-500">Subir o tomar foto</span>
                       <input
-                        type="file"
-                        accept="image/*"
-                        capture="environment"
-                        className="hidden"
-                        onChange={e => handleFileChange(e, key)}
-                      />
+  type="file"
+  accept="image/*"
+  className="hidden"
+  onChange={e => handleFileChange(e, key)}
+/>
                     </label>
                   )}
                 </div>

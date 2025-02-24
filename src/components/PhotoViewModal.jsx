@@ -4,7 +4,6 @@ import { X, ZoomIn, ZoomOut } from 'lucide-react';
 
 const PhotoViewModal = ({ isOpen, onClose, photos }) => {
   const [selectedPhoto, setSelectedPhoto] = useState(null);
-  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
 
   if (!isOpen) return null;
 
@@ -30,33 +29,6 @@ const PhotoViewModal = ({ isOpen, onClose, photos }) => {
       setSelectedPhoto(availablePhotos[prevIndex]);
     };
 
-    // Implementación básica de evento táctil para dispositivos móviles
-    const handleTouchStart = (e) => {
-      const touchStartX = e.touches[0].clientX;
-      e.currentTarget.setAttribute('data-touch-start-x', touchStartX);
-    };
-
-    const handleTouchEnd = (e) => {
-      if (!e.currentTarget.hasAttribute('data-touch-start-x')) return;
-      
-      const touchStartX = parseFloat(e.currentTarget.getAttribute('data-touch-start-x'));
-      const touchEndX = e.changedTouches[0].clientX;
-      const diff = touchEndX - touchStartX;
-      
-      // Si el deslizamiento es mayor a 50px, cambiamos de foto
-      if (Math.abs(diff) > 50) {
-        if (diff > 0) {
-          // Deslizamiento a la derecha -> foto anterior
-          goToPrevious();
-        } else {
-          // Deslizamiento a la izquierda -> foto siguiente
-          goToNext();
-        }
-      }
-      
-      e.currentTarget.removeAttribute('data-touch-start-x');
-    };
-
     return (
       <div className="fixed inset-0 bg-black z-50 flex flex-col">
         <div className="flex justify-between items-center p-4 bg-black bg-opacity-75">
@@ -68,11 +40,7 @@ const PhotoViewModal = ({ isOpen, onClose, photos }) => {
             <X size={24} />
           </button>
         </div>
-        <div 
-          className="flex-1 flex items-center justify-center p-4 relative"
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
-        >
+        <div className="flex-1 flex items-center justify-center p-4 relative">
           {/* Botón de navegación a la izquierda */}
           <button 
             onClick={goToPrevious}
@@ -87,7 +55,6 @@ const PhotoViewModal = ({ isOpen, onClose, photos }) => {
             src={photos[photo.key].url}
             alt={photo.alt}
             className="max-h-full max-w-full object-contain"
-            draggable="false" // Evita conflictos con el gesto de deslizamiento
           />
           
           {/* Botón de navegación a la derecha */}
