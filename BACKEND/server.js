@@ -10,6 +10,7 @@ const Driver = require('./models/Driver');
 const User = require('./models/User');
 const State = require('./models/State');
 const { uploadMiddleware, cloudinary } = require('./config/cloudinary');
+const Notification = require('./models/Notification');
 
 const app = express();
 
@@ -495,6 +496,73 @@ app.use((err, req, res, next) => {
     message: 'Error interno del servidor',
     error: process.env.NODE_ENV === 'development' ? err.message : undefined
   });
+});
+
+// Rutas de notificaciones
+app.get('/api/notifications', authMiddleware, async (req, res) => {
+  try {
+    const notifications = await Notification.find({ 
+      userId: req.user.id 
+    }).sort({ createdAt: -1 });
+    
+    res.json(notifications);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+app.post('/api/notifications', authMiddleware, async (req, res) => {
+  try {
+    const notification = new Notification({
+      userId: req.user.id,
+      ...req.body
+    });
+    
+    await notification.save();
+    res.status(201).json(notification);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+app.patch('/api/notifications/read-all', authMiddleware, async (req, res) => {
+  try {
+    await Notification.updateMany(
+      { userId: req.user.id },
+      { $set: { read: true } }
+    );
+    
+    res.json({ message: 'Todas las notificaciones marcadas como leídas' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+app.delete('/api/notifications', authMiddleware, async (req, res) => {
+  try {
+    await Notification.deleteMany({ userId: req.user.id });
+    res.json({ message: 'Todas las notificaciones eliminadas' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+app.delete('/api/notifications/:id', authMiddleware, async (req, res) => {
+  try {
+    const notification = await Notification.findOne({
+      _id: req.params.id,
+      userId: req.user.id
+    });
+    
+    if (!notification) {
+      return res.status(404).json({ message: 'Notificación no encontrada' });
+    }
+    
+    await Notification.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Notificación eliminada correctamente' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
 // Iniciar servidor

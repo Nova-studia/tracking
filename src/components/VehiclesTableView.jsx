@@ -30,12 +30,12 @@ const VehiclesTableView = ({
       if (!token) {
         throw new Error('No se encontró token de autenticación');
       }
-  
+    
       const selectedVehicle = vehicles.find(v => v._id === vehicleId);
       if (!selectedVehicle) {
         throw new Error('Vehículo no encontrado');
       }
-  
+    
       const response = await fetch(`${API_URL}/vehicles/${vehicleId}/status`, {
         method: 'PATCH',
         headers: {
@@ -52,32 +52,43 @@ const VehiclesTableView = ({
           }]
         })
       });
-  
+    
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Error al actualizar comentarios');
       }
-  
+    
       const updatedVehicle = await response.json();
       onVehicleUpdate(updatedVehicle);
       
-      // Agregar notificación
+      // Crear la notificación
       const newNotification = {
         lotInfo: `${selectedVehicle.LOT || 'LOT'} - ${selectedVehicle.brand} ${selectedVehicle.model}`,
         message: newComment.length > 50 ? `${newComment.substring(0, 50)}...` : newComment,
-        time: new Date().toLocaleString(),
         vehicleId: vehicleId,
-        image: selectedVehicle.loadingPhotos?.frontPhoto?.url || null
+        image: selectedVehicle.loadingPhotos?.frontPhoto?.url || null,
+        time: new Date().toLocaleString()
       };
       
-      setNotifications(prev => {
-        const updatedNotifications = [...prev, newNotification];
-        localStorage.setItem('notificationsData', JSON.stringify(updatedNotifications));
-        return updatedNotifications;
-      });
+      // Enviar la notificación al servidor
+      try {
+        await fetch(`${API_URL}/notifications`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(newNotification)
+        });
+      } catch (notifError) {
+        console.error('Error al guardar notificación en servidor:', notifError);
+      }
+      
+      // Actualizar el estado local de notificaciones
+      setNotifications(prev => [...prev, newNotification]);
       
       return updatedVehicle;
-  
+    
     } catch (error) {
       console.error('Error updating comments:', error);
       throw new Error('Error al actualizar comentarios');

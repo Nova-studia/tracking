@@ -54,6 +54,31 @@ function App() {
     validateToken();
   }, []);
 
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      if (!auth) return;
+      
+      try {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/notifications`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setNotifications(data);
+        }
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+      }
+    };
+    
+    if (auth) {
+      fetchNotifications();
+    }
+  }, [auth]);
+
   const handleLogin = (userData) => {
     setAuth(userData);
   };
@@ -121,9 +146,21 @@ function App() {
       <div className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 flex justify-between items-center">
         <span>Notificaciones</span>
         <button 
-  onClick={() => {
-    setNotifications([]);
-    localStorage.removeItem('notificationsData');
+  onClick={async () => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/notifications`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (response.ok) {
+        setNotifications([]);
+      }
+    } catch (error) {
+      console.error('Error eliminating notifications:', error);
+    }
   }}
   className="text-xs text-red-500 hover:text-red-700"
 >
@@ -133,12 +170,25 @@ function App() {
       <div className="max-h-60 overflow-y-auto">
         {notifications.map((notification, index) => (
           <div key={index} className="px-4 py-3 text-sm border-b hover:bg-gray-50 relative">
-            <button 
-  onClick={() => {
-    const newNotifications = [...notifications];
-    newNotifications.splice(index, 1);
-    setNotifications(newNotifications);
-    localStorage.setItem('notificationsData', JSON.stringify(newNotifications));
+           <button 
+  onClick={async () => {
+    try {
+      // Si la notificación tiene _id, significa que viene del servidor
+      if (notification._id) {
+        await fetch(`${process.env.REACT_APP_API_URL}/api/notifications/${notification._id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+      }
+      
+      const newNotifications = [...notifications];
+      newNotifications.splice(index, 1);
+      setNotifications(newNotifications);
+    } catch (error) {
+      console.error('Error removing notification:', error);
+    }
   }}
   className="absolute top-1 right-1 text-gray-400 hover:text-gray-600"
 >
@@ -163,7 +213,9 @@ function App() {
               <div>
                 <p className="font-medium text-gray-900">{notification.lotInfo || ""}</p>
                 <p className="text-gray-600">{notification.message}</p>
-                <p className="text-xs text-gray-400 mt-1">{notification.time}</p>
+                <p className="text-xs text-gray-400 mt-1">
+  {notification.time || new Date(notification.createdAt).toLocaleString()}
+</p>
               </div>
             </div>
           </div>
