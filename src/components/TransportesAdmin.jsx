@@ -22,6 +22,57 @@ const TransportesAdmin = () => {
   };
 
   useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const response = await fetch(`${API_URL}/clients`, {
+          headers: getAuthHeaders()
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Error al obtener clientes');
+        }
+        const data = await response.json();
+        setClients(data);
+      } catch (error) {
+        console.error('Error fetching clients:', error);
+        throw error;
+      }
+    };
+  
+    const fetchDrivers = async () => {
+      try {
+        const response = await fetch(`${API_URL}/drivers`, {
+          headers: getAuthHeaders()
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Error al obtener conductores');
+        }
+        const data = await response.json();
+        setDrivers(data);
+      } catch (error) {
+        console.error('Error fetching drivers:', error);
+        throw error;
+      }
+    };
+  
+    const fetchVehicles = async () => {
+      try {
+        const response = await fetch(`${API_URL}/vehicles`, {
+          headers: getAuthHeaders()
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Error al obtener vehículos');
+        }
+        const data = await response.json();
+        setVehicles(data);
+      } catch (error) {
+        console.error('Error fetching vehicles:', error);
+        throw error;
+      }
+    };
+  
     const loadInitialData = async () => {
       try {
         setLoading(true);
@@ -37,62 +88,11 @@ const TransportesAdmin = () => {
         setLoading(false);
       }
     };
-
+  
     loadInitialData();
   }, []);
 
-  const fetchClients = async () => {
-    try {
-      const response = await fetch(`${API_URL}/clients`, {
-        headers: getAuthHeaders()
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al obtener clientes');
-      }
-      const data = await response.json();
-      setClients(data);
-    } catch (error) {
-      console.error('Error fetching clients:', error);
-      throw error;
-    }
-  };
-
-  const fetchDrivers = async () => {
-    try {
-      const response = await fetch(`${API_URL}/drivers`, {
-        headers: getAuthHeaders()
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al obtener conductores');
-      }
-      const data = await response.json();
-      setDrivers(data);
-    } catch (error) {
-      console.error('Error fetching drivers:', error);
-      throw error;
-    }
-  };
-
-  const fetchVehicles = async () => {
-    try {
-      const response = await fetch(`${API_URL}/vehicles`, {
-        headers: getAuthHeaders()
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al obtener vehículos');
-      }
-      const data = await response.json();
-      setVehicles(data);
-    } catch (error) {
-      console.error('Error fetching vehicles:', error);
-      throw error;
-    }
-  };
-
-  const handleAddClient = async (newClient) => {
+    const handleAddClient = async (newClient) => {
     try {
       const response = await fetch(`${API_URL}/clients`, {
         method: 'POST',
@@ -267,7 +267,7 @@ const TransportesAdmin = () => {
         headers: getAuthHeaders(),
         body: JSON.stringify({ driverId: driverId === '' ? null : driverId }),
       });
-
+  
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Error al asignar conductor');
@@ -275,11 +275,15 @@ const TransportesAdmin = () => {
       
       const updatedVehicle = await response.json();
       setVehicles(prev => prev.map(v => v._id === vehicleId ? updatedVehicle : v));
-
-      // Si se asignó un conductor (driverId no está vacío), actualizamos el estado
-      if (driverId) {
-        await handleUpdateStatus(vehicleId, 'assigned');
+  
+      // Solo si se asignó un conductor (driverId no está vacío) y el vehículo estaba en estado 'pending',
+      // actualizamos el estado a 'assigned'
+      const currentVehicle = vehicles.find(v => v._id === vehicleId);
+      if (driverId && currentVehicle && currentVehicle.status === 'pending') {
+        await handleUpdateStatus(vehicleId, 'assigned', 'Conductor asignado al vehículo');
       }
+      
+      return updatedVehicle;
     } catch (error) {
       console.error('Error detallado:', error);
       alert('Error al asignar conductor: ' + error.message);
@@ -312,7 +316,7 @@ const TransportesAdmin = () => {
 
   return (
     <div className="min-h-screen bg-white text-slate-900">
-      <div className="container mx-auto p-6">
+      <div className="container mx-auto">
         <header className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900 mb-6">Sistema de Transportes</h1>
           <div className="flex space-x-4 bg-slate-100 p-1 rounded-lg">

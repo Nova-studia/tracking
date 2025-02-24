@@ -203,14 +203,14 @@ const VehiclesTableView = ({
       return buttons;
     }
 
-    if (vehicle.status === 'pending') {
+    if (vehicle.status === 'pending' || vehicle.status === 'assigned' || vehicle.status === 'loading') {
       const select = (
         <select
           key="driver-select"
-          value={vehicle.driverId || ''}
+          value={vehicle.driverId ? (typeof vehicle.driverId === 'object' ? vehicle.driverId._id : vehicle.driverId) : ''}
           onChange={(e) => {
             onAssignDriver(vehicle._id, e.target.value);
-            if (e.target.value) {
+            if (e.target.value && vehicle.status === 'pending') {
               setTimeout(() => {
                 onUpdateStatus(vehicle._id, 'assigned', 'Conductor asignado al vehículo');
               }, 100);
@@ -218,7 +218,9 @@ const VehiclesTableView = ({
           }}
           className="px-2 py-1 rounded text-sm font-medium bg-white border border-slate-200 text-slate-800 w-24 hover:border-slate-300 focus:ring-1 focus:ring-slate-200"
         >
-          <option value="">Asignar</option>
+          <option value="">
+            {vehicle.status === 'pending' ? 'Asignar' : 'Reasignar'}
+          </option>
           {drivers
             .filter(driver => driver.isActive)
             .map(driver => (
@@ -230,7 +232,6 @@ const VehiclesTableView = ({
         </select>
       );
       buttons.push(select);
-      return buttons;
     }
 
     const buttonConfig = {
@@ -378,8 +379,35 @@ const VehiclesTableView = ({
                 Comentarios
               </button>
               <div className="flex justify-center gap-2 mt-2">
-                {getActionButton(vehicle)}
-              </div>
+  {vehicle.status === 'pending' || vehicle.status === 'assigned' || vehicle.status === 'loading' ? (
+    <select
+      value={vehicle.driverId ? (typeof vehicle.driverId === 'object' ? vehicle.driverId._id : vehicle.driverId) : ''}
+      onChange={(e) => {
+        e.stopPropagation();
+        onAssignDriver(vehicle._id, e.target.value);
+        if (e.target.value && vehicle.status === 'pending') {
+          setTimeout(() => {
+            onUpdateStatus(vehicle._id, 'assigned', 'Conductor asignado al vehículo');
+          }, 100);
+        }
+      }}
+      className="flex-1 px-3 py-2 rounded text-sm font-medium bg-white border border-slate-200 text-slate-800 hover:border-slate-300 focus:ring-1 focus:ring-slate-200"
+    >
+      <option value="">
+        {vehicle.status === 'pending' ? 'Asignar' : 'Reasignar'}
+      </option>
+      {drivers
+        .filter(driver => driver.isActive)
+        .map(driver => (
+          <option key={driver._id} value={driver._id}>
+            {driver.name}
+          </option>
+        ))
+      }
+    </select>
+  ) : null}
+  {getActionButton(vehicle)}
+</div>
             </div>
           </div>
         )}
@@ -406,18 +434,18 @@ const VehiclesTableView = ({
             <table className="w-full border-collapse">
               <thead className="text-sm bg-slate-100">
                 <tr className="border-b whitespace-nowrap">
-                  <th className="px-4 py-2 text-left font-bold">FECHA</th>
-                  <th className="px-4 py-2 text-left font-bold">LOT</th>
-                  <th className="px-4 py-2 text-left font-bold">PIN</th>
-                  <th className="px-4 py-2 text-left font-bold">SUBASTA</th>
-                  <th className="px-4 py-2 text-left font-bold">UBICACIÓN</th>
-                  <th className="px-4 py-2 text-left font-bold min-w-[150px]">CLIENTE</th>
-                  <th className="px-4 py-2 text-left font-bold">MARCA</th>
-                  <th className="px-4 py-2 text-left font-bold">MODELO</th>
-                  <th className="px-4 py-2 text-left font-bold">AÑO</th>
-                  <th className="px-4 py-2 text-left font-bold min-w-[120px]">STATUS</th>
-                  <th className="px-4 py-2 text-center font-bold">COMENTARIOS</th>
-                  <th className="px-4 py-2 text-center font-bold min-w-[180px]">ACCIONES</th>
+                  <th className="px-2 py-2 text-left font-bold">FECHA</th>
+                  <th className="px-2 py-2 text-left font-bold">LOT</th>
+                  <th className="px-2 py-2 text-left font-bold">PIN</th>
+                  <th className="px-2 py-2 text-left font-bold">SUBASTA</th>
+                  <th className="px-2 py-2 text-left font-bold">UBICACIÓN</th>
+                  <th className="px-2 py-2 text-left font-bold min-w-[150px]">CLIENTE</th>
+                  <th className="px-2 py-2 text-left font-bold">MARCA</th>
+                  <th className="px-2 py-2 text-left font-bold">MODELO</th>
+                  <th className="px-2 py-2 text-left font-bold">AÑO</th>
+                  <th className="px-2 py-2 text-left font-bold min-w-[120px]">STATUS</th>
+                  <th className="px-2 py-2 text-center font-bold">COMENTARIOS</th>
+                  <th className="px-2 py-2 text-center font-bold min-w-[180px]">ACCIONES</th>
                 </tr>
               </thead>
               <tbody className="text-sm font-medium">
@@ -434,11 +462,11 @@ const VehiclesTableView = ({
                           new Date(vehicle.createdAt).toLocaleDateString()
                         }
                       </td>
-                      <td className="px-4 py-2">{vehicle.LOT || '-'}</td>
-                      <td className="px-4 py-2">{vehicle.PIN || '-'}</td>
-                      <td className="px-4 py-2">{vehicle.auctionHouse || '-'}</td>
-                      <td className="px-4 py-2">{getLocation(vehicle)}</td>
-                      <td className="px-4 py-2">
+                      <td className="px-2 py-2">{vehicle.LOT || '-'}</td>
+                      <td className="px-2 py-2">{vehicle.PIN || '-'}</td>
+                      <td className="px-2 py-2">{vehicle.auctionHouse || '-'}</td>
+                      <td className="px-2 py-2">{getLocation(vehicle)}</td>
+                      <td className="px-2 py-2">
                         <div className="flex items-center">
                           <span className="truncate">{getClientName(vehicle)}</span>
                           <button
@@ -452,11 +480,11 @@ const VehiclesTableView = ({
                           </button>
                         </div>
                       </td>
-                      <td className="px-4 py-2">{vehicle.brand || '-'}</td>
-                      <td className="px-4 py-2">{vehicle.model || '-'}</td>
-                      <td className="px-4 py-2">{vehicle.year || '-'}</td>
-                      <td className="px-4 py-2">{getProgressBar(vehicle.status)}</td>
-                      <td className="px-4 py-2">
+                      <td className="px-2 py-2">{vehicle.brand || '-'}</td>
+                      <td className="px-2 py-2">{vehicle.model || '-'}</td>
+                      <td className="px-2 py-2">{vehicle.year || '-'}</td>
+                      <td className="px-2 py-2">{getProgressBar(vehicle.status)}</td>
+                      <td className="px-2 py-2">
                         <div className="flex justify-center">
                           <button
                             onClick={() => {
