@@ -3,9 +3,10 @@ import ClientesTab from './ClientesTab';
 import DriversTab from './DriversTab';
 import VehiculosTab from './VehiculosTab';
 
+
 const API_URL = `${process.env.REACT_APP_API_URL}/api`;
 
-const TransportesAdmin = () => {
+const TransportesAdmin = ({ setNotifications }) => {
   const [clients, setClients] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [vehicles, setVehicles] = useState([]);
@@ -369,18 +370,19 @@ const TransportesAdmin = () => {
           />
         )}
 
-        {activeTab === 'vehicles' && (
-          <VehiculosTab 
-            vehicles={vehicles}
-            setVehicles={setVehicles}
-            clients={clients}
-            drivers={drivers} 
-            onAddVehicle={handleAddVehicle}
-            onUpdateStatus={handleUpdateStatus}
-            onAssignDriver={handleAssignDriver}
-            onDeleteVehicle={handleDeleteVehicle}
-          />
-        )}
+{activeTab === 'vehicles' && (
+  <VehiculosTab 
+    vehicles={vehicles}
+    setVehicles={setVehicles}
+    clients={clients}
+    drivers={drivers} 
+    onAddVehicle={handleAddVehicle}
+    onUpdateStatus={handleUpdateStatus}
+    onAssignDriver={handleAssignDriver}
+    onDeleteVehicle={handleDeleteVehicle}
+    setNotifications={setNotifications}  // Agregar esta línea
+  />
+)}
       </div>
     </div>
   );

@@ -5,7 +5,17 @@ import ClientAutocomplete from './ClientAutocomplete';
 import SearchBar from './SearchBar';
 import VehiclesTableView from './VehiclesTableView';
 
-const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, onUpdateStatus, onAssignDriver, onDeleteVehicle }) => {
+const VehiculosTab = ({ 
+  vehicles, 
+  setVehicles, 
+  clients, 
+  drivers, 
+  onAddVehicle, 
+  onUpdateStatus, 
+  onAssignDriver, 
+  onDeleteVehicle,
+  setNotifications  // Nueva prop
+}) => {
   const [filters, setFilters] = useState({
     searchText: '',
     status: '',
@@ -431,8 +441,9 @@ const VehiculosTab = ({ vehicles, setVehicles, clients, drivers, onAddVehicle, o
           onAssignDriver={onAssignDriver}
           onUpdateStatus={(vehicleId, status, comment) => onUpdateStatus(vehicleId, status, comment)}
           onVehicleUpdate={handleVehicleUpdate}
-          onDeleteVehicle={onDeleteVehicle}  // Agregar esta línea
+          onDeleteVehicle={onDeleteVehicle}
           setVehicles={setVehicles}
+          setNotifications={setNotifications}  // Agregar esta línea
         />
         ) : (
           <div className="text-center py-8 text-slate-500">
@@ -491,7 +502,9 @@ VehiculosTab.propTypes = {
   onAddVehicle: PropTypes.func.isRequired,
   onUpdateStatus: PropTypes.func.isRequired,
   onAssignDriver: PropTypes.func.isRequired,
+  onDeleteVehicle: PropTypes.func.isRequired,
   setVehicles: PropTypes.func.isRequired,
+  setNotifications: PropTypes.func.isRequired,
 };
 
 export default VehiculosTab;

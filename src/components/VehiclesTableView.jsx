@@ -12,8 +12,9 @@ const VehiclesTableView = ({
   onAssignDriver, 
   onUpdateStatus,
   onVehicleUpdate,
-  onDeleteVehicle,  // Agregar esta línea
-  setVehicles 
+  onDeleteVehicle,  
+  setVehicles,
+  setNotifications  // Nueva prop
 }) => {
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const [selectedPhotos, setSelectedPhotos] = useState(null);
@@ -59,6 +60,15 @@ const VehiclesTableView = ({
   
       const updatedVehicle = await response.json();
       onVehicleUpdate(updatedVehicle);
+      
+      // Agregar notificación
+      setNotifications(prev => [...prev, {
+        title: `Nuevo comentario en ${selectedVehicle.brand} ${selectedVehicle.model}`,
+        message: newComment.length > 30 ? `${newComment.substring(0, 30)}...` : newComment,
+        time: new Date().toLocaleTimeString(),
+        vehicleId: vehicleId
+      }]);
+      
       return updatedVehicle;
   
     } catch (error) {
@@ -630,8 +640,9 @@ VehiclesTableView.propTypes = {
   onAssignDriver: PropTypes.func.isRequired,
   onUpdateStatus: PropTypes.func.isRequired,
   onVehicleUpdate: PropTypes.func.isRequired,
-  onDeleteVehicle: PropTypes.func.isRequired,  // Nueva prop agregada
-  setVehicles: PropTypes.func.isRequired
+  onDeleteVehicle: PropTypes.func.isRequired,
+  setVehicles: PropTypes.func.isRequired,
+  setNotifications: PropTypes.func.isRequired,
 };
 
 export default VehiclesTableView;
