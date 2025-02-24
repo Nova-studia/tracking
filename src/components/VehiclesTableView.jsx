@@ -63,10 +63,11 @@ const VehiclesTableView = ({
       
       // Agregar notificación
       setNotifications(prev => [...prev, {
-        title: `Nuevo comentario en ${selectedVehicle.brand} ${selectedVehicle.model}`,
-        message: newComment.length > 30 ? `${newComment.substring(0, 30)}...` : newComment,
-        time: new Date().toLocaleTimeString(),
-        vehicleId: vehicleId
+        lotInfo: `${selectedVehicle.LOT || 'LOT'} - ${selectedVehicle.brand} ${selectedVehicle.model}`,
+        message: newComment.length > 50 ? `${newComment.substring(0, 50)}...` : newComment,
+        time: new Date().toLocaleString(),
+        vehicleId: vehicleId,
+        image: selectedVehicle.loadingPhotos?.frontPhoto?.url || null
       }]);
       
       return updatedVehicle;
