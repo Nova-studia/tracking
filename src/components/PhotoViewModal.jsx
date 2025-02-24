@@ -4,6 +4,7 @@ import { X, ZoomIn, ZoomOut } from 'lucide-react';
 
 const PhotoViewModal = ({ isOpen, onClose, photos }) => {
   const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
 
   if (!isOpen) return null;
 
@@ -14,27 +15,105 @@ const PhotoViewModal = ({ isOpen, onClose, photos }) => {
     { key: 'rightPhoto', label: 'Lado Derecho', alt: 'Lado derecho del vehículo' }
   ];
 
-  // Modal para vista completa de una foto
-  const FullScreenPhoto = ({ photo, onClose }) => (
-    <div className="fixed inset-0 bg-black z-50 flex flex-col">
-      <div className="flex justify-between items-center p-4 bg-black bg-opacity-75">
-        <h3 className="text-white text-lg">{photo.label}</h3>
-        <button
-          onClick={onClose}
-          className="text-white hover:text-gray-300 transition-colors"
+  // Modal para vista completa de una foto con navegación
+  const FullScreenPhoto = ({ photo, onClose }) => {
+    const availablePhotos = photoData.filter(p => photos[p.key]);
+    const currentIndex = availablePhotos.findIndex(p => p.key === photo.key);
+    
+    const goToNext = () => {
+      const nextIndex = (currentIndex + 1) % availablePhotos.length;
+      setSelectedPhoto(availablePhotos[nextIndex]);
+    };
+    
+    const goToPrevious = () => {
+      const prevIndex = (currentIndex - 1 + availablePhotos.length) % availablePhotos.length;
+      setSelectedPhoto(availablePhotos[prevIndex]);
+    };
+
+    // Implementación básica de evento táctil para dispositivos móviles
+    const handleTouchStart = (e) => {
+      const touchStartX = e.touches[0].clientX;
+      e.currentTarget.setAttribute('data-touch-start-x', touchStartX);
+    };
+
+    const handleTouchEnd = (e) => {
+      if (!e.currentTarget.hasAttribute('data-touch-start-x')) return;
+      
+      const touchStartX = parseFloat(e.currentTarget.getAttribute('data-touch-start-x'));
+      const touchEndX = e.changedTouches[0].clientX;
+      const diff = touchEndX - touchStartX;
+      
+      // Si el deslizamiento es mayor a 50px, cambiamos de foto
+      if (Math.abs(diff) > 50) {
+        if (diff > 0) {
+          // Deslizamiento a la derecha -> foto anterior
+          goToPrevious();
+        } else {
+          // Deslizamiento a la izquierda -> foto siguiente
+          goToNext();
+        }
+      }
+      
+      e.currentTarget.removeAttribute('data-touch-start-x');
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black z-50 flex flex-col">
+        <div className="flex justify-between items-center p-4 bg-black bg-opacity-75">
+          <h3 className="text-white text-lg">{photo.label}</h3>
+          <button
+            onClick={onClose}
+            className="text-white hover:text-gray-300 transition-colors"
+          >
+            <X size={24} />
+          </button>
+        </div>
+        <div 
+          className="flex-1 flex items-center justify-center p-4 relative"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
         >
-          <X size={24} />
-        </button>
+          {/* Botón de navegación a la izquierda */}
+          <button 
+            onClick={goToPrevious}
+            className="absolute left-4 z-10 bg-black bg-opacity-50 p-2 rounded-full text-white hover:bg-opacity-70 transition-opacity"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
+          
+          <img
+            src={photos[photo.key].url}
+            alt={photo.alt}
+            className="max-h-full max-w-full object-contain"
+            draggable="false" // Evita conflictos con el gesto de deslizamiento
+          />
+          
+          {/* Botón de navegación a la derecha */}
+          <button 
+            onClick={goToNext}
+            className="absolute right-4 z-10 bg-black bg-opacity-50 p-2 rounded-full text-white hover:bg-opacity-70 transition-opacity"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </button>
+        </div>
+        
+        {/* Indicadores de navegación */}
+        <div className="flex justify-center p-4">
+          {availablePhotos.map((p, idx) => (
+            <button 
+              key={p.key}
+              onClick={() => setSelectedPhoto(p)}
+              className={`w-2 h-2 mx-1 rounded-full ${idx === currentIndex ? 'bg-white' : 'bg-gray-500'}`}
+            />
+          ))}
+        </div>
       </div>
-      <div className="flex-1 flex items-center justify-center p-4">
-        <img
-          src={photos[photo.key].url}
-          alt={photo.alt}
-          className="max-h-full max-w-full object-contain"
-        />
-      </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-40">
