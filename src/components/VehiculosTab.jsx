@@ -14,7 +14,8 @@ const VehiculosTab = ({
   onUpdateStatus, 
   onAssignDriver, 
   onDeleteVehicle,
-  setNotifications  // Nueva prop
+  setNotifications,
+  userInfo  // Agregamos userInfo a los props
 }) => {
   const [filters, setFilters] = useState({
     searchText: '',
@@ -50,8 +51,13 @@ const VehiculosTab = ({
     if (!selectedState || selectedState === '') {
       return [];
     }
-
-    return localVehicles.filter(vehicle => {
+  
+    // Si el usuario es socio, asegurarse de mostrar solo vehículos de su grupo
+    const vehiclesToFilter = userInfo.role === 'partner' 
+      ? localVehicles.filter(v => v.partnerGroup === userInfo.partnerGroup)
+      : localVehicles;
+  
+    return vehiclesToFilter.filter(vehicle => {
       // Filtrar por estado seleccionado (si no es 'Todos')
       if (selectedState !== 'Todos' && !vehicle.state.includes(selectedState)) {
         return false;
@@ -108,51 +114,54 @@ const VehiculosTab = ({
     });
 }, [localVehicles, filters, selectedState]);
 
-  const handleSubmit = async () => {
-    if (!newVehicle.brand || !newVehicle.model || !newVehicle.lotLocation || !newVehicle.auctionHouse) {
-      alert('Por favor complete los campos requeridos:\n- Marca\n- Modelo\n- Ubicación (Ciudad, Estado)\n- Casa de Subasta');
+const handleSubmit = async () => {
+  if (!newVehicle.brand || !newVehicle.model || !newVehicle.lotLocation || !newVehicle.auctionHouse) {
+    alert('Por favor complete los campos requeridos:\n- Marca\n- Modelo\n- Ubicación (Ciudad, Estado)\n- Casa de Subasta');
+    return;
+  }
+
+  try {
+    const [city, state] = newVehicle.lotLocation.split(',').map(s => s.trim());
+    
+    if (!city || !state) {
+      alert('La ubicación debe estar en formato: Ciudad, Estado');
       return;
     }
-  
-    try {
-      const [city, state] = newVehicle.lotLocation.split(',').map(s => s.trim());
-      
-      if (!city || !state) {
-        alert('La ubicación debe estar en formato: Ciudad, Estado');
-        return;
-      }
-  
-      const vehicleData = {
-        ...newVehicle,
-        city,
-        state,
-        lotLocation: `${city}, ${state}`,
-        status: 'pending',
-        clientId: newVehicle.clientId || null
-      };
-      
-      const createdVehicle = await onAddVehicle(vehicleData);
-      setLocalVehicles(prev => [...prev, createdVehicle]);
-      setIsFormOpen(false);
-  
-      setNewVehicle({
-        clientId: '',
-        brand: '',
-        model: '',
-        year: '',
-        LOT: '',
-        PIN: '',
-        auctionHouse: 'Copart',
-        lotLocation: '',
-        city: '',
-        state: '',
-        status: 'pending',
-        comments: ''
-      });
-    } catch (error) {
-      alert('Error al crear vehículo: ' + error.message);
-    }
-  };
+
+    const vehicleData = {
+      ...newVehicle,
+      city,
+      state,
+      lotLocation: `${city}, ${state}`,
+      status: 'pending',
+      clientId: newVehicle.clientId || null,
+      partnerGroup: userInfo?.partnerGroup || 'main'  // Añadimos el grupo del socio
+    };
+    
+    console.log('Creando vehículo con datos:', vehicleData);
+    
+    const createdVehicle = await onAddVehicle(vehicleData);
+    setLocalVehicles(prev => [...prev, createdVehicle]);
+    setIsFormOpen(false);
+
+    setNewVehicle({
+      clientId: '',
+      brand: '',
+      model: '',
+      year: '',
+      LOT: '',
+      PIN: '',
+      auctionHouse: 'Copart',
+      lotLocation: '',
+      city: '',
+      state: '',
+      status: 'pending',
+      comments: ''
+    });
+  } catch (error) {
+    alert('Error al crear vehículo: ' + error.message);
+  }
+};
 
   const handleInputChange = (field, value) => {
     if (field === 'LOT') {
@@ -505,6 +514,13 @@ VehiculosTab.propTypes = {
   onDeleteVehicle: PropTypes.func.isRequired,
   setVehicles: PropTypes.func.isRequired,
   setNotifications: PropTypes.func.isRequired,
+  userInfo: PropTypes.shape({
+    id: PropTypes.string,
+    username: PropTypes.string,
+    role: PropTypes.string,
+    partnerGroup: PropTypes.string,
+    isMainAdmin: PropTypes.bool
+  })
 };
 
 export default VehiculosTab;

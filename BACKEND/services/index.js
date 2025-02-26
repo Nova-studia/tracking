@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const Client = require('../models/Client');
 const Driver = require('../models/Driver');
 const Vehicle = require('../models/Vehicle');
+const authService = require('./authService');
 const User = require('../models/User');
 
 const clientService = {
@@ -225,5 +226,6 @@ const vehicleService = {
 module.exports = {
   clientService,
   driverService,
-  vehicleService
+  vehicleService,
+  authService
 };

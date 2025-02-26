@@ -79,6 +79,11 @@ const vehicleSchema = new mongoose.Schema({
     },
     default: 'pending'
   },
+  partnerGroup: {
+    type: String,
+    default: 'main', // Grupo al que pertenece el vehículo
+    required: true
+  },
   loadingPhotos: {
     frontPhoto: {
       url: String,
@@ -174,5 +179,6 @@ vehicleSchema.index({ createdAt: -1 });
 vehicleSchema.index({ LOT: 1 }, { unique: true, sparse: true });
 vehicleSchema.index({ PIN: 1 });
 vehicleSchema.index({ auctionHouse: 1 });
+vehicleSchema.index({ partnerGroup: 1 }); // Nuevo índice para búsquedas por grupo
 
 module.exports = mongoose.model('Vehicle', vehicleSchema);

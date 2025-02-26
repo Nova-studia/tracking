@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import ClientesTab from './ClientesTab';
 import DriversTab from './DriversTab';
 import VehiculosTab from './VehiculosTab';
+import PartnersTab from './PartnersTab'; // Nuevo import
 
 
 const API_URL = `${process.env.REACT_APP_API_URL}/api`;
@@ -13,6 +14,11 @@ const TransportesAdmin = ({ setNotifications }) => {
   const [activeTab, setActiveTab] = useState('vehicles');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [userInfo, setUserInfo] = useState(() => {
+    const userData = localStorage.getItem('userData');
+    return userData ? JSON.parse(userData) : {};
+  });
+  const [partners, setPartners] = useState([]);
 
   const getAuthHeaders = () => {
     const token = localStorage.getItem('token');
@@ -74,13 +80,35 @@ const TransportesAdmin = ({ setNotifications }) => {
       }
     };
   
+    const fetchPartners = async () => {
+      // Solo cargar socios si el usuario es admin principal
+      if (!userInfo.isMainAdmin) return [];
+      
+      try {
+        const response = await fetch(`${API_URL}/partners`, {
+          headers: getAuthHeaders()
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Error al obtener socios');
+        }
+        const data = await response.json();
+        setPartners(data);
+        return data;
+      } catch (error) {
+        console.error('Error fetching partners:', error);
+        return [];
+      }
+    };
+  
     const loadInitialData = async () => {
       try {
         setLoading(true);
         await Promise.all([
           fetchClients(),
           fetchDrivers(),
-          fetchVehicles()
+          fetchVehicles(),
+          fetchPartners() // Añadir esta llamada
         ]);
       } catch (err) {
         setError('Error al cargar los datos iniciales: ' + err.message);
@@ -91,7 +119,7 @@ const TransportesAdmin = ({ setNotifications }) => {
     };
   
     loadInitialData();
-  }, []);
+  }, [userInfo.isMainAdmin]); // Añadir esta dependencia
 
     const handleAddClient = async (newClient) => {
     try {
@@ -260,6 +288,99 @@ const TransportesAdmin = ({ setNotifications }) => {
     }
   };
 
+  const handleAddPartner = async (newPartner) => {
+    try {
+      const response = await fetch(`${API_URL}/partners`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(newPartner),
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al crear socio');
+      }
+      
+      const data = await response.json();
+      setPartners(prevPartners => [...prevPartners, data]);
+      return data;
+    } catch (error) {
+      console.error('Error adding partner:', error);
+      throw error;
+    }
+  };
+  
+  const handleTogglePartnerStatus = async (partnerId) => {
+    try {
+      const response = await fetch(`${API_URL}/partners/${partnerId}/status`, {
+        method: 'PATCH',
+        headers: getAuthHeaders()
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al cambiar estado del socio');
+      }
+      
+      const updatedPartner = await response.json();
+      setPartners(prevPartners =>
+        prevPartners.map(partner =>
+          partner._id === partnerId ? updatedPartner : partner
+        )
+      );
+      return updatedPartner;
+    } catch (error) {
+      console.error('Error toggling partner status:', error);
+      throw error;
+    }
+  };
+  
+  const handleUpdatePartner = async (partnerId, updateData) => {
+    try {
+      const response = await fetch(`${API_URL}/partners/${partnerId}`, {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(updateData),
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al actualizar socio');
+      }
+      
+      const updatedPartner = await response.json();
+      setPartners(prevPartners =>
+        prevPartners.map(partner =>
+          partner._id === partnerId ? updatedPartner : partner
+        )
+      );
+      return updatedPartner;
+    } catch (error) {
+      console.error('Error updating partner:', error);
+      throw error;
+    }
+  };
+  
+  const handleDeletePartner = async (partnerId) => {
+    try {
+      const response = await fetch(`${API_URL}/partners/${partnerId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al eliminar socio');
+      }
+  
+      setPartners(prevPartners => prevPartners.filter(partner => partner._id !== partnerId));
+      return true;
+    } catch (error) {
+      console.error('Error deleting partner:', error);
+      throw error;
+    }
+  };
+
   const handleAssignDriver = async (vehicleId, driverId) => {
     try {
       // Primero asignamos el conductor
@@ -321,54 +442,66 @@ const TransportesAdmin = ({ setNotifications }) => {
         <header className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900 mb-6">Sistema de Transportes</h1>
           <div className="flex space-x-4 bg-slate-100 p-1 rounded-lg">
-            <button
-              onClick={() => setActiveTab('vehicles')}
-              className={`px-4 py-2.5 rounded-md flex items-center flex-1 justify-center transition-all ${
-                activeTab === 'vehicles' 
-                  ? 'bg-white text-slate-900 shadow-sm' 
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-              }`}
-            >
-              Vehículos
-            </button>
-            <button
-              onClick={() => setActiveTab('clients')}
-              className={`px-4 py-2.5 rounded-md flex items-center flex-1 justify-center transition-all ${
-                activeTab === 'clients' 
-                  ? 'bg-white text-slate-900 shadow-sm' 
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-              }`}
-            >
-              Clientes
-            </button>
-            <button
-              onClick={() => setActiveTab('drivers')}
-              className={`px-4 py-2.5 rounded-md flex items-center flex-1 justify-center transition-all ${
-                activeTab === 'drivers' 
-                  ? 'bg-white text-slate-900 shadow-sm' 
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-              }`}
-            >
-              Conductores
-            </button>
-          </div>
+  <button
+    onClick={() => setActiveTab('vehicles')}
+    className={`px-4 py-2.5 rounded-md flex items-center flex-1 justify-center transition-all ${
+      activeTab === 'vehicles' 
+        ? 'bg-white text-slate-900 shadow-sm' 
+        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+    }`}
+  >
+    Vehículos
+  </button>
+  <button
+    onClick={() => setActiveTab('clients')}
+    className={`px-4 py-2.5 rounded-md flex items-center flex-1 justify-center transition-all ${
+      activeTab === 'clients' 
+        ? 'bg-white text-slate-900 shadow-sm' 
+        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+    }`}
+  >
+    Clientes
+  </button>
+  <button
+    onClick={() => setActiveTab('drivers')}
+    className={`px-4 py-2.5 rounded-md flex items-center flex-1 justify-center transition-all ${
+      activeTab === 'drivers' 
+        ? 'bg-white text-slate-900 shadow-sm' 
+        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+    }`}
+  >
+    Conductores
+  </button>
+  {userInfo.isMainAdmin && (
+    <button
+      onClick={() => setActiveTab('partners')}
+      className={`px-4 py-2.5 rounded-md flex items-center flex-1 justify-center transition-all ${
+        activeTab === 'partners' 
+          ? 'bg-white text-slate-900 shadow-sm' 
+          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+      }`}
+    >
+      Socios
+    </button>
+  )}
+</div>
         </header>
 
         {activeTab === 'clients' && (
-          <ClientesTab 
-            clients={clients} 
-            onAddClient={handleAddClient} 
-          />
-        )}
+  <ClientesTab 
+    clients={clients} 
+    onAddClient={handleAddClient} 
+  />
+)}
 
-        {activeTab === 'drivers' && (
-          <DriversTab 
-            drivers={drivers} 
-            onAddDriver={handleAddDriver}
-            onUpdateCredentials={handleUpdateCredentials}
-            onToggleStatus={handleToggleStatus}
-          />
-        )}
+{activeTab === 'drivers' && (
+  <DriversTab 
+    drivers={drivers} 
+    onAddDriver={handleAddDriver}
+    onUpdateCredentials={handleUpdateCredentials}
+    onToggleStatus={handleToggleStatus}
+  />
+)}
 
 {activeTab === 'vehicles' && (
   <VehiculosTab 
@@ -380,7 +513,18 @@ const TransportesAdmin = ({ setNotifications }) => {
     onUpdateStatus={handleUpdateStatus}
     onAssignDriver={handleAssignDriver}
     onDeleteVehicle={handleDeleteVehicle}
-    setNotifications={setNotifications}  // Agregar esta línea
+    setNotifications={setNotifications}
+    userInfo={userInfo} // Pasar información del usuario
+  />
+)}
+
+{activeTab === 'partners' && userInfo.isMainAdmin && (
+  <PartnersTab 
+    partners={partners}
+    onAddPartner={handleAddPartner}
+    onToggleStatus={handleTogglePartnerStatus}
+    onUpdatePartner={handleUpdatePartner}
+    onDeletePartner={handleDeletePartner}
   />
 )}
       </div>

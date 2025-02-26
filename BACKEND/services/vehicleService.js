@@ -2,7 +2,7 @@ const Vehicle = require('../models/Vehicle');
 const { cloudinary } = require('../config/cloudinary');
 
 const vehicleService = {
-  async createVehicle(vehicleData) {
+  async createVehicle(vehicleData, partnerGroup = 'main') {
     try {
       console.log('Creating vehicle with data:', vehicleData);
       
@@ -11,7 +11,8 @@ const vehicleService = {
         lotLocation: vehicleData.lotLocation ? vehicleData.lotLocation.toUpperCase() : 
                     `${vehicleData.city}, ${vehicleData.state}`.toUpperCase(),
         PIN: vehicleData.PIN,
-        auctionHouse: vehicleData.auctionHouse
+        auctionHouse: vehicleData.auctionHouse,
+        partnerGroup // Asignamos el grupo del socio/admin
       });
       
       if (!vehicle.auctionHouse) {
@@ -28,32 +29,71 @@ const vehicleService = {
     }
   },
 
-  async getAllVehicles() {
-    try {
-      const vehicles = await Vehicle.find()
-        .populate('clientId')
-        .populate('driverId')
-        .lean()
-        .sort({ createdAt: -1 });
+  // En vehicleService.js, línea aproximada 64
+  // En vehicleService.js, reemplaza el método getAllVehicles
+async getAllVehicles(partnerGroup = null, isMainAdmin = false) {
+  try {
+    // Filtro base
+    const filter = {};
+    
+    // Si no es admin principal y se especifica un grupo, filtramos por grupo
+    if (!isMainAdmin && partnerGroup) {
+      filter.partnerGroup = partnerGroup;
+    }
+    
+    console.log('Filtro aplicado a vehículos:', filter); // Para debugging
+    
+    const vehicles = await Vehicle.find(filter)
+      .populate('clientId')
+      .populate('driverId')
+      .lean()
+      .sort({ createdAt: -1 });
 
-      return vehicles.map(vehicle => {
-        if (vehicle.lotLocation) {
-          const [city, state] = vehicle.lotLocation.split(',').map(s => s.trim());
-          return {
-            ...vehicle,
-            city,
-            state
-          };
-        }
-        return vehicle;
-      });
+    console.log(`Se encontraron ${vehicles.length} vehículos`); // Para debugging
+    
+    return vehicles.map(vehicle => {
+      if (vehicle.lotLocation) {
+        const [city, state] = vehicle.lotLocation.split(',').map(s => s.trim());
+        return {
+          ...vehicle,
+          city,
+          state
+        };
+      }
+      return vehicle;
+    });
+  } catch (error) {
+    console.error('Error getting vehicles:', error);
+    throw new Error(`Error al obtener vehículos: ${error.message}`);
+  }
+},
+
+  async getVehicle(vehicleId, partnerGroup = null, isMainAdmin = false) {
+    try {
+      // Construir la consulta base
+      const query = { _id: vehicleId };
+      
+      // Si no es admin principal, filtramos por grupo
+      if (!isMainAdmin && partnerGroup) {
+        query.partnerGroup = partnerGroup;
+      }
+      
+      const vehicle = await Vehicle.findOne(query)
+        .populate('clientId')
+        .populate('driverId');
+        
+      if (!vehicle) {
+        throw new Error('Vehículo no encontrado o no tiene permisos para acceder a él');
+      }
+      
+      return vehicle;
     } catch (error) {
-      console.error('Error getting vehicles:', error);
-      throw new Error(`Error al obtener vehículos: ${error.message}`);
+      console.error('Error getting vehicle:', error);
+      throw new Error(`Error al obtener vehículo: ${error.message}`);
     }
   },
 
-  async updateVehicleStatus(vehicleId, newStatus) {
+  async updateVehicleStatus(vehicleId, newStatus, partnerGroup = null, isMainAdmin = false) {
     try {
       console.log('Updating vehicle status:', { vehicleId, newStatus });
       
@@ -62,13 +102,15 @@ const vehicleService = {
         throw new Error(`Estado inválido: ${newStatus}`);
       }
 
+      // Primero verificamos si el usuario tiene acceso al vehículo
+      const vehicleToUpdate = await this.getVehicle(vehicleId, partnerGroup, isMainAdmin);
+      
       if (newStatus === 'loading') {
-        const vehicle = await Vehicle.findById(vehicleId);
-        if (!vehicle.loadingPhotos || 
-            !vehicle.loadingPhotos.frontPhoto || 
-            !vehicle.loadingPhotos.backPhoto || 
-            !vehicle.loadingPhotos.leftPhoto || 
-            !vehicle.loadingPhotos.rightPhoto) {
+        if (!vehicleToUpdate.loadingPhotos || 
+            !vehicleToUpdate.loadingPhotos.frontPhoto || 
+            !vehicleToUpdate.loadingPhotos.backPhoto || 
+            !vehicleToUpdate.loadingPhotos.leftPhoto || 
+            !vehicleToUpdate.loadingPhotos.rightPhoto) {
           throw new Error('Se requieren todas las fotos antes de cambiar el estado a loading');
         }
       }
@@ -96,7 +138,7 @@ const vehicleService = {
     }
   },
 
-  async updateVehicleStatusWithComment(vehicleId, status, comment) {
+  async updateVehicleStatusWithComment(vehicleId, status, comment, partnerGroup = null, isMainAdmin = false) {
     try {
       console.log('Updating vehicle status with comment:', { vehicleId, status, comment });
       
@@ -105,13 +147,15 @@ const vehicleService = {
         throw new Error(`Estado inválido: ${status}`);
       }
 
+      // Verificamos acceso al vehículo
+      const vehicleToUpdate = await this.getVehicle(vehicleId, partnerGroup, isMainAdmin);
+
       if (status === 'loading') {
-        const vehicle = await Vehicle.findById(vehicleId);
-        if (!vehicle.loadingPhotos || 
-            !vehicle.loadingPhotos.frontPhoto || 
-            !vehicle.loadingPhotos.backPhoto || 
-            !vehicle.loadingPhotos.leftPhoto || 
-            !vehicle.loadingPhotos.rightPhoto) {
+        if (!vehicleToUpdate.loadingPhotos || 
+            !vehicleToUpdate.loadingPhotos.frontPhoto || 
+            !vehicleToUpdate.loadingPhotos.backPhoto || 
+            !vehicleToUpdate.loadingPhotos.leftPhoto || 
+            !vehicleToUpdate.loadingPhotos.rightPhoto) {
           throw new Error('Se requieren todas las fotos antes de cambiar el estado a loading');
         }
       }
@@ -146,8 +190,11 @@ const vehicleService = {
     }
   },
 
-  async uploadVehiclePhotos(vehicleId, files) {
+  async uploadVehiclePhotos(vehicleId, files, partnerGroup = null, isMainAdmin = false) {
     try {
+      // Verificamos acceso al vehículo
+      await this.getVehicle(vehicleId, partnerGroup, isMainAdmin);
+      
       const photos = {};
   
       if (files) {
@@ -200,8 +247,11 @@ const vehicleService = {
     }
   },
 
-  async updateVehicleClient(vehicleId, clientId) {
+  async updateVehicleClient(vehicleId, clientId, partnerGroup = null, isMainAdmin = false) {
     try {
+      // Verificamos acceso al vehículo
+      await this.getVehicle(vehicleId, partnerGroup, isMainAdmin);
+      
       const vehicle = await Vehicle.findByIdAndUpdate(
         vehicleId,
         { 
@@ -224,8 +274,11 @@ const vehicleService = {
     }
   },
   
-  async assignDriver(vehicleId, driverId) {
+  async assignDriver(vehicleId, driverId, partnerGroup = null, isMainAdmin = false) {
     try {
+      // Verificamos acceso al vehículo
+      await this.getVehicle(vehicleId, partnerGroup, isMainAdmin);
+      
       const vehicle = await Vehicle.findByIdAndUpdate(
         vehicleId,
         { 
@@ -245,6 +298,30 @@ const vehicleService = {
       return vehicle;
     } catch (error) {
       throw new Error(`Error al asignar conductor: ${error.message}`);
+    }
+  },
+  
+  async deleteVehicle(vehicleId, partnerGroup = null, isMainAdmin = false) {
+    try {
+      // Verificamos acceso al vehículo
+      await this.getVehicle(vehicleId, partnerGroup, isMainAdmin);
+      
+      // Eliminamos el vehículo
+      const deletedVehicle = await Vehicle.findByIdAndDelete(vehicleId);
+      
+      if (!deletedVehicle) {
+        throw new Error('Vehículo no encontrado');
+      }
+      
+      // Si tenía fotos, las eliminamos de Cloudinary
+      if (deletedVehicle.loadingPhotos) {
+        await this.deleteOldPhotos(deletedVehicle.loadingPhotos);
+      }
+      
+      return { success: true, message: 'Vehículo eliminado correctamente' };
+    } catch (error) {
+      console.error('Error deleting vehicle:', error);
+      throw new Error(`Error al eliminar vehículo: ${error.message}`);
     }
   }
 };
