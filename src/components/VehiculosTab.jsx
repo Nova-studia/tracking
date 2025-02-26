@@ -23,7 +23,7 @@ const VehiculosTab = ({
     dateRange: 'all'
   });
   
-  const [selectedState, setSelectedState] = useState('');
+  const [selectedState, setSelectedState] = useState('Todos');
   const [newVehicle, setNewVehicle] = useState({
     clientId: '',
     brand: '',
