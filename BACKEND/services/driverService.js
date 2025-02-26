@@ -34,49 +34,57 @@ const driverService = {
   async createDriver(driverData) {
     const session = await mongoose.startSession();
     session.startTransaction();
-
+  
     try {
       // Validar datos antes de crear
       await this.validateDriverData(driverData);
-
+  
       // Preparar datos de usuario
       const username = driverData.username || driverData.phone;
       const password = driverData.password || '1234';
       const hashedPassword = await bcrypt.hash(password, 10);
-
-      console.log('📝 Creando usuario para driver:', { username });
-
+  
+      console.log('📝 Creando usuario para driver:', { 
+        username, 
+        partnerGroup: driverData.partnerGroup || 'main' 
+      });
+  
       // Crear usuario
       const user = new User({
         username,
         password: hashedPassword,
         role: 'driver',
-        isActive: true
+        state: driverData.state || '',
+        isActive: true,
+        partnerGroup: driverData.partnerGroup || 'main' // Asegurarnos de asignar el grupo
       });
       await user.save({ session });
-
-      console.log('✅ Usuario creado:', user._id);
-
+  
+      console.log('✅ Usuario creado:', user._id, 'con grupo:', user.partnerGroup);
+  
       // Crear driver
       const driver = new Driver({
         name: driverData.name.trim(),
         phone: driverData.phone.trim(),
         license: driverData.license ? driverData.license.trim() : undefined,
         username: username,
+        state: driverData.state || '',
         isActive: true,
-        userId: user._id
+        userId: user._id,
+        partnerGroup: driverData.partnerGroup || 'main' // También asignar al conductor el grupo
       });
       await driver.save({ session });
-
-      console.log('✅ Driver creado:', driver._id);
-
+  
+      console.log('✅ Driver creado:', driver._id, 'con grupo:', driver.partnerGroup);
+  
       await session.commitTransaction();
       
       // Retornar datos necesarios
       return {
         ...driver.toObject(),
         username,
-        tempPassword: password // Solo se envía en la creación inicial
+        tempPassword: password, // Solo se envía en la creación inicial
+        partnerGroup: driver.partnerGroup // Asegurar que se incluya en la respuesta
       };
     } catch (error) {
       console.error('❌ Error en createDriver:', error);
@@ -89,11 +97,25 @@ const driverService = {
 
   async getAllDrivers() {
     try {
+      // Incluir toda la información de usuario y asegurarnos de tener el partnerGroup
       const drivers = await Driver.find()
-        .populate('userId', '-password')
+        .populate({
+          path: 'userId',
+          select: '-password'
+        })
         .sort({ createdAt: -1 });
-
-      console.log(`📋 Obtenidos ${drivers.length} conductores`);
+  
+      console.log(`📋 Obtenidos ${drivers.length} conductores en total`);
+      
+      // Log para depuración
+      drivers.forEach(driver => {
+        const userPartnerGroup = driver.userId && driver.userId.partnerGroup ? 
+          driver.userId.partnerGroup : 'no definido';
+        const driverPartnerGroup = driver.partnerGroup || 'no definido';
+        
+        console.log(`Driver: ${driver.name}, Grupo: ${driverPartnerGroup}, Usuario Grupo: ${userPartnerGroup}`);
+      });
+      
       return drivers;
     } catch (error) {
       console.error('❌ Error en getAllDrivers:', error);

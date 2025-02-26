@@ -145,6 +145,7 @@ app.get('/api/clients', auth, async (req, res) => {
 });
 
 // Rutas de conductores
+// Rutas de conductores
 app.post('/api/drivers', auth, async (req, res) => {
   try {
     // Verificar que sea admin o socio
@@ -152,9 +153,10 @@ app.post('/api/drivers', auth, async (req, res) => {
       return res.status(403).json({ message: 'No autorizado' });
     }
     
-    // Si es socio, asignar el mismo grupo al conductor
-    if (req.user.role === 'partner') {
+    // Si es socio o admin NO principal, asignar el mismo grupo al conductor
+    if (req.user.role === 'partner' || (req.user.role === 'admin' && !req.user.isMainAdmin)) {
       req.body.partnerGroup = req.user.partnerGroup;
+      console.log(`Asignando grupo ${req.user.partnerGroup} al nuevo conductor`);
     }
     
     const driver = await driverService.createDriver(req.body);
@@ -177,14 +179,35 @@ app.get('/api/drivers', auth, async (req, res) => {
       return res.json(drivers);
     }
     
-    // Si es socio, filtrar por su grupo
+    // Si es socio o admin regular, filtrar por su grupo
     const drivers = await driverService.getAllDrivers();
-    const filteredDrivers = drivers.filter(driver => 
-      driver.partnerGroup === req.user.partnerGroup
-    );
+    console.log(`Filtrando conductores por grupo: ${req.user.partnerGroup}`);
     
+    // Filtrar por partnerGroup, considerando tanto el campo en driver como en userId
+    const filteredDrivers = drivers.filter(driver => {
+      // Verificar el partnerGroup del conductor directamente
+      const driverGroup = driver.partnerGroup;
+      
+      // Verificar el partnerGroup del usuario asociado
+      const userGroup = driver.userId && typeof driver.userId === 'object' ? 
+        driver.userId.partnerGroup : null;
+      
+      // Verificar si alguno coincide con el grupo del socio
+      const matchesGroup = 
+        (driverGroup && driverGroup === req.user.partnerGroup) || 
+        (userGroup && userGroup === req.user.partnerGroup);
+      
+      if (matchesGroup) {
+        console.log(`✅ Driver encontrado para grupo ${req.user.partnerGroup}: ${driver.name}`);
+      }
+      
+      return matchesGroup;
+    });
+    
+    console.log(`Se encontraron ${filteredDrivers.length} conductores para el grupo ${req.user.partnerGroup}`);
     res.json(filteredDrivers);
   } catch (error) {
+    console.error('❌ Error en GET /api/drivers:', error);
     res.status(500).json({ message: error.message });
   }
 });

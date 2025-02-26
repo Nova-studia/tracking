@@ -56,6 +56,7 @@ const TransportesAdmin = ({ setNotifications }) => {
           throw new Error(errorData.message || 'Error al obtener conductores');
         }
         const data = await response.json();
+        console.log('Conductores recibidos:', data.length);
         setDrivers(data);
       } catch (error) {
         console.error('Error fetching drivers:', error);

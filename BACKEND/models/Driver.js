@@ -15,9 +15,8 @@ const driverSchema = new mongoose.Schema({
     required: [true, 'El nombre de usuario es requerido'],
     unique: true
   },
-  state:{
+  state: {
     type: String,
-    
   },
   isActive: {
     type: Boolean,
@@ -27,6 +26,10 @@ const driverSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
+  },
+  partnerGroup: {
+    type: String,
+    default: 'main'
   }
 }, {
   timestamps: true
