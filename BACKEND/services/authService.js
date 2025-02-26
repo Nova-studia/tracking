@@ -6,14 +6,24 @@ const Driver = require('../models/Driver');
 const authService = {
   async generateToken(user) {
     try {
+      // Buscar driverId si es conductor
+      let driverId = null;
+      if (user.role === 'driver') {
+        const driver = await Driver.findOne({ userId: user._id });
+        if (driver) {
+          driverId = driver._id;
+        }
+      }
+  
       const payload = {
         id: user._id,
         username: user.username,
         role: user.role,
         partnerGroup: user.partnerGroup || 'main',
-        isMainAdmin: user.isMainAdmin || false
+        isMainAdmin: user.isMainAdmin || false,
+        driverId: driverId // Incluir driverId en el token si es un conductor
       };
-
+  
       return jwt.sign(payload, process.env.JWT_SECRET, {
         expiresIn: '1d' // Token expira en 1 día
       });
@@ -30,21 +40,21 @@ const authService = {
       if (!user) {
         throw new Error('Credenciales inválidas');
       }
-
+  
       // Verificar si el usuario está activo
       if (!user.isActive) {
         throw new Error('Usuario inactivo. Contacte al administrador');
       }
-
+  
       // Verificar contraseña
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) {
         throw new Error('Credenciales inválidas');
       }
-
+  
       // Generar token JWT
       const token = await this.generateToken(user);
-
+  
       // Construir objeto de respuesta según el rol
       let userData = {
         id: user._id,
@@ -54,7 +64,7 @@ const authService = {
         partnerGroup: user.partnerGroup || 'main',
         isMainAdmin: user.isMainAdmin || false
       };
-
+  
       // Si es un conductor, añadir información específica
       if (user.role === 'driver') {
         const driver = await Driver.findOne({ userId: user._id });
@@ -66,7 +76,7 @@ const authService = {
           };
         }
       }
-
+  
       return {
         token,
         user: userData

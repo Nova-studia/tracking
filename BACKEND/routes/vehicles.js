@@ -37,12 +37,46 @@ router.get('/', auth, extractUserInfo, async (req, res) => {
     
     // Para conductores, filtramos por los vehículos asignados a ellos
     if (req.user.role === 'driver') {
-      let vehicles = await vehicleService.getAllVehicles(null, true); // Obtener todos los vehículos primero
-      vehicles = vehicles.filter(v => 
-        v.driverId && 
-        (v.driverId._id?.toString() === req.user.driverId?.toString() || 
-         v.driverId?.toString() === req.user.driverId?.toString())
-      );
+      console.log(`Filtrando vehículos para el conductor: ${req.user.username}, ID: ${req.user.id}`);
+      
+      // Obtener todos los vehículos
+      let vehicles = await vehicleService.getAllVehicles(null, true);
+      
+      // Verificar si el ID del conductor está en el token de usuario
+      if (!req.user.driverId) {
+        // Si no está, intentar buscarlo en la base de datos
+        const Driver = require('../models/Driver');
+        const driver = await Driver.findOne({ userId: req.user.id });
+        
+        if (driver) {
+          req.user.driverId = driver._id;
+          console.log(`Encontrado ID del conductor: ${driver._id}`);
+        } else {
+          console.log('No se pudo encontrar el ID del conductor');
+          return res.json([]); // No hay vehículos asignados
+        }
+      }
+      
+      // Filtrar vehículos asignados a este conductor
+      vehicles = vehicles.filter(v => {
+        if (!v.driverId) return false;
+        
+        const driverIdString = typeof v.driverId === 'object' 
+          ? v.driverId._id?.toString() 
+          : v.driverId?.toString();
+          
+        const userDriverIdString = req.user.driverId?.toString();
+        
+        const isAssigned = driverIdString === userDriverIdString;
+        
+        if (isAssigned) {
+          console.log(`Vehículo asignado encontrado: ${v.brand} ${v.model}, LOT: ${v.LOT}`);
+        }
+        
+        return isAssigned;
+      });
+      
+      console.log(`Total de vehículos asignados a este conductor: ${vehicles.length}`);
       return res.json(vehicles);
     }
     
@@ -56,6 +90,7 @@ router.get('/', auth, extractUserInfo, async (req, res) => {
     const vehicles = await vehicleService.getAllVehicles(partnerGroup, false);
     res.json(vehicles);
   } catch (error) {
+    console.error('Error obteniendo vehículos:', error);
     res.status(400).json({ message: error.message });
   }
 });
