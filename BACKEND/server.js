@@ -267,7 +267,43 @@ app.get('/api/states', async (req, res) => {
 });
 
 // Rutas de notificaciones
-// Agregar después de la línea 329 en server.js (después de la ruta GET /api/notifications)
+// Ruta para obtener notificaciones según rol y grupo
+app.get('/api/notifications', auth, async (req, res) => {
+  try {
+    let filter = {};
+    
+    // Si es superadmin, puede ver todas las notificaciones (no aplicamos filtro)
+    if (req.user.isMainAdmin) {
+      // No aplicamos filtro, puede ver todo
+      console.log('Usuario es superadmin, mostrando todas las notificaciones');
+    } 
+    // Si es admin normal o partner, solo ve notificaciones de su grupo
+    else if (req.user.role === 'admin' || req.user.role === 'partner') {
+      filter = { partnerGroup: req.user.partnerGroup };
+      console.log(`Usuario es ${req.user.role}, filtrando por grupo: ${req.user.partnerGroup}`);
+    } 
+    // Si es conductor, solo ve sus propias notificaciones
+    else {
+      filter = { userId: req.user.id };
+      console.log(`Usuario es conductor, filtrando por userId: ${req.user.id}`);
+    }
+    
+    console.log('Filtro de notificaciones aplicado:', filter);
+    
+    const notifications = await Notification.find(filter)
+      .sort({ createdAt: -1 })
+      .populate('userId', 'username role partnerGroup')
+      .populate('vehicleId', 'LOT brand model');
+    
+    console.log(`Se encontraron ${notifications.length} notificaciones`);
+    res.json(notifications);
+  } catch (error) {
+    console.error('Error obteniendo notificaciones:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Ruta para ver todas las notificaciones (solo para superadmin)
 app.get('/api/notifications/all', auth, async (req, res) => {
   try {
     // Verificar que el usuario sea admin
@@ -291,12 +327,16 @@ app.post('/api/notifications', auth, async (req, res) => {
   try {
     const notification = new Notification({
       userId: req.user.id,
+      partnerGroup: req.user.partnerGroup || 'main', // Aseguramos que se guarde el grupo
       ...req.body
     });
+    
+    console.log(`Creando notificación para usuario ${req.user.username} del grupo ${req.user.partnerGroup}`);
     
     await notification.save();
     res.status(201).json(notification);
   } catch (error) {
+    console.error('Error creando notificación:', error);
     res.status(400).json({ message: error.message });
   }
 });

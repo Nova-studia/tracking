@@ -1,5 +1,6 @@
 const Vehicle = require('../models/Vehicle');
 const { cloudinary } = require('../config/cloudinary');
+const Notification = require('../models/Notification');
 
 const vehicleService = {
   async createVehicle(vehicleData, partnerGroup = 'main') {
@@ -29,82 +30,80 @@ const vehicleService = {
     }
   },
 
-  // En vehicleService.js, línea aproximada 64
-  // En vehicleService.js, reemplaza el método getAllVehicles
-async getAllVehicles(partnerGroup = null, isMainAdmin = false) {
-  try {
-    // Filtro base
-    const filter = {};
-    
-    // Si no es admin principal y se especifica un grupo, filtramos por grupo
-    if (!isMainAdmin && partnerGroup) {
-      filter.partnerGroup = partnerGroup;
-    }
-    
-    console.log('Filtro aplicado a vehículos:', filter); // Para debugging
-    
-    const vehicles = await Vehicle.find(filter)
-      .populate('clientId')
-      .populate('driverId')
-      .lean()
-      .sort({ createdAt: -1 });
-
-    console.log(`Se encontraron ${vehicles.length} vehículos`); // Para debugging
-    
-    return vehicles.map(vehicle => {
-      if (vehicle.lotLocation) {
-        const [city, state] = vehicle.lotLocation.split(',').map(s => s.trim());
-        return {
-          ...vehicle,
-          city,
-          state
-        };
+  async getAllVehicles(partnerGroup = null, isMainAdmin = false) {
+    try {
+      // Filtro base
+      const filter = {};
+      
+      // Si no es admin principal y se especifica un grupo, filtramos por grupo
+      if (!isMainAdmin && partnerGroup) {
+        filter.partnerGroup = partnerGroup;
       }
-      return vehicle;
-    });
-  } catch (error) {
-    console.error('Error getting vehicles:', error);
-    throw new Error(`Error al obtener vehículos: ${error.message}`);
-  }
-},
+      
+      console.log('Filtro aplicado a vehículos:', filter); // Para debugging
+      
+      const vehicles = await Vehicle.find(filter)
+        .populate('clientId')
+        .populate('driverId')
+        .lean()
+        .sort({ createdAt: -1 });
 
-async getVehicle(vehicleId, partnerGroup = null, isMainAdmin = false, userId = null, userRole = null) {
-  try {
-    // Si es un conductor, verificar directamente por ID
-    if (userRole === 'driver') {
-      const vehicle = await Vehicle.findById(vehicleId)
+      console.log(`Se encontraron ${vehicles.length} vehículos`); // Para debugging
+      
+      return vehicles.map(vehicle => {
+        if (vehicle.lotLocation) {
+          const [city, state] = vehicle.lotLocation.split(',').map(s => s.trim());
+          return {
+            ...vehicle,
+            city,
+            state
+          };
+        }
+        return vehicle;
+      });
+    } catch (error) {
+      console.error('Error getting vehicles:', error);
+      throw new Error(`Error al obtener vehículos: ${error.message}`);
+    }
+  },
+
+  async getVehicle(vehicleId, partnerGroup = null, isMainAdmin = false, userId = null, userRole = null) {
+    try {
+      // Si es un conductor, verificar directamente por ID
+      if (userRole === 'driver') {
+        const vehicle = await Vehicle.findById(vehicleId)
+          .populate('clientId')
+          .populate('driverId');
+          
+        if (!vehicle) {
+          throw new Error('Vehículo no encontrado');
+        }
+        
+        return vehicle;
+      }
+      
+      // Consulta base para otros roles
+      const query = { _id: vehicleId };
+      
+      // Si no es admin principal, filtramos por grupo
+      if (!isMainAdmin && partnerGroup) {
+        query.partnerGroup = partnerGroup;
+      }
+      
+      const vehicle = await Vehicle.findOne(query)
         .populate('clientId')
         .populate('driverId');
         
       if (!vehicle) {
-        throw new Error('Vehículo no encontrado');
+        throw new Error('Vehículo no encontrado o no tiene permisos para acceder a él');
       }
       
       return vehicle;
+    } catch (error) {
+      console.error('Error getting vehicle:', error);
+      throw new Error(`Error al obtener vehículo: ${error.message}`);
     }
-    
-    // Consulta base para otros roles
-    const query = { _id: vehicleId };
-    
-    // Si no es admin principal, filtramos por grupo
-    if (!isMainAdmin && partnerGroup) {
-      query.partnerGroup = partnerGroup;
-    }
-    
-    const vehicle = await Vehicle.findOne(query)
-      .populate('clientId')
-      .populate('driverId');
-      
-    if (!vehicle) {
-      throw new Error('Vehículo no encontrado o no tiene permisos para acceder a él');
-    }
-    
-    return vehicle;
-  } catch (error) {
-    console.error('Error getting vehicle:', error);
-    throw new Error(`Error al obtener vehículo: ${error.message}`);
-  }
-},
+  },
 
   async updateVehicleStatus(vehicleId, newStatus, partnerGroup = null, isMainAdmin = false) {
     try {
@@ -195,6 +194,24 @@ async getVehicle(vehicleId, partnerGroup = null, isMainAdmin = false, userId = n
       if (!vehicle) {
         throw new Error('Vehículo no encontrado');
       }
+      
+      // Si hay cambio de estado, crear notificación
+      if (status !== vehicleToUpdate.status) {
+        try {
+          const notification = new Notification({
+            userId: userId,
+            vehicleId: vehicleId,
+            partnerGroup: partnerGroup || 'main', // Guardar el grupo del partner
+            lotInfo: vehicle.LOT || 'N/A',
+            message: `Estado actualizado: ${vehicleToUpdate.status} → ${status}. ${comment}`,
+          });
+          await notification.save();
+          console.log('Notificación creada para cambio de estado');
+        } catch (notificationError) {
+          console.error('Error creando notificación:', notificationError);
+          // No interrumpimos el flujo principal si falla la notificación
+        }
+      }
   
       return vehicle;
     } catch (error) {
@@ -206,7 +223,7 @@ async getVehicle(vehicleId, partnerGroup = null, isMainAdmin = false, userId = n
   async uploadVehiclePhotos(vehicleId, files, partnerGroup = null, isMainAdmin = false, userId = null, userRole = null) {
     try {
       // Verificamos acceso al vehículo
-      await this.getVehicle(vehicleId, partnerGroup, isMainAdmin, userId, userRole);
+      const vehicleToUpdate = await this.getVehicle(vehicleId, partnerGroup, isMainAdmin, userId, userRole);
       
       const photos = {};
       const { bufferToStream } = require('../config/cloudinary');
@@ -272,6 +289,23 @@ async getVehicle(vehicleId, partnerGroup = null, isMainAdmin = false, userId = n
         { loadingPhotos: photos },
         { new: true }
       ).populate(['clientId', 'driverId']);
+      
+      // Crear notificación de subida de fotos
+      try {
+        const notification = new Notification({
+          userId: userId,
+          vehicleId: vehicleId,
+          partnerGroup: partnerGroup || 'main', // Guardar el grupo del partner
+          lotInfo: vehicle.LOT || 'N/A',
+          message: `Fotos subidas para el vehículo`,
+          image: photos.frontPhoto?.url || null, // Guardar una de las imágenes como referencia
+        });
+        await notification.save();
+        console.log('Notificación creada para subida de fotos');
+      } catch (notificationError) {
+        console.error('Error creando notificación:', notificationError);
+        // No interrumpimos el flujo principal si falla la notificación
+      }
   
       return vehicle;
     } catch (error) {
