@@ -18,13 +18,14 @@ const auth = (req, res, next) => {
     console.log('Token decodificado:', verified); // Importante: agregar este log
     
     // Añadir datos del usuario al objeto request para usar en rutas protegidas
-    req.user = {
-      id: verified.id,
-      username: verified.username,
-      role: verified.role,
-      partnerGroup: verified.partnerGroup || 'main',
-      isMainAdmin: verified.isMainAdmin || false
-    };
+req.user = {
+  id: verified.id,
+  username: verified.username,
+  role: verified.role,
+  partnerGroup: verified.partnerGroup || 'main',
+  isMainAdmin: verified.isMainAdmin || false,
+  driverId: verified.driverId || null // Añadir driverId del token
+};
     
     console.log('Usuario extraído del token:', req.user); // Importante: agregar este log
     

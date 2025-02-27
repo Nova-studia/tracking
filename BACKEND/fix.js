@@ -1,44 +1,54 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 const User = require('./models/User');
-const Driver = require('./models/Driver');
 
-async function moverConductorGamboo() {
+// Configuración
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/transportes';
+
+async function updateAdminPassword() {
   try {
-    await mongoose.connect(process.env.MONGODB_URI);
-    console.log('Conectado a MongoDB');
+    // Conectar a MongoDB
+    console.log('🔄 Conectando a MongoDB...');
+    await mongoose.connect(MONGODB_URI);
+    console.log('✅ Conectado a MongoDB');
     
-    // 1. Actualizar el usuario asociado al conductor Gamboo
-    const usuarioActualizado = await User.updateOne(
-      { _id: new mongoose.Types.ObjectId('67bf6ab4dabde250971ad169') }, // Con 'new'
-      { $set: { partnerGroup: 'grupo_maikel' } }
-    );
+    // Buscar el usuario admin con isMainAdmin: true
+    console.log('🔍 Buscando usuario admin principal...');
+    const adminUser = await User.findOne({ 
+      username: 'admin',
+      isMainAdmin: true
+    });
     
-    console.log(`Usuario de Gamboo actualizado: ${JSON.stringify(usuarioActualizado)}`);
+    if (!adminUser) {
+      console.error('❌ Usuario admin principal no encontrado');
+      process.exit(1);
+    }
     
-    // 2. Actualizar el documento del conductor Gamboo
-    const driverActualizado = await Driver.updateOne(
-      { _id: new mongoose.Types.ObjectId('67bf6ab4dabde250971ad16b') }, // Con 'new'
-      { $set: { partnerGroup: 'grupo_maikel' } }
-    );
+    console.log('✅ Usuario admin encontrado:', adminUser.username);
     
-    console.log(`Documento de conductor Gamboo actualizado: ${JSON.stringify(driverActualizado)}`);
+    // Generar el hash de la nueva contraseña
+    console.log('🔐 Generando hash para la nueva contraseña...');
+    const newPassword = '1231';
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
     
-    // 3. Verificar la actualización
-    const gambooUsuario = await User.findById('67bf6ab4dabde250971ad169');
-    console.log('Usuario de Gamboo después de la actualización:', gambooUsuario);
+    // Actualizar la contraseña
+    console.log('🔄 Actualizando contraseña...');
+    adminUser.password = hashedPassword;
+    await adminUser.save();
     
-    const gambooDriver = await Driver.findById('67bf6ab4dabde250971ad16b');
-    console.log('Driver Gamboo después de la actualización:', gambooDriver);
-    
-    console.log('Proceso completado.');
+    console.log('✅ Contraseña actualizada correctamente');
+    console.log('🔑 Nueva contraseña: 1231');
     
   } catch (error) {
-    console.error('Error:', error);
+    console.error('❌ Error:', error);
   } finally {
+    // Cerrar conexión
     await mongoose.disconnect();
-    console.log('Desconectado de MongoDB');
+    console.log('👋 Conexión cerrada');
+    process.exit(0);
   }
 }
 
-moverConductorGamboo();
+// Ejecutar la función
+updateAdminPassword();

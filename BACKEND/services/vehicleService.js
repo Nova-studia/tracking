@@ -68,30 +68,43 @@ async getAllVehicles(partnerGroup = null, isMainAdmin = false) {
   }
 },
 
-  async getVehicle(vehicleId, partnerGroup = null, isMainAdmin = false) {
-    try {
-      // Construir la consulta base
-      const query = { _id: vehicleId };
-      
-      // Si no es admin principal, filtramos por grupo
-      if (!isMainAdmin && partnerGroup) {
-        query.partnerGroup = partnerGroup;
-      }
-      
-      const vehicle = await Vehicle.findOne(query)
+async getVehicle(vehicleId, partnerGroup = null, isMainAdmin = false, userId = null, userRole = null) {
+  try {
+    // Si es un conductor, verificar directamente por ID
+    if (userRole === 'driver') {
+      const vehicle = await Vehicle.findById(vehicleId)
         .populate('clientId')
         .populate('driverId');
         
       if (!vehicle) {
-        throw new Error('Vehículo no encontrado o no tiene permisos para acceder a él');
+        throw new Error('Vehículo no encontrado');
       }
       
       return vehicle;
-    } catch (error) {
-      console.error('Error getting vehicle:', error);
-      throw new Error(`Error al obtener vehículo: ${error.message}`);
     }
-  },
+    
+    // Consulta base para otros roles
+    const query = { _id: vehicleId };
+    
+    // Si no es admin principal, filtramos por grupo
+    if (!isMainAdmin && partnerGroup) {
+      query.partnerGroup = partnerGroup;
+    }
+    
+    const vehicle = await Vehicle.findOne(query)
+      .populate('clientId')
+      .populate('driverId');
+      
+    if (!vehicle) {
+      throw new Error('Vehículo no encontrado o no tiene permisos para acceder a él');
+    }
+    
+    return vehicle;
+  } catch (error) {
+    console.error('Error getting vehicle:', error);
+    throw new Error(`Error al obtener vehículo: ${error.message}`);
+  }
+},
 
   async updateVehicleStatus(vehicleId, newStatus, partnerGroup = null, isMainAdmin = false) {
     try {
@@ -138,7 +151,7 @@ async getAllVehicles(partnerGroup = null, isMainAdmin = false) {
     }
   },
 
-  async updateVehicleStatusWithComment(vehicleId, status, comment, partnerGroup = null, isMainAdmin = false) {
+  async updateVehicleStatusWithComment(vehicleId, status, comment, partnerGroup = null, isMainAdmin = false, userId = null, userRole = null) {
     try {
       console.log('Updating vehicle status with comment:', { vehicleId, status, comment });
       
@@ -146,10 +159,10 @@ async getAllVehicles(partnerGroup = null, isMainAdmin = false) {
       if (!validStates.includes(status)) {
         throw new Error(`Estado inválido: ${status}`);
       }
-
+  
       // Verificamos acceso al vehículo
-      const vehicleToUpdate = await this.getVehicle(vehicleId, partnerGroup, isMainAdmin);
-
+      const vehicleToUpdate = await this.getVehicle(vehicleId, partnerGroup, isMainAdmin, userId, userRole);
+  
       if (status === 'loading') {
         if (!vehicleToUpdate.loadingPhotos || 
             !vehicleToUpdate.loadingPhotos.frontPhoto || 
@@ -159,7 +172,7 @@ async getAllVehicles(partnerGroup = null, isMainAdmin = false) {
           throw new Error('Se requieren todas las fotos antes de cambiar el estado a loading');
         }
       }
-
+  
       const vehicle = await Vehicle.findByIdAndUpdate(
         vehicleId,
         { 
@@ -178,11 +191,11 @@ async getAllVehicles(partnerGroup = null, isMainAdmin = false) {
           runValidators: true 
         }
       ).populate(['clientId', 'driverId']);
-
+  
       if (!vehicle) {
         throw new Error('Vehículo no encontrado');
       }
-
+  
       return vehicle;
     } catch (error) {
       console.error('Error updating vehicle with comment:', error);
@@ -190,33 +203,68 @@ async getAllVehicles(partnerGroup = null, isMainAdmin = false) {
     }
   },
 
-  async uploadVehiclePhotos(vehicleId, files, partnerGroup = null, isMainAdmin = false) {
+  async uploadVehiclePhotos(vehicleId, files, partnerGroup = null, isMainAdmin = false, userId = null, userRole = null) {
     try {
       // Verificamos acceso al vehículo
-      await this.getVehicle(vehicleId, partnerGroup, isMainAdmin);
+      await this.getVehicle(vehicleId, partnerGroup, isMainAdmin, userId, userRole);
       
       const photos = {};
+      const { bufferToStream } = require('../config/cloudinary');
   
-      if (files) {
+      console.log('Archivos recibidos:', files ? Object.keys(files) : 'No hay archivos');
+      
+      if (files && Object.keys(files).length > 0) {
         for (const [key, fileArray] of Object.entries(files)) {
-          const file = fileArray[0];
-          
-          const result = await cloudinary.uploader.upload(file.path, {
-            folder: `vehicles/${vehicleId}`,
-            public_id: `${key}-${Date.now()}`,
-            transformation: [
-              { width: 1000, height: 1000, crop: 'limit' },
-              { quality: 'auto' },
-              { format: 'webp' }
-            ]
-          });
-  
-          photos[key] = {
-            url: result.secure_url,
-            publicId: result.public_id,
-            uploadedAt: new Date()
-          };
+          if (fileArray && fileArray.length > 0) {
+            const file = fileArray[0];
+            
+            if (!file.buffer) {
+              console.error(`El archivo ${key} no tiene una propiedad 'buffer'`);
+              console.log('Propiedades del archivo:', Object.keys(file));
+              continue;
+            }
+            
+            console.log(`Subiendo archivo ${key}, tipo: ${file.mimetype}, tamaño: ${file.size} bytes`);
+            
+            try {
+              // Subir usando stream desde el buffer
+              const result = await new Promise((resolve, reject) => {
+                const stream = cloudinary.uploader.upload_stream(
+                  {
+                    folder: `vehicles/${vehicleId}`,
+                    public_id: `${key}-${Date.now()}`,
+                    transformation: [
+                      { width: 1000, height: 1000, crop: 'limit' },
+                      { quality: 'auto' },
+                      { format: 'webp' }
+                    ]
+                  },
+                  (error, result) => {
+                    if (error) return reject(error);
+                    resolve(result);
+                  }
+                );
+                
+                bufferToStream(file.buffer).pipe(stream);
+              });
+              
+              photos[key] = {
+                url: result.secure_url,
+                publicId: result.public_id,
+                uploadedAt: new Date()
+              };
+            } catch (uploadError) {
+              console.error(`Error al subir ${key} a Cloudinary:`, uploadError);
+              throw new Error(`Error al subir ${key}: ${uploadError.message}`);
+            }
+          }
         }
+      } else {
+        throw new Error('No se recibieron archivos para subir');
+      }
+      
+      if (Object.keys(photos).length === 0) {
+        throw new Error('No se pudieron procesar las imágenes');
       }
   
       const vehicle = await Vehicle.findByIdAndUpdate(

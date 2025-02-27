@@ -131,26 +131,40 @@ router.patch('/:vehicleId/status', auth, extractUserInfo, async (req, res) => {
   try {
     const { partnerGroup, isMainAdmin } = req.partnerInfo;
     
-    // Para conductores, verificamos que el vehículo esté asignado a ellos
-    if (req.user.role === 'driver') {
-      const vehicle = await Vehicle.findById(req.params.vehicleId).populate('driverId');
-      if (!vehicle) {
-        return res.status(404).json({ message: 'Vehículo no encontrado' });
-      }
+// Para conductores, verificamos que el vehículo esté asignado a ellos
+if (req.user.role === 'driver') {
+  const vehicle = await Vehicle.findById(req.params.vehicleId).populate('driverId');
+  if (!vehicle) {
+    return res.status(404).json({ message: 'Vehículo no encontrado' });
+  }
 
-      if (!req.user.driverId || 
-          vehicle.driverId._id.toString() !== req.user.driverId.toString()) {
-        return res.status(403).json({ message: 'No autorizado' });
-      }
-    }
+  // Obtener las representaciones de string de ambos IDs
+  const vehicleDriverId = vehicle.driverId && typeof vehicle.driverId === 'object' 
+    ? vehicle.driverId._id?.toString() 
+    : vehicle.driverId?.toString();
+  
+  const userDriverId = req.user.driverId?.toString();
+  
+  console.log('Comparando IDs:', {
+    vehicleDriverId,
+    userDriverId,
+    vehicleId: req.params.vehicleId
+  });
+
+  if (!userDriverId || !vehicleDriverId || vehicleDriverId !== userDriverId) {
+    return res.status(403).json({ message: 'No autorizado para este vehículo' });
+  }
+}
     
-    const vehicle = await vehicleService.updateVehicleStatusWithComment(
-      req.params.vehicleId, 
-      req.body.status,
-      req.body.comment || `Estado actualizado a ${req.body.status}`,
-      partnerGroup,
-      isMainAdmin
-    );
+const vehicle = await vehicleService.updateVehicleStatusWithComment(
+  req.params.vehicleId, 
+  req.body.status,
+  req.body.comment || `Estado actualizado a ${req.body.status}`,
+  partnerGroup,
+  isMainAdmin,
+  req.user.id,
+  req.user.role
+);
     res.json(vehicle);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -228,25 +242,39 @@ router.post('/:vehicleId/photos',
     try {
       const { partnerGroup, isMainAdmin } = req.partnerInfo;
       
-      // Para conductores, verificamos que el vehículo esté asignado a ellos
-      if (req.user.role === 'driver') {
-        const vehicle = await Vehicle.findById(req.params.vehicleId).populate('driverId');
-        if (!vehicle) {
-          return res.status(404).json({ message: 'Vehículo no encontrado' });
-        }
+// Para conductores, verificamos que el vehículo esté asignado a ellos
+if (req.user.role === 'driver') {
+  const vehicle = await Vehicle.findById(req.params.vehicleId).populate('driverId');
+  if (!vehicle) {
+    return res.status(404).json({ message: 'Vehículo no encontrado' });
+  }
 
-        if (!req.user.driverId || 
-            vehicle.driverId._id.toString() !== req.user.driverId.toString()) {
-          return res.status(403).json({ message: 'No autorizado' });
-        }
-      }
+  // Obtener las representaciones de string de ambos IDs
+  const vehicleDriverId = vehicle.driverId && typeof vehicle.driverId === 'object' 
+    ? vehicle.driverId._id?.toString() 
+    : vehicle.driverId?.toString();
+  
+  const userDriverId = req.user.driverId?.toString();
+  
+  console.log('Comparando IDs:', {
+    vehicleDriverId,
+    userDriverId,
+    vehicleId: req.params.vehicleId
+  });
+
+  if (!userDriverId || !vehicleDriverId || vehicleDriverId !== userDriverId) {
+    return res.status(403).json({ message: 'No autorizado para este vehículo' });
+  }
+}
       
-      const vehicle = await vehicleService.uploadVehiclePhotos(
-        req.params.vehicleId, 
-        req.files,
-        partnerGroup,
-        isMainAdmin
-      );
+const vehicle = await vehicleService.uploadVehiclePhotos(
+  req.params.vehicleId, 
+  req.files,
+  partnerGroup,
+  isMainAdmin,
+  req.user.id,
+  req.user.role
+);
       res.json(vehicle);
     } catch (error) {
       console.error('Error in upload route:', error);
