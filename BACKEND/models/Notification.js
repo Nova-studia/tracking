@@ -1,6 +1,7 @@
 // models/Notification.js
 const mongoose = require('mongoose');
 
+// En Notification.js, línea 4
 const notificationSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -11,6 +12,11 @@ const notificationSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Vehicle',
     required: true
+  },
+  // Añadir un campo para el grupo al que pertenece la notificación
+  partnerGroup: {
+    type: String,
+    default: 'main'
   },
   lotInfo: {
     type: String,
@@ -30,5 +36,3 @@ const notificationSchema = new mongoose.Schema({
     default: Date.now
   }
 });
-
-module.exports = mongoose.model('Notification', notificationSchema);

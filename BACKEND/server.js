@@ -267,12 +267,20 @@ app.get('/api/states', async (req, res) => {
 });
 
 // Rutas de notificaciones
-app.get('/api/notifications', auth, async (req, res) => {
+// Agregar después de la línea 329 en server.js (después de la ruta GET /api/notifications)
+app.get('/api/notifications/all', auth, async (req, res) => {
   try {
-    const notifications = await Notification.find({ 
-      userId: req.user.id 
-    }).sort({ createdAt: -1 });
+    // Verificar que el usuario sea admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'No autorizado' });
+    }
     
+    // Buscar todas las notificaciones, sin filtrar por userId
+    const notifications = await Notification.find()
+      .sort({ createdAt: -1 })
+      .populate('userId', 'username role partnerGroup')  // Añadir información del usuario
+      .populate('vehicleId', 'LOT brand model');         // Añadir información del vehículo
+
     res.json(notifications);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -308,6 +316,13 @@ app.patch('/api/notifications/read-all', auth, async (req, res) => {
 
 app.delete('/api/notifications', auth, async (req, res) => {
   try {
+    // Si es admin y se especifica "all", elimina todas las notificaciones
+    if (req.user.role === 'admin' && req.query.all === 'true') {
+      await Notification.deleteMany({});
+      return res.json({ message: 'Todas las notificaciones del sistema eliminadas' });
+    }
+    
+    // De lo contrario, solo elimina las del usuario
     await Notification.deleteMany({ userId: req.user.id });
     res.json({ message: 'Todas las notificaciones eliminadas' });
   } catch (error) {
@@ -317,10 +332,15 @@ app.delete('/api/notifications', auth, async (req, res) => {
 
 app.delete('/api/notifications/:id', auth, async (req, res) => {
   try {
-    const notification = await Notification.findOne({
-      _id: req.params.id,
-      userId: req.user.id
-    });
+    // Construir la consulta según el rol
+    const query = { _id: req.params.id };
+    
+    // Si no es admin, solo puede eliminar sus propias notificaciones
+    if (req.user.role !== 'admin') {
+      query.userId = req.user.id;
+    }
+    
+    const notification = await Notification.findOne(query);
     
     if (!notification) {
       return res.status(404).json({ message: 'Notificación no encontrada' });
