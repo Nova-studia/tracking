@@ -5,7 +5,7 @@ import PhotoViewModal from './PhotoViewModal';
 import CommentsModal from './CommentsModal';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { MessageSquare, Camera, Truck, ChevronDown, ChevronUp, PlayCircle } from 'lucide-react';
+import { MessageSquare, Camera, Truck, ChevronDown, ChevronUp } from 'lucide-react';
 
 const API_URL = `${process.env.REACT_APP_API_URL}/api`;
 
@@ -210,7 +210,6 @@ const DriverDashboard = ({ driverId, setNotifications }) => {
   const [selectedPhotos, setSelectedPhotos] = useState(null);
   const [isCommentsModalOpen, setIsCommentsModalOpen] = useState(false);
   const [selectedVehicleForComments, setSelectedVehicleForComments] = useState(null);
-  const [isBatchUpdating, setIsBatchUpdating] = useState(false);
 
   // Función para centralizar la actualización de vehículos
   const refreshVehicleData = useCallback((updatedVehicle) => {
@@ -326,54 +325,6 @@ const DriverDashboard = ({ driverId, setNotifications }) => {
     }
   };
 
-  // Nueva función para actualizar todos los vehículos en carga a en tránsito
-  const handleStartAllTrips = async () => {
-    try {
-      setIsBatchUpdating(true);
-      
-      // Filtrar vehículos en estado de carga
-      const vehiclesInLoading = currentTrips.filter(v => v.status === 'loading');
-      
-      if (vehiclesInLoading.length === 0) {
-        alert('No hay vehículos en estado de carga para iniciar viaje');
-        setIsBatchUpdating(false);
-        return;
-      }
-      
-      // Confirmar la acción
-      if (!window.confirm(`¿Está seguro de iniciar viaje para ${vehiclesInLoading.length} vehículos?`)) {
-        setIsBatchUpdating(false);
-        return;
-      }
-      
-      console.log(`Iniciando viaje para ${vehiclesInLoading.length} vehículos`);
-      
-      // Actualizar cada vehículo en paralelo
-      const updatePromises = vehiclesInLoading.map(vehicle => 
-        handleStatusUpdate(vehicle._id, 'in-transit', 'Iniciando viaje completo')
-      );
-      
-      const results = await Promise.allSettled(updatePromises);
-      
-      // Contar éxitos y fracasos
-      const succeeded = results.filter(r => r.status === 'fulfilled').length;
-      const failed = results.filter(r => r.status === 'rejected').length;
-      
-      // Mostrar resumen
-      if (failed > 0) {
-        alert(`Se iniciaron ${succeeded} viajes. ${failed} vehículos no pudieron actualizarse.`);
-      } else {
-        alert(`Se iniciaron ${succeeded} viajes exitosamente.`);
-      }
-      
-    } catch (error) {
-      console.error('Error starting all trips:', error);
-      alert('Ocurrió un error al iniciar los viajes: ' + error.message);
-    } finally {
-      setIsBatchUpdating(false);
-    }
-  };
-
   const handlePhotoSubmit = async (formData) => {
     try {
       if (!selectedVehicleId) {
@@ -484,9 +435,6 @@ const DriverDashboard = ({ driverId, setNotifications }) => {
     }
   };
 
-  // Contar cuántos vehículos están en estado de carga
-  const vehiclesInLoadingCount = currentTrips.filter(v => v.status === 'loading').length;
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -543,22 +491,6 @@ const DriverDashboard = ({ driverId, setNotifications }) => {
           Historial
         </button>
       </div>
-
-      {/* Botón para iniciar todos los viajes */}
-      {activeTab === 'current' && vehiclesInLoadingCount > 0 && (
-        <div className="mb-4">
-          <button
-            onClick={handleStartAllTrips}
-            disabled={isBatchUpdating}
-            className="w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-medium"
-          >
-            <PlayCircle className="w-5 h-5" />
-            {isBatchUpdating 
-              ? 'Iniciando viajes...' 
-              : `Iniciar Viaje Completo (${vehiclesInLoadingCount})`}
-          </button>
-        </div>
-      )}
 
       {/* Content */}
       <div className="space-y-4">
