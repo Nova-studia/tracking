@@ -350,7 +350,7 @@ const VehiclesTableView = ({
     return (
       <div className="bg-white rounded-lg shadow-sm border border-slate-100 overflow-hidden">
         <div 
-          className="p-3 flex items-center justify-between cursor-pointer space-x-1"
+          className="p-1 flex items-center justify-between cursor-pointer space-x-1"
           onClick={() => setIsExpanded(!isExpanded)}
         >
           <div className="flex items-center space-x-3">

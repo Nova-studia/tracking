@@ -403,7 +403,7 @@ const handleSubmit = async () => {
       </div>
 
       <SearchBar onSearch={setFilters} />
-      <div className="border-b border-slate-200">
+      <div className="px-4 border-b border-slate-200">
   <button
     onClick={() => {
       setSelectedState('Todos');
@@ -438,7 +438,7 @@ const handleSubmit = async () => {
       ))
   }
 </div>
-      <div className="bg-white shadow-sm">
+      <div className="px-1 bg-white shadow-sm">
       <h2 className="text-xl font-semibold mb-4 text-slate-900">
   {selectedState ? (selectedState === 'Todos' ? 'Lista de Todos los Vehículos' : `Lista de Vehículos - ${selectedState}`) : 'Seleccione un estado para ver los vehículos'}
 </h2>
