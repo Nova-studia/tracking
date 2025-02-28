@@ -173,19 +173,36 @@ const vehicleService = {
         }
       }
   
+      // Verificar si es un comentario automático
+      const isAutoComment = !comment || 
+                           comment === "Conductor asignado al vehículo" ||
+                           comment === "Iniciando carga del vehículo" ||
+                           comment === "Iniciando viaje del vehículo" ||
+                           comment === "Iniciando viaje" ||
+                           comment === "Vehículo entregado al destino" ||
+                           comment === "Fotos cargadas y vehículo listo para transporte" ||
+                           comment.startsWith(`Estado actualizado a ${status}`);
+
+      // Preparar objeto de actualización
+      const updateData = { 
+        status,
+        updatedAt: new Date()
+      };
+
+      // Solo añadir el comentario a travelComments si no es automático
+      if (!isAutoComment) {
+        updateData.$push = { 
+          travelComments: {
+            comment,
+            status,
+            createdAt: new Date()
+          }
+        };
+      }
+
       const vehicle = await Vehicle.findByIdAndUpdate(
         vehicleId,
-        { 
-          status,
-          $push: { 
-            travelComments: {
-              comment,
-              status,
-              createdAt: new Date()
-            }
-          },
-          updatedAt: new Date()
-        },
+        updateData,
         { 
           new: true,
           runValidators: true 
@@ -196,34 +213,33 @@ const vehicleService = {
         throw new Error('Vehículo no encontrado');
       }
       
-      // Si hay cambio de estado, crear notificación
-    // Solo crear notificación si hay un comentario explícito (no automático de cambio de estado)
-    if (comment && !comment.startsWith(`Estado actualizado a ${status}`) && comment !== `Iniciando viaje` && comment !== `Vehículo entregado al destino` && comment !== `Iniciando carga del vehículo` && comment !== `Fotos cargadas y vehículo listo para transporte`) {
-      try {
-        // Usar el partnerGroup del vehículo en lugar del usuario
-        const vehicleGroup = vehicle.partnerGroup;
-        
-        console.log('Creando notificación con datos:', {
-          vehicleId: vehicleId,
-          vehicleGroup: vehicleGroup,
-          lotInfo: vehicle.LOT || 'N/A',
-          message: comment
-        });
-        
-        const notification = new Notification({
-          userId: userId,
-          vehicleId: vehicleId,
-          partnerGroup: vehicleGroup, // Usar el grupo del vehículo
-          lotInfo: vehicle.LOT || 'N/A',
-          message: comment,
-        });
-        await notification.save();
-        console.log('Notificación creada para comentario explícito con grupo del vehículo:', vehicleGroup);
-      } catch (notificationError) {
-        console.error('Error creando notificación:', notificationError);
-        // No interrumpimos el flujo principal si falla la notificación
+      // Solo crear notificación si no es un comentario automático
+      if (!isAutoComment) {
+        try {
+          // Usar el partnerGroup del vehículo en lugar del usuario
+          const vehicleGroup = vehicle.partnerGroup;
+          
+          console.log('Creando notificación con datos:', {
+            vehicleId: vehicleId,
+            vehicleGroup: vehicleGroup,
+            lotInfo: vehicle.LOT || 'N/A',
+            message: comment
+          });
+          
+          const notification = new Notification({
+            userId: userId,
+            vehicleId: vehicleId,
+            partnerGroup: vehicleGroup, // Usar el grupo del vehículo
+            lotInfo: vehicle.LOT || 'N/A',
+            message: comment,
+          });
+          await notification.save();
+          console.log('Notificación creada para comentario explícito con grupo del vehículo:', vehicleGroup);
+        } catch (notificationError) {
+          console.error('Error creando notificación:', notificationError);
+          // No interrumpimos el flujo principal si falla la notificación
+        }
       }
-    }
   
       return vehicle;
     } catch (error) {
