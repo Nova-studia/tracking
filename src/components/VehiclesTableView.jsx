@@ -362,7 +362,7 @@ const VehiclesTableView = ({
 </div>
           </div>
           <div className="flex items-center space-x-3">
-            <span className={`px-6 py-1.5 text-sm text-white rounded-sm ${getStatusColor(vehicle.status)}`}>
+            <span className={`px-4 py-1.5 text-sm text-white rounded-sm ${getStatusColor(vehicle.status)}`}>
               {getStatusText(vehicle.status)}
             </span>
             {isExpanded ? (
