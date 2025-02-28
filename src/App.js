@@ -148,7 +148,9 @@ function App() {
         <button 
   onClick={async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/notifications`, {
+      // Si es admin, usar ?all=true
+      const queryParam = auth.role === 'admin' ? '?all=true' : '';
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/notifications${queryParam}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
