@@ -43,10 +43,16 @@ const VehicleCard = ({ vehicle, onPhotoUpload, onViewPhotos, onCommentsOpen, onS
   const [isExpanded, setIsExpanded] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
+  // Esta función no se usa directamente aquí, se mantiene por compatibilidad
+  // La subida real de fotos ocurre en PhotoUploadModal
   const handlePhotoUpload = async (formData) => {
     try {
       setIsUploading(true);
       const token = localStorage.getItem('token');
+      
+      console.log('Subiendo fotos para vehículo:', vehicle._id);
+      console.log('Contenido del formData:', Array.from(formData.entries()).length, 'archivos');
+      
       const response = await fetch(`${API_URL}/vehicles/${vehicle._id}/photos`, {
         method: 'POST',
         headers: {
@@ -56,7 +62,8 @@ const VehicleCard = ({ vehicle, onPhotoUpload, onViewPhotos, onCommentsOpen, onS
       });
 
       if (!response.ok) {
-        throw new Error('Error al subir las fotos');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al subir las fotos');
       }
 
       const updatedVehicle = await response.json();
@@ -74,6 +81,7 @@ const VehicleCard = ({ vehicle, onPhotoUpload, onViewPhotos, onCommentsOpen, onS
       
       return updatedWithStatus;
     } catch (error) {
+      console.error('Error en handlePhotoUpload:', error);
       alert('Error: ' + error.message);
     } finally {
       setIsUploading(false);
@@ -213,6 +221,13 @@ const DriverDashboard = ({ driverId, setNotifications }) => {
 
   // Función para centralizar la actualización de vehículos
   const refreshVehicleData = useCallback((updatedVehicle) => {
+    if (!updatedVehicle || !updatedVehicle._id) {
+      console.error('refreshVehicleData: Invalid vehicle data', updatedVehicle);
+      return;
+    }
+    
+    console.log('Actualizando listas con vehículo:', updatedVehicle._id, updatedVehicle.status);
+    
     setAssignedVehicles(prev => 
       prev.map(v => v._id === updatedVehicle._id ? updatedVehicle : v)
     );
@@ -229,6 +244,9 @@ const DriverDashboard = ({ driverId, setNotifications }) => {
           return [...prev, updatedVehicle];
         }
       });
+      
+      // Asegurarse que no esté en la lista de completados
+      setCompletedTrips(prev => prev.filter(v => v._id !== updatedVehicle._id));
     } else if (updatedVehicle.status === 'delivered') {
       // Si el vehículo está entregado, moverlo a completados
       setCurrentTrips(prev => prev.filter(v => v._id !== updatedVehicle._id));
@@ -250,6 +268,8 @@ const DriverDashboard = ({ driverId, setNotifications }) => {
           throw new Error('No se encontró token de autenticación');
         }
 
+        console.log('Obteniendo vehículos asignados para conductor:', driverId);
+        
         const response = await fetch(`${API_URL}/vehicles`, {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -263,10 +283,13 @@ const DriverDashboard = ({ driverId, setNotifications }) => {
         }
 
         const vehicles = await response.json();
+        console.log('Vehículos obtenidos:', vehicles.length);
         
         const allAssigned = vehicles.filter(v => 
           v.driverId?._id === driverId || v.driverId === driverId
         );
+        
+        console.log('Vehículos asignados a este conductor:', allAssigned.length);
         
         setAssignedVehicles(allAssigned);
         
@@ -338,18 +361,49 @@ const DriverDashboard = ({ driverId, setNotifications }) => {
       }
 
       console.log('Subiendo fotos para vehículo:', selectedVehicleId);
+      console.log('Contenido del formData:', Array.from(formData.entries()).length, 'archivos');
+      
+      // Asegurarnos que el formData esté bien construido para iOS
+      // Ajuste específico para iPhone
+      const formDataAdjusted = new FormData();
+      
+      for (const [key, value] of formData.entries()) {
+        // Asegúrate de que el tipo de contenido esté correcto para iOS
+        if (value instanceof File) {
+          const newFile = new File(
+            [value], 
+            value.name, 
+            {
+              type: value.type || 'image/jpeg',
+              lastModified: value.lastModified
+            }
+          );
+          formDataAdjusted.append(key, newFile);
+          console.log(`Añadido archivo ${key}:`, newFile.name, newFile.type, newFile.size);
+        } else {
+          formDataAdjusted.append(key, value);
+          console.log(`Añadido campo ${key}:`, value);
+        }
+      }
       
       const response = await fetch(`${API_URL}/vehicles/${selectedVehicleId}/photos`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          // No incluyas Content-Type aquí, lo establece automáticamente con el boundary correcto
         },
-        body: formData
+        body: formDataAdjusted
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al subir las fotos');
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        try {
+          const errorData = JSON.parse(errorText);
+          throw new Error(errorData.message || 'Error al subir las fotos');
+        } catch (e) {
+          throw new Error(`Error al subir las fotos: ${response.status} ${response.statusText}`);
+        }
       }
 
       const updatedVehicle = await response.json();
@@ -373,6 +427,7 @@ const DriverDashboard = ({ driverId, setNotifications }) => {
       return statusResponse;
     } catch (error) {
       console.error('Error uploading photos:', error);
+      alert(`Error al subir fotos: ${error.message}`);
       throw error;
     }
   };
