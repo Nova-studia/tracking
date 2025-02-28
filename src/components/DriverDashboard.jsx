@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import PhotoUploadModal from './PhotoUploadModal';
 import PhotoViewModal from './PhotoViewModal';
@@ -60,10 +60,19 @@ const VehicleCard = ({ vehicle, onPhotoUpload, onViewPhotos, onCommentsOpen, onS
       }
 
       const updatedVehicle = await response.json();
+      console.log('Fotos subidas correctamente desde VehicleCard:', updatedVehicle);
       
-      await onStatusUpdate(vehicle._id, 'loading', 'Fotos cargadas y vehículo listo para transporte');
+      // Llamar a la actualización de estado y asegurarse de esperar a que termine
+      const updatedWithStatus = await onStatusUpdate(
+        vehicle._id, 
+        'loading', 
+        'Fotos cargadas y vehículo listo para transporte'
+      );
       
-      onPhotoUpload(updatedVehicle);
+      // Notificar al componente padre con el vehículo completamente actualizado
+      onPhotoUpload(updatedWithStatus);
+      
+      return updatedWithStatus;
     } catch (error) {
       alert('Error: ' + error.message);
     } finally {
@@ -202,6 +211,37 @@ const DriverDashboard = ({ driverId, setNotifications }) => {
   const [isCommentsModalOpen, setIsCommentsModalOpen] = useState(false);
   const [selectedVehicleForComments, setSelectedVehicleForComments] = useState(null);
 
+  // Función para centralizar la actualización de vehículos
+  const refreshVehicleData = useCallback((updatedVehicle) => {
+    setAssignedVehicles(prev => 
+      prev.map(v => v._id === updatedVehicle._id ? updatedVehicle : v)
+    );
+    
+    // Si el vehículo está en viajes actuales, actualizar esa lista
+    if (['assigned', 'loading', 'in-transit'].includes(updatedVehicle.status)) {
+      setCurrentTrips(prev => {
+        // Si ya existe el vehículo en la lista, actualizarlo
+        if (prev.some(v => v._id === updatedVehicle._id)) {
+          return prev.map(v => v._id === updatedVehicle._id ? updatedVehicle : v);
+        } 
+        // Si no existe pero debería estar en la lista, agregarlo
+        else {
+          return [...prev, updatedVehicle];
+        }
+      });
+    } else if (updatedVehicle.status === 'delivered') {
+      // Si el vehículo está entregado, moverlo a completados
+      setCurrentTrips(prev => prev.filter(v => v._id !== updatedVehicle._id));
+      setCompletedTrips(prev => {
+        if (prev.some(v => v._id === updatedVehicle._id)) {
+          return prev.map(v => v._id === updatedVehicle._id ? updatedVehicle : v);
+        } else {
+          return [updatedVehicle, ...prev];
+        }
+      });
+    }
+  }, []);
+
   useEffect(() => {
     const fetchAssignedVehicles = async () => {
       try {
@@ -253,6 +293,7 @@ const DriverDashboard = ({ driverId, setNotifications }) => {
 
   const handleStatusUpdate = async (vehicleId, newStatus, comment) => {
     try {
+      console.log(`Actualizando estado de vehículo ${vehicleId} a ${newStatus} con comentario: ${comment}`);
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_URL}/vehicles/${vehicleId}/status`, {
         method: 'PATCH',
@@ -272,19 +313,10 @@ const DriverDashboard = ({ driverId, setNotifications }) => {
       }
 
       const updatedVehicle = await response.json();
+      console.log('Vehículo actualizado correctamente:', updatedVehicle);
 
-      setAssignedVehicles(prev => 
-        prev.map(v => v._id === vehicleId ? updatedVehicle : v)
-      );
-
-      if (newStatus === 'delivered') {
-        setCurrentTrips(prev => prev.filter(v => v._id !== vehicleId));
-        setCompletedTrips(prev => [updatedVehicle, ...prev]);
-      } else {
-        setCurrentTrips(prev => 
-          prev.map(v => v._id === vehicleId ? updatedVehicle : v)
-        );
-      }
+      // Usar la función centralizada para actualizar todas las listas
+      refreshVehicleData(updatedVehicle);
 
       return updatedVehicle;
     } catch (error) {
@@ -305,6 +337,8 @@ const DriverDashboard = ({ driverId, setNotifications }) => {
         throw new Error('No se han seleccionado fotos');
       }
 
+      console.log('Subiendo fotos para vehículo:', selectedVehicleId);
+      
       const response = await fetch(`${API_URL}/vehicles/${selectedVehicleId}/photos`, {
         method: 'POST',
         headers: {
@@ -319,21 +353,24 @@ const DriverDashboard = ({ driverId, setNotifications }) => {
       }
 
       const updatedVehicle = await response.json();
+      console.log('Fotos subidas correctamente, vehículo actualizado:', updatedVehicle);
       
-      await handleStatusUpdate(selectedVehicleId, 'loading', 'Fotos cargadas y vehículo listo para transporte');
+      // Actualizar estado a 'loading'
+      const statusResponse = await handleStatusUpdate(
+        selectedVehicleId, 
+        'loading', 
+        'Fotos cargadas y vehículo listo para transporte'
+      );
       
-      setAssignedVehicles(prev => 
-        prev.map(v => v._id === selectedVehicleId ? updatedVehicle : v)
-      );
-
-      setCurrentTrips(prev => 
-        prev.map(v => v._id === selectedVehicleId ? updatedVehicle : v)
-      );
+      console.log('Estado actualizado a loading:', statusResponse);
+      
+      // Usar la función refreshVehicleData para actualizar todas las listas de manera consistente
+      refreshVehicleData(statusResponse);
 
       setIsPhotoModalOpen(false);
       setSelectedVehicleId('');
 
-      return updatedVehicle;
+      return statusResponse;
     } catch (error) {
       console.error('Error uploading photos:', error);
       throw error;
@@ -371,31 +408,25 @@ const DriverDashboard = ({ driverId, setNotifications }) => {
 
       const updatedVehicle = await response.json();
 
-      setAssignedVehicles(prev => 
-        prev.map(v => v._id === vehicleId ? updatedVehicle : v)
-      );
-
-      setCurrentTrips(prev => 
-        prev.map(v => v._id === vehicleId ? updatedVehicle : v)
-      );
+      // Usar la función centralizada para actualizar
+      refreshVehicleData(updatedVehicle);
 
       // Crear la notificación local
-      // Crear la notificación local
-if (updatedVehicle) {
-  const newNotification = {
-    lotInfo: `${updatedVehicle.LOT || 'LOT'} - ${updatedVehicle.brand} ${updatedVehicle.model}`,
-    message: newComment.trim(),
-    vehicleId: vehicleId,
-    image: updatedVehicle.loadingPhotos?.frontPhoto?.url || null,
-    time: new Date().toLocaleString(),
-    partnerGroup: updatedVehicle.partnerGroup // Añadir el grupo del vehículo
-  };
-  
-  console.log('Creando notificación local con grupo:', updatedVehicle.partnerGroup);
-  
-  // Actualizar el estado local de notificaciones
-  setNotifications(prev => [...prev, newNotification]);
-}
+      if (updatedVehicle) {
+        const newNotification = {
+          lotInfo: `${updatedVehicle.LOT || 'LOT'} - ${updatedVehicle.brand} ${updatedVehicle.model}`,
+          message: newComment.trim(),
+          vehicleId: vehicleId,
+          image: updatedVehicle.loadingPhotos?.frontPhoto?.url || null,
+          time: new Date().toLocaleString(),
+          partnerGroup: updatedVehicle.partnerGroup // Añadir el grupo del vehículo
+        };
+        
+        console.log('Creando notificación local con grupo:', updatedVehicle.partnerGroup);
+        
+        // Actualizar el estado local de notificaciones
+        setNotifications(prev => [...prev, newNotification]);
+      }
 
       return updatedVehicle;
     } catch (error) {
