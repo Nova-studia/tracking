@@ -442,7 +442,7 @@ const TransportesAdmin = ({ setNotifications }) => {
       <div className="container mx-auto">
         <header className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900 mb-6">Sistema de Transportes</h1>
-          <div className="flex space-x-4 bg-slate-100 p-1 rounded-lg">
+          <div className="flex space-x-1 bg-slate-100 p-1 rounded-lg">
   <button
     onClick={() => setActiveTab('vehicles')}
     className={`px-4 py-2.5 rounded-md flex items-center flex-1 justify-center transition-all ${
