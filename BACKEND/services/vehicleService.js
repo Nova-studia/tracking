@@ -153,6 +153,7 @@ const vehicleService = {
   async updateVehicleStatusWithComment(vehicleId, status, comment, partnerGroup = null, isMainAdmin = false, userId = null, userRole = null) {
     try {
       console.log('Updating vehicle status with comment:', { vehicleId, status, comment });
+      console.log('Creando notificación con partnerGroup:', partnerGroup || 'main');
       
       const validStates = ['pending', 'assigned', 'loading', 'in-transit', 'delivered'];
       if (!validStates.includes(status)) {
@@ -196,22 +197,33 @@ const vehicleService = {
       }
       
       // Si hay cambio de estado, crear notificación
-      if (status !== vehicleToUpdate.status) {
-        try {
-          const notification = new Notification({
-            userId: userId,
-            vehicleId: vehicleId,
-            partnerGroup: partnerGroup || 'main', // Guardar el grupo del partner
-            lotInfo: vehicle.LOT || 'N/A',
-            message: `Estado actualizado: ${vehicleToUpdate.status} → ${status}. ${comment}`,
-          });
-          await notification.save();
-          console.log('Notificación creada para cambio de estado');
-        } catch (notificationError) {
-          console.error('Error creando notificación:', notificationError);
-          // No interrumpimos el flujo principal si falla la notificación
-        }
+    // Solo crear notificación si hay un comentario explícito (no automático de cambio de estado)
+    if (comment && !comment.startsWith(`Estado actualizado a ${status}`) && comment !== `Iniciando viaje` && comment !== `Vehículo entregado al destino` && comment !== `Iniciando carga del vehículo` && comment !== `Fotos cargadas y vehículo listo para transporte`) {
+      try {
+        // Usar el partnerGroup del vehículo en lugar del usuario
+        const vehicleGroup = vehicle.partnerGroup;
+        
+        console.log('Creando notificación con datos:', {
+          vehicleId: vehicleId,
+          vehicleGroup: vehicleGroup,
+          lotInfo: vehicle.LOT || 'N/A',
+          message: comment
+        });
+        
+        const notification = new Notification({
+          userId: userId,
+          vehicleId: vehicleId,
+          partnerGroup: vehicleGroup, // Usar el grupo del vehículo
+          lotInfo: vehicle.LOT || 'N/A',
+          message: comment,
+        });
+        await notification.save();
+        console.log('Notificación creada para comentario explícito con grupo del vehículo:', vehicleGroup);
+      } catch (notificationError) {
+        console.error('Error creando notificación:', notificationError);
+        // No interrumpimos el flujo principal si falla la notificación
       }
+    }
   
       return vehicle;
     } catch (error) {
@@ -291,21 +303,7 @@ const vehicleService = {
       ).populate(['clientId', 'driverId']);
       
       // Crear notificación de subida de fotos
-      try {
-        const notification = new Notification({
-          userId: userId,
-          vehicleId: vehicleId,
-          partnerGroup: partnerGroup || 'main', // Guardar el grupo del partner
-          lotInfo: vehicle.LOT || 'N/A',
-          message: `Fotos subidas para el vehículo`,
-          image: photos.frontPhoto?.url || null, // Guardar una de las imágenes como referencia
-        });
-        await notification.save();
-        console.log('Notificación creada para subida de fotos');
-      } catch (notificationError) {
-        console.error('Error creando notificación:', notificationError);
-        // No interrumpimos el flujo principal si falla la notificación
-      }
+      console.log('Fotos subidas sin crear notificación');
   
       return vehicle;
     } catch (error) {

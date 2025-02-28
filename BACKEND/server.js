@@ -267,14 +267,12 @@ app.get('/api/states', async (req, res) => {
 });
 
 // Rutas de notificaciones
-// Ruta para obtener notificaciones según rol y grupo
 app.get('/api/notifications', auth, async (req, res) => {
   try {
     let filter = {};
     
     // Si es superadmin, puede ver todas las notificaciones (no aplicamos filtro)
     if (req.user.isMainAdmin) {
-      // No aplicamos filtro, puede ver todo
       console.log('Usuario es superadmin, mostrando todas las notificaciones');
     } 
     // Si es admin normal o partner, solo ve notificaciones de su grupo

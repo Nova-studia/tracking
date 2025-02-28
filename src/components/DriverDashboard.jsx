@@ -130,13 +130,13 @@ const VehicleCard = ({ vehicle, onPhotoUpload, onViewPhotos, onCommentsOpen, onS
       {isExpanded && (
         <div className="px-4 pb-4 border-t border-slate-100">
           <div className="text-sm text-slate-600 space-y-2 mt-4 mb-4">
-  <p><span className="font-medium">Fecha de asignación:</span> {format(new Date(vehicle.createdAt), 'dd/MM/yyyy', { locale: es })}</p>
-  <p><span className="font-medium">PIN:</span> {vehicle.PIN || '-'}</p>
-  <p><span className="font-medium">Subasta:</span> {vehicle.auctionHouse}</p>
-  <p><span className="font-medium">Ubicación:</span> {vehicle.lotLocation}</p>
-  <p><span className="font-medium">Cliente:</span> {vehicle.clientId?.name}</p>
-  {vehicle.year && <p><span className="font-medium">Año:</span> {vehicle.year}</p>}
-</div>
+            <p><span className="font-medium">Fecha de asignación:</span> {format(new Date(vehicle.createdAt), 'dd/MM/yyyy', { locale: es })}</p>
+            <p><span className="font-medium">PIN:</span> {vehicle.PIN || '-'}</p>
+            <p><span className="font-medium">Subasta:</span> {vehicle.auctionHouse}</p>
+            <p><span className="font-medium">Ubicación:</span> {vehicle.lotLocation}</p>
+            <p><span className="font-medium">Cliente:</span> {vehicle.clientId?.name}</p>
+            {vehicle.year && <p><span className="font-medium">Año:</span> {vehicle.year}</p>}
+          </div>
 
           <div className="flex flex-col gap-2">
             {vehicle.status === 'assigned' && (
@@ -188,7 +188,7 @@ const VehicleCard = ({ vehicle, onPhotoUpload, onViewPhotos, onCommentsOpen, onS
   );
 };
 
-const DriverDashboard = ({ driverId }) => {
+const DriverDashboard = ({ driverId, setNotifications }) => {
   const [activeTab, setActiveTab] = useState('current');
   const [assignedVehicles, setAssignedVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -379,6 +379,24 @@ const DriverDashboard = ({ driverId }) => {
         prev.map(v => v._id === vehicleId ? updatedVehicle : v)
       );
 
+      // Crear la notificación local
+      // Crear la notificación local
+if (updatedVehicle) {
+  const newNotification = {
+    lotInfo: `${updatedVehicle.LOT || 'LOT'} - ${updatedVehicle.brand} ${updatedVehicle.model}`,
+    message: newComment.trim(),
+    vehicleId: vehicleId,
+    image: updatedVehicle.loadingPhotos?.frontPhoto?.url || null,
+    time: new Date().toLocaleString(),
+    partnerGroup: updatedVehicle.partnerGroup // Añadir el grupo del vehículo
+  };
+  
+  console.log('Creando notificación local con grupo:', updatedVehicle.partnerGroup);
+  
+  // Actualizar el estado local de notificaciones
+  setNotifications(prev => [...prev, newNotification]);
+}
+
       return updatedVehicle;
     } catch (error) {
       console.error('Error updating comments:', error);
@@ -532,7 +550,8 @@ const DriverDashboard = ({ driverId }) => {
 };
 
 DriverDashboard.propTypes = {
-  driverId: PropTypes.string.isRequired
+  driverId: PropTypes.string.isRequired,
+  setNotifications: PropTypes.func.isRequired
 };
 
 export default DriverDashboard;

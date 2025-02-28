@@ -156,10 +156,12 @@ if (req.user.role === 'driver') {
   }
 }
     
+const commentToUse = req.body.comment ? req.body.comment : null;
+
 const vehicle = await vehicleService.updateVehicleStatusWithComment(
   req.params.vehicleId, 
   req.body.status,
-  req.body.comment || `Estado actualizado a ${req.body.status}`,
+  commentToUse,
   partnerGroup,
   isMainAdmin,
   req.user.id,
