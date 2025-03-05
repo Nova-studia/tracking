@@ -29,7 +29,6 @@ const driverSchema = new mongoose.Schema({
   },
   partnerGroup: {
     type: String,
-    default: 'main'
   }
 }, {
   timestamps: true

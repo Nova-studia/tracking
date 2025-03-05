@@ -6,7 +6,6 @@ const Vehicle = require('../models/Vehicle');
 const { uploadMiddleware } = require('../config/cloudinary');
 
 // Middleware para extraer información del usuario del token
-// En vehicles.js, verifica que el middleware extractUserInfo sea así:
 const extractUserInfo = (req, res, next) => {
   // El middleware auth ya debe haber puesto la información del usuario en req.user
   if (!req.user) {
@@ -30,7 +29,7 @@ const extractUserInfo = (req, res, next) => {
   next();
 };
 
-// Obtener todos los vehículos (filtrados por grupo del socio)
+// Obtener todos los vehículos (filtrados por grupo del usuario)
 router.get('/', auth, extractUserInfo, async (req, res) => {
   try {
     const { partnerGroup, isMainAdmin } = req.partnerInfo;
@@ -86,7 +85,7 @@ router.get('/', auth, extractUserInfo, async (req, res) => {
       return res.json(vehicles);
     }
     
-    // Para socios y admins regulares, filtrar por grupo
+    // Para admins regulares, filtrar por grupo
     const vehicles = await vehicleService.getAllVehicles(partnerGroup, false);
     res.json(vehicles);
   } catch (error) {
@@ -113,8 +112,8 @@ router.get('/:vehicleId', auth, extractUserInfo, async (req, res) => {
 // Crear nuevo vehículo (asignado al grupo del usuario)
 router.post('/', auth, extractUserInfo, async (req, res) => {
   try {
-    // Solo admin y socios pueden crear vehículos
-    if (req.user.role !== 'admin' && req.user.role !== 'partner') {
+    // Solo admin puede crear vehículos
+    if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'No autorizado' });
     }
     
@@ -131,42 +130,42 @@ router.patch('/:vehicleId/status', auth, extractUserInfo, async (req, res) => {
   try {
     const { partnerGroup, isMainAdmin } = req.partnerInfo;
     
-// Para conductores, verificamos que el vehículo esté asignado a ellos
-if (req.user.role === 'driver') {
-  const vehicle = await Vehicle.findById(req.params.vehicleId).populate('driverId');
-  if (!vehicle) {
-    return res.status(404).json({ message: 'Vehículo no encontrado' });
-  }
-
-  // Obtener las representaciones de string de ambos IDs
-  const vehicleDriverId = vehicle.driverId && typeof vehicle.driverId === 'object' 
-    ? vehicle.driverId._id?.toString() 
-    : vehicle.driverId?.toString();
-  
-  const userDriverId = req.user.driverId?.toString();
-  
-  console.log('Comparando IDs:', {
-    vehicleDriverId,
-    userDriverId,
-    vehicleId: req.params.vehicleId
-  });
-
-  if (!userDriverId || !vehicleDriverId || vehicleDriverId !== userDriverId) {
-    return res.status(403).json({ message: 'No autorizado para este vehículo' });
-  }
-}
+    // Para conductores, verificamos que el vehículo esté asignado a ellos
+    if (req.user.role === 'driver') {
+      const vehicle = await Vehicle.findById(req.params.vehicleId).populate('driverId');
+      if (!vehicle) {
+        return res.status(404).json({ message: 'Vehículo no encontrado' });
+      }
     
-const commentToUse = req.body.comment ? req.body.comment : null;
-
-const vehicle = await vehicleService.updateVehicleStatusWithComment(
-  req.params.vehicleId, 
-  req.body.status,
-  commentToUse,
-  partnerGroup,
-  isMainAdmin,
-  req.user.id,
-  req.user.role
-);
+      // Obtener las representaciones de string de ambos IDs
+      const vehicleDriverId = vehicle.driverId && typeof vehicle.driverId === 'object' 
+        ? vehicle.driverId._id?.toString() 
+        : vehicle.driverId?.toString();
+      
+      const userDriverId = req.user.driverId?.toString();
+      
+      console.log('Comparando IDs:', {
+        vehicleDriverId,
+        userDriverId,
+        vehicleId: req.params.vehicleId
+      });
+    
+      if (!userDriverId || !vehicleDriverId || vehicleDriverId !== userDriverId) {
+        return res.status(403).json({ message: 'No autorizado para este vehículo' });
+      }
+    }
+        
+    const commentToUse = req.body.comment ? req.body.comment : null;
+    
+    const vehicle = await vehicleService.updateVehicleStatusWithComment(
+      req.params.vehicleId, 
+      req.body.status,
+      commentToUse,
+      partnerGroup,
+      isMainAdmin,
+      req.user.id,
+      req.user.role
+    );
     res.json(vehicle);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -176,8 +175,8 @@ const vehicle = await vehicleService.updateVehicleStatusWithComment(
 // Asignar conductor
 router.patch('/:vehicleId/driver', auth, extractUserInfo, async (req, res) => {
   try {
-    // Solo admin y socios pueden asignar conductores
-    if (req.user.role !== 'admin' && req.user.role !== 'partner') {
+    // Solo admin puede asignar conductores
+    if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'No autorizado' });
     }
     
@@ -197,8 +196,8 @@ router.patch('/:vehicleId/driver', auth, extractUserInfo, async (req, res) => {
 // Actualizar cliente
 router.patch('/:vehicleId/client', auth, extractUserInfo, async (req, res) => {
   try {
-    // Solo admin y socios pueden actualizar clientes
-    if (req.user.role !== 'admin' && req.user.role !== 'partner') {
+    // Solo admin puede actualizar clientes
+    if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'No autorizado' });
     }
     
@@ -218,8 +217,8 @@ router.patch('/:vehicleId/client', auth, extractUserInfo, async (req, res) => {
 // Eliminar vehículo
 router.delete('/:vehicleId', auth, extractUserInfo, async (req, res) => {
   try {
-    // Solo admin y socios pueden eliminar vehículos
-    if (req.user.role !== 'admin' && req.user.role !== 'partner') {
+    // Solo admin puede eliminar vehículos
+    if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'No autorizado' });
     }
     
@@ -244,39 +243,39 @@ router.post('/:vehicleId/photos',
     try {
       const { partnerGroup, isMainAdmin } = req.partnerInfo;
       
-// Para conductores, verificamos que el vehículo esté asignado a ellos
-if (req.user.role === 'driver') {
-  const vehicle = await Vehicle.findById(req.params.vehicleId).populate('driverId');
-  if (!vehicle) {
-    return res.status(404).json({ message: 'Vehículo no encontrado' });
-  }
-
-  // Obtener las representaciones de string de ambos IDs
-  const vehicleDriverId = vehicle.driverId && typeof vehicle.driverId === 'object' 
-    ? vehicle.driverId._id?.toString() 
-    : vehicle.driverId?.toString();
-  
-  const userDriverId = req.user.driverId?.toString();
-  
-  console.log('Comparando IDs:', {
-    vehicleDriverId,
-    userDriverId,
-    vehicleId: req.params.vehicleId
-  });
-
-  if (!userDriverId || !vehicleDriverId || vehicleDriverId !== userDriverId) {
-    return res.status(403).json({ message: 'No autorizado para este vehículo' });
-  }
-}
+      // Para conductores, verificamos que el vehículo esté asignado a ellos
+      if (req.user.role === 'driver') {
+        const vehicle = await Vehicle.findById(req.params.vehicleId).populate('driverId');
+        if (!vehicle) {
+          return res.status(404).json({ message: 'Vehículo no encontrado' });
+        }
       
-const vehicle = await vehicleService.uploadVehiclePhotos(
-  req.params.vehicleId, 
-  req.files,
-  partnerGroup,
-  isMainAdmin,
-  req.user.id,
-  req.user.role
-);
+        // Obtener las representaciones de string de ambos IDs
+        const vehicleDriverId = vehicle.driverId && typeof vehicle.driverId === 'object' 
+          ? vehicle.driverId._id?.toString() 
+          : vehicle.driverId?.toString();
+        
+        const userDriverId = req.user.driverId?.toString();
+        
+        console.log('Comparando IDs:', {
+          vehicleDriverId,
+          userDriverId,
+          vehicleId: req.params.vehicleId
+        });
+      
+        if (!userDriverId || !vehicleDriverId || vehicleDriverId !== userDriverId) {
+          return res.status(403).json({ message: 'No autorizado para este vehículo' });
+        }
+      }
+          
+      const vehicle = await vehicleService.uploadVehiclePhotos(
+        req.params.vehicleId, 
+        req.files,
+        partnerGroup,
+        isMainAdmin,
+        req.user.id,
+        req.user.role
+      );
       res.json(vehicle);
     } catch (error) {
       console.error('Error in upload route:', error);

@@ -43,10 +43,16 @@ const driverService = {
       const username = driverData.username || driverData.phone;
       const password = driverData.password || '1234';
       const hashedPassword = await bcrypt.hash(password, 10);
-  
+      
+      // Asegurar que el partnerGroup sea válido y nunca sea undefined o null
+      const partnerGroup = driverData.partnerGroup && driverData.partnerGroup.trim() !== '' 
+                           ? driverData.partnerGroup 
+                           : 'main';
+      
       console.log('📝 Creando usuario para driver:', { 
         username, 
-        partnerGroup: driverData.partnerGroup || 'main' 
+        partnerGroup: partnerGroup, // Usar la variable que ya verificamos
+        originalPartnerGroup: driverData.partnerGroup // Mostrar lo que venía en la solicitud para depuración
       });
   
       // Crear usuario
@@ -56,7 +62,7 @@ const driverService = {
         role: 'driver',
         state: driverData.state || '',
         isActive: true,
-        partnerGroup: driverData.partnerGroup || 'main' // Asegurarnos de asignar el grupo
+        partnerGroup: partnerGroup // Usar la variable verificada
       });
       await user.save({ session });
   
@@ -71,7 +77,7 @@ const driverService = {
         state: driverData.state || '',
         isActive: true,
         userId: user._id,
-        partnerGroup: driverData.partnerGroup || 'main' // También asignar al conductor el grupo
+        partnerGroup: partnerGroup // Usar la misma variable verificada
       });
       await driver.save({ session });
   

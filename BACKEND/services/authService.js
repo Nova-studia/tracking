@@ -87,136 +87,137 @@ const authService = {
     }
   },
 
-  async createPartner(partnerData) {
+  async createAdmin(adminData) {
     try {
       // Verificar si ya existe un usuario con ese username
-      const existingUser = await User.findOne({ username: partnerData.username });
+      const existingUser = await User.findOne({ username: adminData.username });
       if (existingUser) {
         throw new Error('El nombre de usuario ya está registrado');
       }
 
       // Encriptar contraseña
       const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(partnerData.password, salt);
+      const hashedPassword = await bcrypt.hash(adminData.password, salt);
 
-      // Crear nuevo usuario con rol de socio
-      const newPartner = new User({
-        username: partnerData.username,
+      // Crear nuevo usuario con rol de admin
+      const newAdmin = new User({
+        username: adminData.username,
         password: hashedPassword,
-        role: 'partner', // Rol específico para socios
-        partnerGroup: partnerData.partnerGroup, // Asignar al grupo específico
+        role: 'admin', // Rol de administrador
+        partnerGroup: adminData.partnerGroup, // Asignar al grupo específico
         isActive: true,
-        state: partnerData.state || '',
-        isMainAdmin: false // Los socios no son admin principales
+        state: adminData.state || '',
+        isMainAdmin: false // No es admin principal
       });
 
-      await newPartner.save();
+      await newAdmin.save();
 
       return {
-        id: newPartner._id,
-        username: newPartner.username,
-        role: newPartner.role,
-        partnerGroup: newPartner.partnerGroup
+        id: newAdmin._id,
+        username: newAdmin.username,
+        role: newAdmin.role,
+        partnerGroup: newAdmin.partnerGroup
       };
     } catch (error) {
-      console.error('Error creando socio:', error);
-      throw new Error(`Error al crear socio: ${error.message}`);
+      console.error('Error creando administrador:', error);
+      throw new Error(`Error al crear administrador: ${error.message}`);
     }
   },
 
-  async getPartners() {
+  async getAdmins() {
     try {
-      // Obtener todos los usuarios con rol de socio
-      const partners = await User.find(
-        { role: 'partner' },
+      // Obtener todos los usuarios con rol admin que NO sean admin principal
+      const admins = await User.find(
+        { role: 'admin', isMainAdmin: false },
         { password: 0 } // Excluir el campo password
       );
       
-      return partners;
+      return admins;
     } catch (error) {
-      console.error('Error obteniendo socios:', error);
-      throw new Error('Error al obtener lista de socios');
+      console.error('Error obteniendo admins:', error);
+      throw new Error('Error al obtener lista de administradores');
     }
   },
 
-  async togglePartnerStatus(partnerId) {
+  async toggleAdminStatus(adminId) {
     try {
-      const partner = await User.findById(partnerId);
+      const admin = await User.findById(adminId);
       
-      if (!partner || partner.role !== 'partner') {
-        throw new Error('Socio no encontrado');
+      if (!admin || admin.role !== 'admin' || admin.isMainAdmin) {
+        throw new Error('Administrador no encontrado o es administrador principal');
       }
       
       // Invertir el estado actual
-      partner.isActive = !partner.isActive;
-      await partner.save();
+      admin.isActive = !admin.isActive;
+      await admin.save();
       
       return {
-        id: partner._id,
-        username: partner.username,
-        role: partner.role,
-        isActive: partner.isActive,
-        partnerGroup: partner.partnerGroup
+        id: admin._id,
+        username: admin.username,
+        role: admin.role,
+        isActive: admin.isActive,
+        partnerGroup: admin.partnerGroup
       };
     } catch (error) {
-      console.error('Error al cambiar estado de socio:', error);
-      throw new Error(`Error al modificar estado del socio: ${error.message}`);
+      console.error('Error al cambiar estado del administrador:', error);
+      throw new Error(`Error al modificar estado del administrador: ${error.message}`);
     }
   },
   
-  async updatePartner(partnerId, updateData) {
+  async updateAdmin(adminId, updateData) {
     try {
-      const partner = await User.findById(partnerId);
+      const admin = await User.findById(adminId);
       
-      if (!partner || partner.role !== 'partner') {
-        throw new Error('Socio no encontrado');
+      if (!admin || admin.role !== 'admin' || admin.isMainAdmin) {
+        throw new Error('Administrador no encontrado o es administrador principal');
       }
       
       // Actualizar solo campos permitidos
       if (updateData.partnerGroup) {
-        partner.partnerGroup = updateData.partnerGroup;
+        admin.partnerGroup = updateData.partnerGroup;
       }
       
       if (updateData.state) {
-        partner.state = updateData.state;
+        admin.state = updateData.state;
       }
       
       if (updateData.password) {
         const salt = await bcrypt.genSalt(10);
-        partner.password = await bcrypt.hash(updateData.password, salt);
+        admin.password = await bcrypt.hash(updateData.password, salt);
       }
       
-      await partner.save();
+      await admin.save();
       
       return {
-        id: partner._id,
-        username: partner.username,
-        role: partner.role,
-        isActive: partner.isActive,
-        partnerGroup: partner.partnerGroup,
-        state: partner.state
+        id: admin._id,
+        username: admin.username,
+        role: admin.role,
+        isActive: admin.isActive,
+        partnerGroup: admin.partnerGroup,
+        state: admin.state
       };
     } catch (error) {
-      console.error('Error al actualizar socio:', error);
-      throw new Error(`Error al actualizar socio: ${error.message}`);
+      console.error('Error al actualizar administrador:', error);
+      throw new Error(`Error al actualizar administrador: ${error.message}`);
     }
   },
   
-  async deletePartner(partnerId) {
+  async deleteAdmin(adminId) {
     try {
-      const partner = await User.findOneAndDelete({
-        _id: partnerId,
-        role: 'partner'
+      const admin = await User.findOneAndDelete({
+        _id: adminId,
+        role: 'admin',
+        isMainAdmin: false // Asegurarse de que no sea el admin principal
       });
       
-      if (!partner) {
-        throw new Error('Socio no encontrado');
+      if (!admin) {
+        throw new Error('Administrador no encontrado o es administrador principal');
       }
       
-      return { message: 'Socio eliminado correctamente' };
+      return { message: 'Administrador eliminado correctamente' };
     } catch (error) {
-      console.error('Error al eliminar socio:', error);
-      throw new Error(`Error al eliminar socio: ${error.message}`);
+      console.error('Error al eliminar administrador:', error);
+      throw new Error(`Error al eliminar administrador: ${error.message}`);
     }
   }
 };

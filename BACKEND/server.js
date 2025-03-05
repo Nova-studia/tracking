@@ -15,7 +15,7 @@ const Notification = require('./models/Notification');
 const auth = require('./middleware/auth');
 // Importar las rutas
 const vehiclesRoutes = require('./routes/vehicles');
-const partnersRoutes = require('./routes/partners');
+const adminsRoutes = require('./routes/admins');
 
 const app = express();
 
@@ -113,13 +113,17 @@ app.post('/api/auth/login', async (req, res) => {
 
 // Uso de archivos de rutas
 app.use('/api/vehicles', vehiclesRoutes);
-app.use('/api/partners', partnersRoutes);
+app.use('/api/admins', adminsRoutes);
+app.use('/api/partners', (req, res, next) => {
+  console.log(`Redirigiendo solicitud de /api/partners a /api/admins`);
+  adminsRoutes(req, res, next);
+});
 
 // Rutas de clientes
 app.post('/api/clients', auth, async (req, res) => {
   try {
-    // Verificar que sea admin o socio
-    if (req.user.role !== 'admin' && req.user.role !== 'partner') {
+    // Verificar que sea admin
+    if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'No autorizado' });
     }
     
@@ -132,8 +136,8 @@ app.post('/api/clients', auth, async (req, res) => {
 
 app.get('/api/clients', auth, async (req, res) => {
   try {
-    // Verificar que sea admin o socio
-    if (req.user.role !== 'admin' && req.user.role !== 'partner') {
+    // Verificar que sea admin
+    if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'No autorizado' });
     }
     
@@ -145,18 +149,23 @@ app.get('/api/clients', auth, async (req, res) => {
 });
 
 // Rutas de conductores
-// Rutas de conductores
 app.post('/api/drivers', auth, async (req, res) => {
   try {
-    // Verificar que sea admin o socio
-    if (req.user.role !== 'admin' && req.user.role !== 'partner') {
+    // Verificar que sea admin
+    if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'No autorizado' });
     }
     
-    // Si es socio o admin NO principal, asignar el mismo grupo al conductor
-    if (req.user.role === 'partner' || (req.user.role === 'admin' && !req.user.isMainAdmin)) {
+    // Si es admin NO principal, asignar el mismo grupo al conductor
+    if (!req.user.isMainAdmin) {
       req.body.partnerGroup = req.user.partnerGroup;
       console.log(`Asignando grupo ${req.user.partnerGroup} al nuevo conductor`);
+    }
+    
+    // Verificación adicional para asegurar que partnerGroup no sea undefined o null
+    if (!req.body.partnerGroup) {
+      req.body.partnerGroup = req.user.isMainAdmin ? 'main' : req.user.partnerGroup;
+      console.log(`Asignando grupo predeterminado ${req.body.partnerGroup} al nuevo conductor`);
     }
     
     const driver = await driverService.createDriver(req.body);
@@ -168,8 +177,8 @@ app.post('/api/drivers', auth, async (req, res) => {
 
 app.get('/api/drivers', auth, async (req, res) => {
   try {
-    // Verificar que sea admin o socio
-    if (req.user.role !== 'admin' && req.user.role !== 'partner') {
+    // Verificar que sea admin
+    if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'No autorizado' });
     }
     
@@ -179,7 +188,7 @@ app.get('/api/drivers', auth, async (req, res) => {
       return res.json(drivers);
     }
     
-    // Si es socio o admin regular, filtrar por su grupo
+    // Si es admin regular, filtrar por su grupo
     const drivers = await driverService.getAllDrivers();
     console.log(`Filtrando conductores por grupo: ${req.user.partnerGroup}`);
     
@@ -192,7 +201,7 @@ app.get('/api/drivers', auth, async (req, res) => {
       const userGroup = driver.userId && typeof driver.userId === 'object' ? 
         driver.userId.partnerGroup : null;
       
-      // Verificar si alguno coincide con el grupo del socio
+      // Verificar si alguno coincide con el grupo del admin
       const matchesGroup = 
         (driverGroup && driverGroup === req.user.partnerGroup) || 
         (userGroup && userGroup === req.user.partnerGroup);
@@ -214,13 +223,13 @@ app.get('/api/drivers', auth, async (req, res) => {
 
 app.patch('/api/drivers/:id/credentials', auth, async (req, res) => {
   try {
-    // Verificar que sea admin o socio
-    if (req.user.role !== 'admin' && req.user.role !== 'partner') {
+    // Verificar que sea admin
+    if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'No autorizado' });
     }
     
-    // Si es socio, verificar que el conductor pertenezca a su grupo
-    if (req.user.role === 'partner' && !req.user.isMainAdmin) {
+    // Si no es admin principal, verificar que el conductor pertenezca a su grupo
+    if (!req.user.isMainAdmin) {
       const driver = await driverService.getDriverById(req.params.id);
       if (driver.partnerGroup !== req.user.partnerGroup) {
         return res.status(403).json({ message: 'No autorizado para modificar este conductor' });
@@ -236,13 +245,13 @@ app.patch('/api/drivers/:id/credentials', auth, async (req, res) => {
 
 app.patch('/api/drivers/:id/status', auth, async (req, res) => {
   try {
-    // Verificar que sea admin o socio
-    if (req.user.role !== 'admin' && req.user.role !== 'partner') {
+    // Verificar que sea admin
+    if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'No autorizado' });
     }
     
-    // Si es socio, verificar que el conductor pertenezca a su grupo
-    if (req.user.role === 'partner' && !req.user.isMainAdmin) {
+    // Si no es admin principal, verificar que el conductor pertenezca a su grupo
+    if (!req.user.isMainAdmin) {
       const driver = await driverService.getDriverById(req.params.id);
       if (driver.partnerGroup !== req.user.partnerGroup) {
         return res.status(403).json({ message: 'No autorizado para modificar este conductor' });
@@ -275,8 +284,8 @@ app.get('/api/notifications', auth, async (req, res) => {
     if (req.user.isMainAdmin) {
       console.log('Usuario es superadmin, mostrando todas las notificaciones');
     } 
-    // Si es admin normal o partner, solo ve notificaciones de su grupo
-    else if (req.user.role === 'admin' || req.user.role === 'partner') {
+    // Si es admin normal, solo ve notificaciones de su grupo
+    else if (req.user.role === 'admin') {
       filter = { partnerGroup: req.user.partnerGroup };
       console.log(`Usuario es ${req.user.role}, filtrando por grupo: ${req.user.partnerGroup}`);
     } 
