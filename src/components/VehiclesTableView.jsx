@@ -60,33 +60,7 @@ const VehiclesTableView = ({
     
       const updatedVehicle = await response.json();
       onVehicleUpdate(updatedVehicle);
-      
-      // Crear la notificación
-      const newNotification = {
-        lotInfo: `${selectedVehicle.LOT || 'LOT'} - ${selectedVehicle.brand} ${selectedVehicle.model}`,
-        message: newComment.length > 50 ? `${newComment.substring(0, 50)}...` : newComment,
-        vehicleId: vehicleId,
-        image: selectedVehicle.loadingPhotos?.frontPhoto?.url || null,
-        time: new Date().toLocaleString()
-      };
-      
-      // Enviar la notificación al servidor
-      try {
-        await fetch(`${API_URL}/notifications`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify(newNotification)
-        });
-      } catch (notifError) {
-        console.error('Error al guardar notificación en servidor:', notifError);
-      }
-      
-      // Actualizar el estado local de notificaciones
-      setNotifications(prev => [...prev, newNotification]);
-      
+           
       return updatedVehicle;
     
     } catch (error) {
