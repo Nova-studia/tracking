@@ -4,6 +4,7 @@ import { MessageSquare, Pencil, Trash2, ChevronDown, ChevronUp } from 'lucide-re
 import ClientEditModal from './ClientEditModal';
 import PhotoViewModal from './PhotoViewModal';
 import CommentsModal from './CommentsModal';
+import TripManifestButton from './TripManifestButton';
 
 const VehiclesTableView = ({ 
   vehicles, 
@@ -393,14 +394,27 @@ const VehiclesTableView = ({
   const VehicleGroupTable = ({ vehicles, groupTitle, className }) => (
     <div className={`bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden mb-4 ${className}`}>
       <div className="border-b border-slate-200">
-        <div className="w-full bg-slate-50 px-4 py-2 flex items-center">
-          <div className="flex-1 min-w-0">
-            <h3 className="text-base font-semibold text-slate-800 truncate" title={groupTitle}>
-              {groupTitle}
-            </h3>
-          </div>
-        </div>
+  <div className="w-full bg-slate-50 px-4 py-2 flex items-center justify-between">
+    <div className="flex-1 min-w-0">
+      <h3 className="text-base font-semibold text-slate-800 truncate" title={groupTitle}>
+        {groupTitle}
+      </h3>
+    </div>
+    
+    {/* Solo muestra el botón si este no es el grupo de "Sin Conductor" y hay vehículos */}
+    {!groupTitle.includes("Sin Conductor") && vehicles.length > 0 && (
+      <div className="ml-4">
+        <TripManifestButton 
+          driver={{ 
+            name: groupTitle.split(" (")[0],  // Extraer el nombre del conductor del título
+            id: vehicles[0].driverId?._id || vehicles[0].driverId
+          }} 
+          vehicles={vehicles}
+        />
       </div>
+    )}
+  </div>
+</div>
   
       {/* Desktop View */}
       <div className="hidden md:block">
@@ -507,20 +521,20 @@ const VehiclesTableView = ({
         />
       )}
 
-      {drivers
-        .sort((a, b) => a.name.localeCompare(b.name))
-        .map(driver => {
-          const driverVehicles = groupedVehicles[driver._id] || [];
-          if (driverVehicles.length === 0) return null;
+{drivers
+  .sort((a, b) => a.name.localeCompare(b.name))
+  .map(driver => {
+    const driverVehicles = groupedVehicles[driver._id] || [];
+    if (driverVehicles.length === 0) return null;
 
-          return (
-            <VehicleGroupTable 
-              key={driver._id}
-              vehicles={driverVehicles} 
-              groupTitle={`${driver.name} (${driverVehicles.length})`}
-            />
-          );
-        })}
+    return (
+      <VehicleGroupTable 
+        key={driver._id}
+        vehicles={driverVehicles} 
+        groupTitle={`${driver.name} (${driverVehicles.length})`}
+      />
+    );
+  })}
 
       {Object.values(groupedVehicles).every(group => group.length === 0) && (
         <div className="text-center py-4 bg-slate-50 rounded-lg border border-slate-200 text-sm">
