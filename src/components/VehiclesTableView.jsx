@@ -166,7 +166,7 @@ const VehiclesTableView = ({
     const textMap = {
       pending: 'PENDIENTE',
       assigned: 'ASIGNADO',
-      loading: 'EN CARGA',
+      loading: 'CARGADO',
       'in-transit': 'EN TRÁNSITO',
       delivered: 'ENTREGADO'
     };
@@ -337,7 +337,7 @@ const VehiclesTableView = ({
         case 'assigned':
           return 'ASIGNADO';
         case 'loading':
-          return 'EN CARGA';
+          return 'CARGADO';
         case 'in-transit':
           return 'EN TRÁNSITO';
         case 'delivered':

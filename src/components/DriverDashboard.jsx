@@ -1,29 +1,55 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import PhotoUploadModal from './PhotoUploadModal';
-import PhotoViewModal from './PhotoViewModal';
 import CommentsModal from './CommentsModal';
+import PhotoViewModal from './PhotoViewModal';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { MessageSquare, Camera, Truck, ChevronDown, ChevronUp } from 'lucide-react';
+import { MessageSquare, Truck, ChevronDown, ChevronUp } from 'lucide-react';
 
-const API_URL = `${process.env.REACT_APP_API_URL}/api`;
+const API_URL = `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api`;
 
-const StatusUpdate = ({ vehicle, onUpdate }) => {
+// Componente simplificado para actualizar el estado
+const StatusUpdate = ({ vehicle, allVehicles, onUpdate }) => {
   const [isUpdating, setIsUpdating] = useState(false);
+
+  // Función para verificar si es el último vehículo por cargar
+  const isLastVehicleToLoad = () => {
+    // Filtramos los vehículos que están asignados (no en carga ni en tránsito)
+    const assignedVehicles = allVehicles.filter(v => v.status === 'assigned');
+    // Si solo queda este vehículo, es el último
+    return assignedVehicles.length === 1 && assignedVehicles[0]._id === vehicle._id;
+  };
 
   const handleSubmit = async () => {
     setIsUpdating(true);
     try {
-      await onUpdate(vehicle._id, 'in-transit', 'Iniciando viaje');
-      setIsUpdating(false);
+      // Si es el último vehículo por cargar
+      if (isLastVehicleToLoad()) {
+        // Primero cambiamos este a cargando
+        await onUpdate(vehicle._id, 'loading', 'El Vehiculo Fue Cargado!!');
+        
+        // Esperar un momento para asegurarnos que se procesó
+        setTimeout(async () => {
+          // Luego cambiar todos los vehículos a en tránsito
+          const loadingVehicles = allVehicles.filter(v => v.status === 'loading');
+          
+          for (const v of loadingVehicles) {
+            await onUpdate(v._id, 'in-transit', 'Iniciando viaje de todos los vehículos');
+          }
+        }, 1000);
+      } else {
+        // Si no es el último, solo cambiar a cargando
+        await onUpdate(vehicle._id, 'loading', 'Iniciando carga del vehículo');
+      }
     } catch (error) {
       alert('Error al actualizar el estado: ' + error.message);
+    } finally {
       setIsUpdating(false);
     }
   };
 
-  if (vehicle.status !== 'loading') {
+  // Solo mostrar el botón cuando el vehículo está asignado
+  if (vehicle.status !== 'assigned') {
     return null;
   }
 
@@ -31,62 +57,17 @@ const StatusUpdate = ({ vehicle, onUpdate }) => {
     <button
       onClick={handleSubmit}
       disabled={isUpdating}
-      className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+      className="w-full px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
     >
       <Truck className="w-4 h-4" />
-      {isUpdating ? 'Actualizando...' : 'Iniciar Viaje'}
+      {isUpdating ? 'Actualizando...' : 'Iniciar Carga'}
     </button>
   );
 };
 
-const VehicleCard = ({ vehicle, onPhotoUpload, onViewPhotos, onCommentsOpen, onStatusUpdate }) => {
+// Componente que muestra la tarjeta individual de vehículo
+const VehicleCard = ({ vehicle, allVehicles, onViewPhotos, onCommentsOpen, onStatusUpdate }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-
-  // Esta función no se usa directamente aquí, se mantiene por compatibilidad
-  // La subida real de fotos ocurre en PhotoUploadModal
-  const handlePhotoUpload = async (formData) => {
-    try {
-      setIsUploading(true);
-      const token = localStorage.getItem('token');
-      
-      console.log('Subiendo fotos para vehículo:', vehicle._id);
-      console.log('Contenido del formData:', Array.from(formData.entries()).length, 'archivos');
-      
-      const response = await fetch(`${API_URL}/vehicles/${vehicle._id}/photos`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al subir las fotos');
-      }
-
-      const updatedVehicle = await response.json();
-      console.log('Fotos subidas correctamente desde VehicleCard:', updatedVehicle);
-      
-      // Llamar a la actualización de estado y asegurarse de esperar a que termine
-      const updatedWithStatus = await onStatusUpdate(
-        vehicle._id, 
-        'loading', 
-        'Fotos cargadas y vehículo listo para transporte'
-      );
-      
-      // Notificar al componente padre con el vehículo completamente actualizado
-      onPhotoUpload(updatedWithStatus);
-      
-      return updatedWithStatus;
-    } catch (error) {
-      console.error('Error en handlePhotoUpload:', error);
-      alert('Error: ' + error.message);
-    } finally {
-      setIsUploading(false);
-    }
-  };
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -108,7 +89,7 @@ const VehicleCard = ({ vehicle, onPhotoUpload, onViewPhotos, onCommentsOpen, onS
       case 'assigned':
         return 'ASIGNADO';
       case 'loading':
-        return 'EN CARGA';
+        return 'CARGADO';
       case 'in-transit':
         return 'EN TRÁNSITO';
       case 'delivered':
@@ -118,30 +99,64 @@ const VehicleCard = ({ vehicle, onPhotoUpload, onViewPhotos, onCommentsOpen, onS
     }
   };
 
+  // Botón para iniciar viaje (solo se muestra si está en carga)
+  const StartTripButton = () => {
+    const [isUpdating, setIsUpdating] = useState(false);
+
+    const handleStartTrip = async () => {
+      setIsUpdating(true);
+      try {
+        await onStatusUpdate(vehicle._id, 'in-transit', 'Iniciando viaje');
+      } catch (error) {
+        alert('Error al iniciar viaje: ' + error.message);
+      } finally {
+        setIsUpdating(false);
+      }
+    };
+
+    if (vehicle.status !== 'loading') {
+      return null;
+    }
+
+    return (
+      <button
+        onClick={handleStartTrip}
+        disabled={isUpdating}
+        className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+      >
+        <Truck className="w-4 h-4" />
+        {isUpdating ? 'Actualizando...' : 'Iniciar Viaje'}
+      </button>
+    );
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-slate-100 overflow-hidden">
-      {/* Header - Always visible */}
-      <div 
-        className="p-4 flex items-center justify-between cursor-pointer"
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
-        <div className="flex items-center space-x-3">
-          <div className="flex flex-col">
-            <span className="font-medium text-slate-900">{vehicle.brand} {vehicle.model}</span>
-            <span className="text-sm text-slate-500">LOT: {vehicle.LOT}</span>
-          </div>
-        </div>
-        <div className="flex items-center space-x-3">
-          <span className={`px-6 py-1.5 text-sm text-white rounded-sm ${getStatusColor(vehicle.status)}`}>
-            {getStatusText(vehicle.status)}
-          </span>
-          {isExpanded ? (
-            <ChevronUp className="w-5 h-5 text-slate-500" />
-          ) : (
-            <ChevronDown className="w-5 h-5 text-slate-500" />
-          )}
-        </div>
+  {/* Header - Always visible, pero sin el onClick general */}
+  <div className="p-4 flex items-center justify-between">
+    <div className="flex items-center space-x-3">
+      <div className="flex flex-col">
+        <span className="font-medium text-slate-900">{vehicle.brand} {vehicle.model}</span>
+        <span className="text-sm text-slate-500">LOT: {vehicle.LOT}</span>
       </div>
+    </div>
+    <div className="flex items-center space-x-3">
+      <span className={`px-6 py-1.5 text-sm text-white rounded-sm ${getStatusColor(vehicle.status)}`}>
+        {getStatusText(vehicle.status)}
+      </span>
+      {/* Ahora el onClick solo está en el botón de la flecha */}
+      <button 
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="p-1.5 rounded-full hover:bg-slate-100 focus:outline-none transition-colors cursor-pointer"
+      >
+        {isExpanded ? (
+          <ChevronUp className="w-5 h-5 text-slate-500" />
+        ) : (
+          <ChevronDown className="w-5 h-5 text-slate-500" />
+        )}
+      </button>
+    </div>
+  </div>
 
       {/* Expandable Content */}
       {isExpanded && (
@@ -156,24 +171,15 @@ const VehicleCard = ({ vehicle, onPhotoUpload, onViewPhotos, onCommentsOpen, onS
           </div>
 
           <div className="flex flex-col gap-2">
-            {vehicle.status === 'assigned' && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onPhotoUpload();
-                }}
-                disabled={isUploading}
-                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                <Camera className="w-4 h-4" />
-                {isUploading ? 'Subiendo...' : 'Cargar Fotos'}
-              </button>
-            )}
-
+            {/* Botón simplificado de iniciar carga */}
             <StatusUpdate 
-              vehicle={vehicle} 
+              vehicle={vehicle}
+              allVehicles={allVehicles}
               onUpdate={onStatusUpdate}
             />
+            
+            {/* Botón para iniciar viaje */}
+            <StartTripButton />
 
             <div className="flex gap-2">
               {vehicle.loadingPhotos && Object.keys(vehicle.loadingPhotos).length > 0 && (
@@ -212,9 +218,7 @@ const DriverDashboard = ({ driverId, setNotifications }) => {
   const [error, setError] = useState(null);
   const [currentTrips, setCurrentTrips] = useState([]);
   const [completedTrips, setCompletedTrips] = useState([]);
-  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const [isViewPhotoModalOpen, setIsViewPhotoModalOpen] = useState(false);
-  const [selectedVehicleId, setSelectedVehicleId] = useState('');
   const [selectedPhotos, setSelectedPhotos] = useState(null);
   const [isCommentsModalOpen, setIsCommentsModalOpen] = useState(false);
   const [selectedVehicleForComments, setSelectedVehicleForComments] = useState(null);
@@ -348,90 +352,6 @@ const DriverDashboard = ({ driverId, setNotifications }) => {
     }
   };
 
-  const handlePhotoSubmit = async (formData) => {
-    try {
-      if (!selectedVehicleId) {
-        throw new Error('No hay vehículo seleccionado');
-      }
-
-      const token = localStorage.getItem('token');
-      
-      if (!formData || Array.from(formData.entries()).length === 0) {
-        throw new Error('No se han seleccionado fotos');
-      }
-
-      console.log('Subiendo fotos para vehículo:', selectedVehicleId);
-      console.log('Contenido del formData:', Array.from(formData.entries()).length, 'archivos');
-      
-      // Asegurarnos que el formData esté bien construido para iOS
-      // Ajuste específico para iPhone
-      const formDataAdjusted = new FormData();
-      
-      for (const [key, value] of formData.entries()) {
-        // Asegúrate de que el tipo de contenido esté correcto para iOS
-        if (value instanceof File) {
-          const newFile = new File(
-            [value], 
-            value.name, 
-            {
-              type: value.type || 'image/jpeg',
-              lastModified: value.lastModified
-            }
-          );
-          formDataAdjusted.append(key, newFile);
-          console.log(`Añadido archivo ${key}:`, newFile.name, newFile.type, newFile.size);
-        } else {
-          formDataAdjusted.append(key, value);
-          console.log(`Añadido campo ${key}:`, value);
-        }
-      }
-      
-      const response = await fetch(`${API_URL}/vehicles/${selectedVehicleId}/photos`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          // No incluyas Content-Type aquí, lo establece automáticamente con el boundary correcto
-        },
-        body: formDataAdjusted
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Error response:', errorText);
-        try {
-          const errorData = JSON.parse(errorText);
-          throw new Error(errorData.message || 'Error al subir las fotos');
-        } catch (e) {
-          throw new Error(`Error al subir las fotos: ${response.status} ${response.statusText}`);
-        }
-      }
-
-      const updatedVehicle = await response.json();
-      console.log('Fotos subidas correctamente, vehículo actualizado:', updatedVehicle);
-      
-      // Actualizar estado a 'loading'
-      const statusResponse = await handleStatusUpdate(
-        selectedVehicleId, 
-        'loading', 
-        'Fotos cargadas y vehículo listo para transporte'
-      );
-      
-      console.log('Estado actualizado a loading:', statusResponse);
-      
-      // Usar la función refreshVehicleData para actualizar todas las listas de manera consistente
-      refreshVehicleData(statusResponse);
-
-      setIsPhotoModalOpen(false);
-      setSelectedVehicleId('');
-
-      return statusResponse;
-    } catch (error) {
-      console.error('Error uploading photos:', error);
-      alert(`Error al subir fotos: ${error.message}`);
-      throw error;
-    }
-  };
-
   const handleCommentUpdate = async (vehicleId, newComment) => {
     try {
       if (!newComment?.trim()) {
@@ -555,10 +475,7 @@ const DriverDashboard = ({ driverId, setNotifications }) => {
               <VehicleCard
                 key={vehicle._id}
                 vehicle={vehicle}
-                onPhotoUpload={() => {
-                  setSelectedVehicleId(vehicle._id);
-                  setIsPhotoModalOpen(true);
-                }}
+                allVehicles={currentTrips}
                 onViewPhotos={(photos) => {
                   setSelectedPhotos(photos);
                   setIsViewPhotoModalOpen(true);
@@ -580,10 +497,7 @@ const DriverDashboard = ({ driverId, setNotifications }) => {
             <VehicleCard
               key={vehicle._id}
               vehicle={vehicle}
-              onPhotoUpload={() => {
-                setSelectedVehicleId(vehicle._id);
-                setIsPhotoModalOpen(true);
-              }}
+              allVehicles={completedTrips}
               onViewPhotos={(photos) => {
                 setSelectedPhotos(photos);
                 setIsViewPhotoModalOpen(true);
@@ -603,16 +517,6 @@ const DriverDashboard = ({ driverId, setNotifications }) => {
       </div>
 
       {/* Modals */}
-      <PhotoUploadModal
-        isOpen={isPhotoModalOpen}
-        onClose={() => {
-          setIsPhotoModalOpen(false);
-          setSelectedVehicleId('');
-        }}
-        onSubmit={handlePhotoSubmit}
-        vehicleId={selectedVehicleId}
-      />
-
       <PhotoViewModal
         isOpen={isViewPhotoModalOpen}
         onClose={() => {
