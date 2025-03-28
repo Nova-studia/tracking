@@ -4,7 +4,7 @@ import CommentsModal from './CommentsModal';
 import PhotoViewModal from './PhotoViewModal';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { MessageSquare, Truck, ChevronDown, ChevronUp } from 'lucide-react';
+import { MessageSquare, Truck, ChevronDown, ChevronUp, Car, MapPin, Calendar, User, ArrowRight } from 'lucide-react';
 
 const API_URL = `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api`;
 
@@ -57,7 +57,7 @@ const StatusUpdate = ({ vehicle, allVehicles, onUpdate }) => {
     <button
       onClick={handleSubmit}
       disabled={isUpdating}
-      className="w-full px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+      className="w-full px-4 py-2.5 bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-md shadow-sm shadow-orange-200 hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 backdrop-blur-sm"
     >
       <Truck className="w-4 h-4" />
       {isUpdating ? 'Actualizando...' : 'Iniciar Carga'}
@@ -69,34 +69,34 @@ const StatusUpdate = ({ vehicle, allVehicles, onUpdate }) => {
 const VehicleCard = ({ vehicle, allVehicles, onViewPhotos, onCommentsOpen, onStatusUpdate }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'assigned':
-        return 'bg-green-400';
-      case 'loading':
-        return 'bg-cyan-300';
-      case 'in-transit':
-        return 'bg-blue-500';
-      case 'delivered':
-        return 'bg-black';
-      default:
-        return 'bg-gray-500';
-    }
+  const getStatusBadge = (status) => {
+    const styles = {
+      assigned: 'bg-gradient-to-r from-orange-400 to-orange-500 shadow-orange-200',
+      loading: 'bg-gradient-to-r from-blue-400 to-blue-500 shadow-blue-200',
+      'in-transit': 'bg-gradient-to-r from-indigo-400 to-indigo-500 shadow-indigo-200',
+      delivered: 'bg-gradient-to-r from-emerald-500 to-emerald-600 shadow-emerald-200'
+    };
+
+    const textMap = {
+      assigned: 'ASIGNADO',
+      loading: 'CARGADO',
+      'in-transit': 'EN TRÁNSITO',
+      delivered: 'ENTREGADO'
+    };
+
+    return (
+      <span className={`px-3 py-1 text-xs font-medium rounded-md shadow-sm ${styles[status]} text-white backdrop-blur-sm`}>
+        {textMap[status]}
+      </span>
+    );
   };
 
-  const getStatusText = (status) => {
-    switch (status) {
-      case 'assigned':
-        return 'ASIGNADO';
-      case 'loading':
-        return 'CARGADO';
-      case 'in-transit':
-        return 'EN TRÁNSITO';
-      case 'delivered':
-        return 'ENTREGADO';
-      default:
-        return 'PENDIENTE';
-    }
+  // Formatear la fecha para mostrar día de la semana
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    return `${days[date.getDay()]} ${date.getDate()} ${months[date.getMonth()]}`;
   };
 
   // Botón para iniciar viaje (solo se muestra si está en carga)
@@ -122,7 +122,7 @@ const VehicleCard = ({ vehicle, allVehicles, onViewPhotos, onCommentsOpen, onSta
       <button
         onClick={handleStartTrip}
         disabled={isUpdating}
-        className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        className="w-full px-4 py-2.5 bg-gradient-to-r from-blue-400 to-blue-500 text-white rounded-md shadow-sm shadow-blue-200 hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 backdrop-blur-sm"
       >
         <Truck className="w-4 h-4" />
         {isUpdating ? 'Actualizando...' : 'Iniciar Viaje'}
@@ -131,46 +131,70 @@ const VehicleCard = ({ vehicle, allVehicles, onViewPhotos, onCommentsOpen, onSta
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-slate-100 overflow-hidden">
-  {/* Header - Always visible, pero sin el onClick general */}
-  <div className="p-4 flex items-center justify-between">
-    <div className="flex items-center space-x-3">
-      <div className="flex flex-col">
-        <span className="font-medium text-slate-900">{vehicle.brand} {vehicle.model}</span>
-        <span className="text-sm text-slate-500">LOT: {vehicle.LOT}</span>
+    <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mb-3 backdrop-blur-sm hover:shadow-md transition-all duration-200">
+      {/* Header - Always visible, solo el arrow tiene onClick */}
+      <div className="p-3 flex items-center justify-between">
+        <div className="flex flex-col flex-1">
+          <div className="flex items-center">
+            <div className="flex-shrink-0 mr-3">
+              <div className="h-10 w-10 bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg flex items-center justify-center shadow-sm">
+                <Car className="h-5 w-5 text-slate-500" />
+              </div>
+            </div>
+            <span className="font-semibold text-slate-800">{vehicle.brand} {vehicle.model}</span>
+            <div className="ml-auto">
+              {getStatusBadge(vehicle.status)}
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center mt-2">
+            <div className="flex items-center mr-3">
+              <span className="text-xs text-slate-500">LOT: {vehicle.LOT}</span>
+            </div>
+            <div className="flex items-center mr-3">
+              <Calendar className="h-3 w-3 text-slate-400 mr-1" />
+              <span className="text-xs text-slate-500">{formatDate(vehicle.assignedAt || vehicle.createdAt)}</span>
+            </div>
+            <div className="flex items-center">
+              <MapPin className="h-3 w-3 text-slate-400 mr-1" />
+              <span className="text-xs text-slate-500 truncate max-w-[160px]">{vehicle.lotLocation}</span>
+            </div>
+          </div>
+        </div>
+        <div 
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="p-2 rounded-lg bg-slate-50 hover:bg-slate-100 cursor-pointer transition-all duration-200 ml-2"
+        >
+          {isExpanded ? (
+            <ChevronUp className="w-5 h-5 text-slate-500" />
+          ) : (
+            <ChevronDown className="w-5 h-5 text-slate-500" />
+          )}
+        </div>
       </div>
-    </div>
-    <div className="flex items-center space-x-3">
-      <span className={`px-6 py-1.5 text-sm text-white rounded-sm ${getStatusColor(vehicle.status)}`}>
-        {getStatusText(vehicle.status)}
-      </span>
-      {/* Ahora el onClick solo está en el botón de la flecha */}
-      <button 
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="p-1.5 rounded-full hover:bg-slate-100 focus:outline-none transition-colors cursor-pointer"
-      >
-        {isExpanded ? (
-          <ChevronUp className="w-5 h-5 text-slate-500" />
-        ) : (
-          <ChevronDown className="w-5 h-5 text-slate-500" />
-        )}
-      </button>
-    </div>
-  </div>
 
       {/* Expandable Content */}
       {isExpanded && (
         <div className="px-4 pb-4 border-t border-slate-100">
-          <div className="text-sm text-slate-600 space-y-2 mt-4 mb-4">
-            <p><span className="font-medium">Fecha de asignación:</span> {format(new Date(vehicle.createdAt), 'dd/MM/yyyy', { locale: es })}</p>
-            <p><span className="font-medium">PIN:</span> {vehicle.PIN || '-'}</p>
-            <p><span className="font-medium">Subasta:</span> {vehicle.auctionHouse}</p>
-            <p><span className="font-medium">Ubicación:</span> {vehicle.lotLocation}</p>
-            <p><span className="font-medium">Cliente:</span> {vehicle.clientId?.name}</p>
-            {vehicle.year && <p><span className="font-medium">Año:</span> {vehicle.year}</p>}
+          <div className="mt-4 mb-4 bg-slate-50 p-3 rounded-lg space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <p className="text-xs text-slate-600">
+                <span className="font-medium">PIN:</span> {vehicle.PIN || '-'}
+              </p>
+              <p className="text-xs text-slate-600">
+                <span className="font-medium">Subasta:</span> {vehicle.auctionHouse}
+              </p>
+              <p className="text-xs text-slate-600">
+                <span className="font-medium">Cliente:</span> {vehicle.clientId?.name}
+              </p>
+              {vehicle.year && (
+                <p className="text-xs text-slate-600">
+                  <span className="font-medium">Año:</span> {vehicle.year}
+                </p>
+              )}
+            </div>
           </div>
 
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-3">
             {/* Botón simplificado de iniciar carga */}
             <StatusUpdate 
               vehicle={vehicle}
@@ -188,7 +212,7 @@ const VehicleCard = ({ vehicle, allVehicles, onViewPhotos, onCommentsOpen, onSta
                     e.stopPropagation();
                     onViewPhotos(vehicle.loadingPhotos);
                   }}
-                  className="flex-1 px-3 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 text-sm"
+                  className="flex-1 px-3 py-2 bg-slate-50 text-slate-700 rounded-md hover:bg-slate-100 text-xs transition-all duration-200 backdrop-blur-sm border border-slate-200"
                 >
                   Ver Fotos
                 </button>
@@ -198,9 +222,9 @@ const VehicleCard = ({ vehicle, allVehicles, onViewPhotos, onCommentsOpen, onSta
                   e.stopPropagation();
                   onCommentsOpen(vehicle);
                 }}
-                className="flex-1 px-3 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 text-sm flex items-center justify-center gap-1"
+                className="flex-1 px-3 py-2 bg-slate-50 text-slate-700 rounded-md hover:bg-slate-100 text-xs transition-all duration-200 backdrop-blur-sm border border-slate-200 flex items-center justify-center gap-1"
               >
-                <MessageSquare className="w-4 h-4" />
+                <MessageSquare className="w-3 h-3" />
                 Comentarios
               </button>
             </div>
@@ -413,7 +437,7 @@ const DriverDashboard = ({ driverId, setNotifications }) => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-900"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-slate-900"></div>
       </div>
     );
   }
@@ -425,7 +449,7 @@ const DriverDashboard = ({ driverId, setNotifications }) => {
           <p className="text-xl font-semibold">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800"
+            className="mt-4 px-4 py-2 bg-gradient-to-r from-slate-800 to-slate-900 text-white rounded-md shadow-sm hover:shadow-md transition-all duration-200"
           >
             Reintentar
           </button>
@@ -437,16 +461,21 @@ const DriverDashboard = ({ driverId, setNotifications }) => {
   return (
     <div className="max-w-lg mx-auto p-4">
       <div className="mb-6">
-        <h1 className="text-xl font-medium text-slate-900">Panel de Conductor</h1>
-        <p className="text-sm text-slate-600 mt-1">
-          {currentTrips.length} viajes activos · {completedTrips.length} completados
-        </p>
+        <h1 className="text-xl font-semibold text-slate-900">Panel de Conductor</h1>
+        <div className="flex items-center mt-2">
+          <div className="bg-gradient-to-r from-blue-400 to-blue-500 px-2.5 py-1 rounded-md text-xs text-white font-medium shadow-sm mr-2">
+            {currentTrips.length} viajes activos
+          </div>
+          <div className="bg-gradient-to-r from-emerald-400 to-emerald-500 px-2.5 py-1 rounded-md text-xs text-white font-medium shadow-sm">
+            {completedTrips.length} completados
+          </div>
+        </div>
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex border-b border-slate-200 mb-4">
+      <div className="flex border-b border-slate-200 mb-6">
         <button
-          className={`flex-1 py-2 text-sm font-medium border-b-2 ${
+          className={`flex-1 py-2.5 text-sm font-medium border-b-2 transition-all duration-200 ${
             activeTab === 'current'
               ? 'border-blue-500 text-blue-600'
               : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -456,7 +485,7 @@ const DriverDashboard = ({ driverId, setNotifications }) => {
           Viajes Activos
         </button>
         <button
-          className={`flex-1 py-2 text-sm font-medium border-b-2 ${
+          className={`flex-1 py-2.5 text-sm font-medium border-b-2 transition-all duration-200 ${
             activeTab === 'completed'
               ? 'border-blue-500 text-blue-600'
               : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -488,8 +517,8 @@ const DriverDashboard = ({ driverId, setNotifications }) => {
               />
             ))
           ) : (
-            <div className="text-center py-8 text-slate-500 bg-slate-50 rounded-lg">
-              No hay viajes activos
+            <div className="text-center py-12 bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl border border-slate-200 shadow-sm">
+              <p className="text-slate-500">No hay viajes activos</p>
             </div>
           )
         ) : completedTrips.length > 0 ? (
@@ -510,8 +539,8 @@ const DriverDashboard = ({ driverId, setNotifications }) => {
             />
           ))
         ) : (
-          <div className="text-center py-8 text-slate-500 bg-slate-50 rounded-lg">
-            No hay viajes completados
+          <div className="text-center py-12 bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl border border-slate-200 shadow-sm">
+            <p className="text-slate-500">No hay viajes completados</p>
           </div>
         )}
       </div>

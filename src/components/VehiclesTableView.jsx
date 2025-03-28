@@ -4,6 +4,7 @@ import { MessageSquare, Pencil, Trash2, ChevronDown, ChevronUp, Car, MapPin, Cal
 import ClientEditModal from './ClientEditModal';
 import PhotoViewModal from './PhotoViewModal';
 import CommentsModal from './CommentsModal';
+import DriverSelectModal from './DriverSelectModal';
 
 const VehiclesTableView = ({ 
   vehicles, 
@@ -21,6 +22,8 @@ const VehiclesTableView = ({
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [isCommentsModalOpen, setIsCommentsModalOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [isDriverModalOpen, setIsDriverModalOpen] = useState(false);
+  const [vehicleForDriverAssignment, setVehicleForDriverAssignment] = useState(null);
 
   const handleUpdateComment = async (vehicleId, newComment) => {
     try {
@@ -61,7 +64,6 @@ const VehiclesTableView = ({
       const updatedVehicle = await response.json();
       onVehicleUpdate(updatedVehicle);
       
-      // Crear la notificación
       const newNotification = {
         lotInfo: `${selectedVehicle.LOT || 'LOT'} - ${selectedVehicle.brand} ${selectedVehicle.model}`,
         message: newComment.length > 50 ? `${newComment.substring(0, 50)}...` : newComment,
@@ -70,7 +72,6 @@ const VehiclesTableView = ({
         time: new Date().toLocaleString()
       };
       
-      // Enviar la notificación al servidor
       try {
         await fetch(`${API_URL}/notifications`, {
           method: 'POST',
@@ -84,9 +85,7 @@ const VehiclesTableView = ({
         console.error('Error al guardar notificación en servidor:', notifError);
       }
       
-      // Actualizar el estado local de notificaciones
       setNotifications(prev => [...prev, newNotification]);
-      
       return updatedVehicle;
     
     } catch (error) {
@@ -120,6 +119,25 @@ const VehiclesTableView = ({
     }
   };
 
+  const openDriverModal = (vehicle) => {
+    setVehicleForDriverAssignment(vehicle);
+    setIsDriverModalOpen(true);
+  };
+
+  const handleDriverSelect = (driverId) => {
+    if (vehicleForDriverAssignment) {
+      onAssignDriver(vehicleForDriverAssignment._id, driverId);
+      
+      if (vehicleForDriverAssignment.status === 'pending') {
+        setTimeout(() => {
+          onUpdateStatus(vehicleForDriverAssignment._id, 'assigned', 'Conductor asignado al vehículo');
+        }, 100);
+      }
+      
+      setVehicleForDriverAssignment(null);
+    }
+  };
+
   const groupedVehicles = React.useMemo(() => {
     const groups = {
       unassigned: []
@@ -137,9 +155,15 @@ const VehiclesTableView = ({
     });
 
     sortedVehicles.forEach(vehicle => {
-      const driverId = vehicle.driverId
-        ? (typeof vehicle.driverId === 'object' ? vehicle.driverId._id : vehicle.driverId)
-        : null;
+      let driverId = null;
+      
+      if (vehicle.driverId) {
+        if (typeof vehicle.driverId === 'object' && vehicle.driverId !== null) {
+          driverId = vehicle.driverId._id;
+        } else if (typeof vehicle.driverId === 'string') {
+          driverId = vehicle.driverId;
+        }
+      }
 
       if (!driverId) {
         groups.unassigned.push(vehicle);
@@ -156,11 +180,11 @@ const VehiclesTableView = ({
 
   const getStatusBadge = (status) => {
     const styles = {
-      pending: 'bg-gradient-to-r from-red-500 to-red-600 shadow-red-200',
-      assigned: 'bg-gradient-to-r from-orange-400 to-orange-500 shadow-orange-200',
-      loading: 'bg-gradient-to-r from-blue-400 to-blue-500 shadow-blue-200',
-      'in-transit': 'bg-gradient-to-r from-indigo-400 to-indigo-500 shadow-indigo-200',
-      delivered: 'bg-gradient-to-r from-emerald-500 to-emerald-600 shadow-emerald-200'
+      pending: 'bg-red-500 text-white',
+      assigned: 'bg-orange-500 text-white',
+      loading: 'bg-blue-500 text-white',
+      'in-transit': 'bg-indigo-500 text-white',
+      delivered: 'bg-emerald-500 text-white'
     };
 
     const textMap = {
@@ -172,7 +196,7 @@ const VehiclesTableView = ({
     };
 
     return (
-      <span className={`px-3 py-1 text-xs font-medium rounded-md shadow-sm ${styles[status]} text-white backdrop-blur-sm`}>
+      <span className={`px-2 py-1 text-xs font-medium rounded ${styles[status]}`}>
         {textMap[status]}
       </span>
     );
@@ -188,9 +212,9 @@ const VehiclesTableView = ({
     };
 
     return (
-      <div className="w-full bg-slate-100 rounded-full h-1.5 backdrop-blur-sm">
+      <div className="w-full bg-slate-100 rounded-full h-1.5">
         <div 
-          className={`h-1.5 rounded-full bg-gradient-to-r from-blue-400 to-indigo-500`} 
+          className="h-1.5 rounded-full bg-blue-500" 
           style={{ width: percentages[status] }}
         ></div>
       </div>
@@ -210,12 +234,11 @@ const VehiclesTableView = ({
   const getActionButton = (vehicle) => {
     const buttons = [];
     
-    // Agregar botón de eliminar para todos los vehículos
     buttons.push(
       <button
         key="delete-button"
         onClick={() => handleDelete(vehicle._id)}
-        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all duration-200"
+        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full"
         title="Eliminar vehículo"
       >
         <Trash2 className="h-4 w-4" />
@@ -230,7 +253,7 @@ const VehiclesTableView = ({
             setSelectedPhotos(vehicle.loadingPhotos);
             setIsPhotoModalOpen(true);
           }}
-          className="text-xs px-3 py-1 bg-slate-900/5 border border-slate-200 text-slate-700 rounded-md hover:bg-slate-100 transition-all duration-200 backdrop-blur-sm"
+          className="text-xs px-3 py-1 bg-slate-100 border border-slate-200 text-slate-700 rounded-md hover:bg-slate-200"
         >
           Ver Fotos
         </button>
@@ -247,51 +270,35 @@ const VehiclesTableView = ({
     }
 
     if (vehicle.status === 'pending' || vehicle.status === 'assigned' || vehicle.status === 'loading') {
-      const select = (
-        <select
-          key="driver-select"
-          value={vehicle.driverId ? (typeof vehicle.driverId === 'object' ? vehicle.driverId._id : vehicle.driverId) : ''}
-          onChange={(e) => {
-            onAssignDriver(vehicle._id, e.target.value);
-            if (e.target.value && vehicle.status === 'pending') {
-              setTimeout(() => {
-                onUpdateStatus(vehicle._id, 'assigned', 'Conductor asignado al vehículo');
-              }, 100);
-            }
-          }}
-          className="text-xs px-3 py-1.5 rounded-md bg-white backdrop-blur-sm border border-slate-200 text-slate-700 hover:border-slate-300 focus:ring-1 focus:ring-indigo-300 focus:outline-none shadow-sm transition-all duration-200"
+      buttons.push(
+        <button
+          key="assign-driver"
+          onClick={() => openDriverModal(vehicle)}
+          className="text-xs px-3 py-1.5 rounded-md bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 flex items-center space-x-1"
         >
-          <option value="">
-            {vehicle.status === 'pending' ? 'Asignar' : 'Reasignar'}
-          </option>
-          {drivers
-            .filter(driver => driver.isActive)
-            .map(driver => (
-              <option key={driver._id} value={driver._id}>
-                {driver.name}
-              </option>
-            ))
-          }
-        </select>
+          <User className="h-3 w-3" />
+          <span>
+            {vehicle.status === 'pending' ? 'Asignar' : 'Reasignar'} Conductor
+          </span>
+        </button>
       );
-      buttons.push(select);
     }
 
     const buttonConfig = {
       assigned: {
         action: 'loading',
         text: 'Iniciar Carga',
-        className: 'bg-gradient-to-r from-orange-400 to-orange-500 text-white shadow-sm shadow-orange-200',
+        className: 'bg-orange-500 text-white',
       },
       loading: {
         action: 'in-transit',
         text: 'Iniciar Viaje',
-        className: 'bg-gradient-to-r from-blue-400 to-blue-500 text-white shadow-sm shadow-blue-200',
+        className: 'bg-blue-500 text-white',
       },
       'in-transit': {
         action: 'delivered',
         text: 'Entregar',
-        className: 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-sm shadow-indigo-200',
+        className: 'bg-indigo-500 text-white',
       }
     };
 
@@ -305,7 +312,7 @@ const VehiclesTableView = ({
             config.action, 
             `Vehículo ${config.action === 'loading' ? 'en carga' : config.action === 'in-transit' ? 'en tránsito' : 'entregado'}`
           )}
-          className={`text-xs px-3 py-1.5 rounded-md transition-all duration-200 backdrop-blur-sm ${config.className}`}
+          className={`text-xs px-3 py-1.5 rounded-md ${config.className}`}
         >
           {config.text}
         </button>
@@ -326,16 +333,23 @@ const VehiclesTableView = ({
       (vehicle.city && vehicle.state ? `${vehicle.city}, ${vehicle.state}` : '-');
   };
 
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    return `${days[date.getDay()]} ${date.getDate()} ${months[date.getMonth()]}`;
+  };
+
   const VehicleCard = ({ vehicle }) => {
     const [isExpanded, setIsExpanded] = useState(false);
   
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mb-2 backdrop-blur-sm hover:shadow-md transition-all duration-200">
+      <div className="bg-white rounded-lg shadow-sm border border-slate-100 overflow-hidden mb-2">
         <div className="p-3 flex items-center justify-between">
           <div className="flex flex-col flex-1">
             <div className="flex items-center">
               <div className="flex-shrink-0 mr-3">
-                <div className="h-10 w-10 bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg flex items-center justify-center shadow-sm">
+                <div className="h-10 w-10 bg-slate-100 rounded-lg flex items-center justify-center">
                   <Car className="h-5 w-5 text-slate-500" />
                 </div>
               </div>
@@ -350,14 +364,7 @@ const VehiclesTableView = ({
               </div>
               <div className="flex items-center mr-3">
                 <Calendar className="h-3 w-3 text-slate-400 mr-1" />
-                <span className="text-xs text-slate-500">{
-                  (() => {
-                    const date = new Date(vehicle.createdAt);
-                    const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-                    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-                    return `${days[date.getDay()]} ${date.getDate()} ${months[date.getMonth()]}`;
-                  })()
-                }</span>
+                <span className="text-xs text-slate-500">{formatDate(vehicle.createdAt)}</span>
               </div>
               <div className="flex items-center">
                 <MapPin className="h-3 w-3 text-slate-400 mr-1" />
@@ -367,7 +374,7 @@ const VehiclesTableView = ({
           </div>
           <div 
             onClick={() => setIsExpanded(!isExpanded)}
-            className="p-2 rounded-lg bg-slate-50 hover:bg-slate-100 cursor-pointer transition-all duration-200"
+            className="p-2 rounded-lg bg-slate-50 hover:bg-slate-100 cursor-pointer"
           >
             {isExpanded ? (
               <ChevronUp className="w-5 h-5 text-slate-500" />
@@ -409,7 +416,7 @@ const VehiclesTableView = ({
                   setSelectedVehicle(vehicle);
                   setIsCommentsModalOpen(true);
                 }}
-                className="flex items-center justify-center gap-1 px-3 py-1.5 bg-slate-50 text-slate-600 rounded-md text-xs hover:bg-slate-100 transition-all duration-200 backdrop-blur-sm"
+                className="flex items-center justify-center gap-1 px-3 py-1.5 bg-slate-50 text-slate-600 rounded-md text-xs hover:bg-slate-100"
               >
                 <MessageSquare className="w-3 h-3" />
                 <span>Comentarios</span>
@@ -422,7 +429,7 @@ const VehiclesTableView = ({
                     setSelectedPhotos(vehicle.loadingPhotos);
                     setIsPhotoModalOpen(true);
                   }}
-                  className="px-3 py-1.5 bg-slate-50 text-slate-600 rounded-md text-xs hover:bg-slate-100 transition-all duration-200 backdrop-blur-sm"
+                  className="px-3 py-1.5 bg-slate-50 text-slate-600 rounded-md text-xs hover:bg-slate-100"
                 >
                   Ver Fotos
                 </button>
@@ -441,9 +448,9 @@ const VehiclesTableView = ({
   };
 
   const VehicleGroupTable = ({ vehicles, groupTitle, className }) => (
-    <div className={`bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-4 backdrop-filter backdrop-blur-sm ${className}`}>
+    <div className={`bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden mb-4 ${className}`}>
       <div className="border-b border-slate-200">
-        <div className="w-full bg-gradient-to-r from-slate-50 to-slate-100 px-4 py-3 flex items-center">
+        <div className="w-full bg-slate-50 px-4 py-3 flex items-center">
           <div className="flex-1 min-w-0">
             <h3 className="text-sm font-semibold text-slate-700 truncate" title={groupTitle}>
               {groupTitle}
@@ -456,7 +463,7 @@ const VehiclesTableView = ({
                 return (
                   <div key={status} className="flex items-center">
                     {getStatusBadge(status)}
-                    <span className="ml-1 text-xs bg-white px-2 py-0.5 rounded-md text-slate-600 shadow-sm">{count}</span>
+                    <span className="ml-1 text-xs bg-white px-2 py-0.5 rounded-md text-slate-600">{count}</span>
                   </div>
                 );
               })}
@@ -486,12 +493,12 @@ const VehiclesTableView = ({
                   .map((vehicle, index) => (
                     <tr 
                       key={vehicle._id} 
-                      className={`border-b hover:bg-slate-50/80 transition-all duration-200 ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
+                      className={`border-b hover:bg-slate-50 ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
                     >
                       <td className="px-4 py-3">
                         <div className="flex flex-col">
                           <span className="font-medium text-slate-800">{vehicle.brand} {vehicle.model} {vehicle.year}</span>
-                          <span className="text-xs text-slate-500 mt-0.5">Creado: {new Date(vehicle.createdAt).toLocaleDateString()}</span>
+                          <span className="text-xs text-slate-500 mt-0.5">Creado: {formatDate(vehicle.createdAt)}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3">
@@ -514,7 +521,7 @@ const VehiclesTableView = ({
                                   setSelectedVehicle(vehicle);
                                   setIsClientModalOpen(true);
                                 }}
-                                className="ml-1 p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-all duration-200"
+                                className="ml-1 p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full"
                               >
                                 <Pencil className="h-3 w-3" />
                               </button>
@@ -543,7 +550,7 @@ const VehiclesTableView = ({
                               setSelectedVehicle(vehicle);
                               setIsCommentsModalOpen(true);
                             }}
-                            className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-all duration-200"
+                            className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full"
                             title={vehicle.comments || 'Sin comentarios'}
                           >
                             <MessageSquare className="h-4 w-4" />
@@ -569,7 +576,7 @@ const VehiclesTableView = ({
           ))}
           
         {vehicles.length === 0 && (
-          <div className="py-6 text-center text-sm text-slate-500 bg-slate-50/50 rounded-lg my-2">
+          <div className="py-6 text-center text-sm text-slate-500 bg-slate-50 rounded-lg my-2">
             No hay vehículos en este grupo
           </div>
         )}
@@ -604,7 +611,7 @@ const VehiclesTableView = ({
         })}
 
       {Object.values(groupedVehicles).every(group => group.length === 0) && (
-        <div className="text-center py-12 bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl border border-slate-200 shadow-sm">
+        <div className="text-center py-12 bg-slate-50 rounded-lg border border-slate-200 shadow-sm">
           <p className="text-slate-500">No hay vehículos registrados</p>
         </div>
       )}
@@ -637,6 +644,23 @@ const VehiclesTableView = ({
         }}
         onSubmit={handleUpdateComment}
         vehicle={selectedVehicle}
+      />
+
+      <DriverSelectModal 
+        isOpen={isDriverModalOpen}
+        onClose={() => {
+          setIsDriverModalOpen(false);
+          setVehicleForDriverAssignment(null);
+        }}
+        drivers={drivers.filter(driver => driver.isActive)}
+        onDriverSelect={handleDriverSelect}
+        selectedDriverId={
+          vehicleForDriverAssignment && vehicleForDriverAssignment.driverId
+            ? (typeof vehicleForDriverAssignment.driverId === 'object' && vehicleForDriverAssignment.driverId !== null
+                ? vehicleForDriverAssignment.driverId._id 
+                : vehicleForDriverAssignment.driverId) 
+            : null
+        }
       />
     </div>
   );
@@ -718,4 +742,4 @@ VehiclesTableView.propTypes = {
   setNotifications: PropTypes.func.isRequired,
 };
 
-export default VehiclesTableView;
+export default VehiclesTableView

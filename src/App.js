@@ -257,7 +257,7 @@ function App() {
                                 ) : (
                                   <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
                                     <img 
-                                      src="/sport-car.png" 
+                                      src="/icon.png" 
                                       alt="Carro" 
                                       className="w-8 h-8 sm:w-10 sm:h-10"
                                     />
