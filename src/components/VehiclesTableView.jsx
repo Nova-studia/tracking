@@ -178,13 +178,14 @@ const VehiclesTableView = ({
     return groups;
   }, [vehicles]);
 
+  // Monochrome status badges with minimal design
   const getStatusBadge = (status) => {
     const styles = {
-      pending: 'bg-red-500 text-white',
-      assigned: 'bg-orange-500 text-white',
-      loading: 'bg-blue-500 text-white',
-      'in-transit': 'bg-indigo-500 text-white',
-      delivered: 'bg-emerald-500 text-white'
+      pending: 'bg-black text-white',
+      assigned: 'bg-gray-700 text-white',
+      loading: 'bg-gray-600 text-white',
+      'in-transit': 'bg-gray-500 text-white',
+      delivered: 'bg-gray-400 text-white'
     };
 
     const textMap = {
@@ -202,6 +203,7 @@ const VehiclesTableView = ({
     );
   };
 
+  // Simplified progress bar
   const getProgressBar = (status) => {
     const percentages = {
       pending: '20%',
@@ -212,9 +214,9 @@ const VehiclesTableView = ({
     };
 
     return (
-      <div className="w-full bg-slate-100 rounded-full h-1.5">
+      <div className="w-full bg-gray-200 rounded-full h-1.5">
         <div 
-          className="h-1.5 rounded-full bg-blue-500" 
+          className="h-1.5 rounded-full bg-black" 
           style={{ width: percentages[status] }}
         ></div>
       </div>
@@ -231,6 +233,7 @@ const VehiclesTableView = ({
     }
   };
   
+  // Minimalist action buttons
   const getActionButton = (vehicle) => {
     const buttons = [];
     
@@ -238,7 +241,7 @@ const VehiclesTableView = ({
       <button
         key="delete-button"
         onClick={() => handleDelete(vehicle._id)}
-        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full"
+        className="p-1.5 text-gray-500 hover:text-black hover:bg-gray-100 rounded-full"
         title="Eliminar vehículo"
       >
         <Trash2 className="h-4 w-4" />
@@ -253,7 +256,7 @@ const VehiclesTableView = ({
             setSelectedPhotos(vehicle.loadingPhotos);
             setIsPhotoModalOpen(true);
           }}
-          className="text-xs px-3 py-1 bg-slate-100 border border-slate-200 text-slate-700 rounded-md hover:bg-slate-200"
+          className="text-xs px-3 py-1 border border-gray-300 text-gray-700 rounded hover:bg-gray-100"
         >
           Ver Fotos
         </button>
@@ -274,7 +277,7 @@ const VehiclesTableView = ({
         <button
           key="assign-driver"
           onClick={() => openDriverModal(vehicle)}
-          className="text-xs px-3 py-1.5 rounded-md bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 flex items-center space-x-1"
+          className="text-xs px-3 py-1 rounded border border-gray-300 text-gray-700 hover:bg-gray-100 flex items-center space-x-1"
         >
           <User className="h-3 w-3" />
           <span>
@@ -284,21 +287,22 @@ const VehiclesTableView = ({
       );
     }
 
+    // Simplified button configuration
     const buttonConfig = {
       assigned: {
         action: 'loading',
         text: 'Iniciar Carga',
-        className: 'bg-orange-500 text-white',
+        className: 'bg-black text-white',
       },
       loading: {
         action: 'in-transit',
         text: 'Iniciar Viaje',
-        className: 'bg-blue-500 text-white',
+        className: 'bg-black text-white',
       },
       'in-transit': {
         action: 'delivered',
         text: 'Entregar',
-        className: 'bg-indigo-500 text-white',
+        className: 'bg-black text-white',
       }
     };
 
@@ -312,7 +316,7 @@ const VehiclesTableView = ({
             config.action, 
             `Vehículo ${config.action === 'loading' ? 'en carga' : config.action === 'in-transit' ? 'en tránsito' : 'entregado'}`
           )}
-          className={`text-xs px-3 py-1.5 rounded-md ${config.className}`}
+          className={`text-xs px-3 py-1 rounded ${config.className}`}
         >
           {config.text}
         </button>
@@ -340,72 +344,73 @@ const VehiclesTableView = ({
     return `${days[date.getDay()]} ${date.getDate()} ${months[date.getMonth()]}`;
   };
 
+  // Minimalist card design
   const VehicleCard = ({ vehicle }) => {
     const [isExpanded, setIsExpanded] = useState(false);
   
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-slate-100 overflow-hidden mb-2">
+      <div className="bg-white rounded border border-gray-200 overflow-hidden mb-2">
         <div className="p-3 flex items-center justify-between">
           <div className="flex flex-col flex-1">
             <div className="flex items-center">
               <div className="flex-shrink-0 mr-3">
-                <div className="h-10 w-10 bg-slate-100 rounded-lg flex items-center justify-center">
-                  <Car className="h-5 w-5 text-slate-500" />
+                <div className="h-8 w-8 bg-gray-100 rounded-full flex items-center justify-center">
+                  <Car className="h-4 w-4 text-gray-500" />
                 </div>
               </div>
-              <span className="font-semibold text-slate-800">{vehicle.brand} {vehicle.model} {vehicle.year}</span>
+              <span className="font-medium text-gray-800">{vehicle.brand} {vehicle.model} {vehicle.year}</span>
               <div className="ml-auto">
                 {getStatusBadge(vehicle.status)}
               </div>
             </div>
             <div className="flex flex-wrap items-center mt-2">
               <div className="flex items-center mr-3">
-                <span className="text-xs text-slate-500">LOT: {vehicle.LOT}</span>
+                <span className="text-xs text-gray-500">LOT: {vehicle.LOT}</span>
               </div>
               <div className="flex items-center mr-3">
-                <Calendar className="h-3 w-3 text-slate-400 mr-1" />
-                <span className="text-xs text-slate-500">{formatDate(vehicle.createdAt)}</span>
+                <Calendar className="h-3 w-3 text-gray-400 mr-1" />
+                <span className="text-xs text-gray-500">{formatDate(vehicle.createdAt)}</span>
               </div>
               <div className="flex items-center">
-                <MapPin className="h-3 w-3 text-slate-400 mr-1" />
-                <span className="text-xs text-slate-500 truncate max-w-[160px]">{getLocation(vehicle)}</span>
+                <MapPin className="h-3 w-3 text-gray-400 mr-1" />
+                <span className="text-xs text-gray-500 truncate max-w-[160px]">{getLocation(vehicle)}</span>
               </div>
             </div>
           </div>
           <div 
             onClick={() => setIsExpanded(!isExpanded)}
-            className="p-2 rounded-lg bg-slate-50 hover:bg-slate-100 cursor-pointer"
+            className="p-1.5 rounded hover:bg-gray-100 cursor-pointer"
           >
             {isExpanded ? (
-              <ChevronUp className="w-5 h-5 text-slate-500" />
+              <ChevronUp className="w-4 h-4 text-gray-500" />
             ) : (
-              <ChevronDown className="w-5 h-5 text-slate-500" />
+              <ChevronDown className="w-4 h-4 text-gray-500" />
             )}
           </div>
         </div>
   
         {isExpanded && (
-          <div className="px-4 pb-4 border-t border-slate-100">
+          <div className="px-4 pb-4 border-t border-gray-100">
             <div className="mt-3 mb-4">
               {getProgressBar(vehicle.status)}
             </div>
             
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div className="flex items-center space-x-2">
-                <Calendar className="h-4 w-4 text-slate-400" />
-                <span className="text-xs text-slate-600">{new Date(vehicle.createdAt).toLocaleDateString()}</span>
+                <Calendar className="h-4 w-4 text-gray-400" />
+                <span className="text-xs text-gray-600">{new Date(vehicle.createdAt).toLocaleDateString()}</span>
               </div>
               <div className="flex items-center space-x-2">
-                <MapPin className="h-4 w-4 text-slate-400" />
-                <span className="text-xs text-slate-600 truncate">{getLocation(vehicle)}</span>
+                <MapPin className="h-4 w-4 text-gray-400" />
+                <span className="text-xs text-gray-600 truncate">{getLocation(vehicle)}</span>
               </div>
               <div className="flex items-center space-x-2">
-                <ArrowRight className="h-4 w-4 text-slate-400" />
-                <span className="text-xs text-slate-600">{vehicle.auctionHouse || '-'}</span>
+                <ArrowRight className="h-4 w-4 text-gray-400" />
+                <span className="text-xs text-gray-600">{vehicle.auctionHouse || '-'}</span>
               </div>
               <div className="flex items-center space-x-2">
-                <User className="h-4 w-4 text-slate-400" />
-                <span className="text-xs text-slate-600 truncate">{getClientName(vehicle)}</span>
+                <User className="h-4 w-4 text-gray-400" />
+                <span className="text-xs text-gray-600 truncate">{getClientName(vehicle)}</span>
               </div>
             </div>
   
@@ -416,7 +421,7 @@ const VehiclesTableView = ({
                   setSelectedVehicle(vehicle);
                   setIsCommentsModalOpen(true);
                 }}
-                className="flex items-center justify-center gap-1 px-3 py-1.5 bg-slate-50 text-slate-600 rounded-md text-xs hover:bg-slate-100"
+                className="flex items-center justify-center gap-1 px-2 py-1 border border-gray-300 text-gray-700 rounded text-xs hover:bg-gray-100"
               >
                 <MessageSquare className="w-3 h-3" />
                 <span>Comentarios</span>
@@ -429,7 +434,7 @@ const VehiclesTableView = ({
                     setSelectedPhotos(vehicle.loadingPhotos);
                     setIsPhotoModalOpen(true);
                   }}
-                  className="px-3 py-1.5 bg-slate-50 text-slate-600 rounded-md text-xs hover:bg-slate-100"
+                  className="px-2 py-1 border border-gray-300 text-gray-700 rounded text-xs hover:bg-gray-100"
                 >
                   Ver Fotos
                 </button>
@@ -447,12 +452,13 @@ const VehiclesTableView = ({
     );
   };
 
+  // Minimalist table design
   const VehicleGroupTable = ({ vehicles, groupTitle, className }) => (
-    <div className={`bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden mb-4 ${className}`}>
-      <div className="border-b border-slate-200">
-        <div className="w-full bg-slate-50 px-4 py-3 flex items-center">
+    <div className={`bg-white rounded border border-gray-200 overflow-hidden mb-4 ${className}`}>
+      <div className="border-b border-gray-200">
+        <div className="w-full bg-gray-50 px-4 py-3 flex items-center">
           <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-semibold text-slate-700 truncate" title={groupTitle}>
+            <h3 className="text-sm font-medium text-gray-700 truncate" title={groupTitle}>
               {groupTitle}
             </h3>
             <div className="flex gap-1.5 mt-1.5 flex-wrap">
@@ -463,7 +469,7 @@ const VehiclesTableView = ({
                 return (
                   <div key={status} className="flex items-center">
                     {getStatusBadge(status)}
-                    <span className="ml-1 text-xs bg-white px-2 py-0.5 rounded-md text-slate-600">{count}</span>
+                    <span className="ml-1 text-xs bg-white px-1.5 py-0.5 rounded text-gray-700">{count}</span>
                   </div>
                 );
               })}
@@ -477,14 +483,14 @@ const VehiclesTableView = ({
         <div className="w-full overflow-x-auto" style={{ maxWidth: '100%' }}>
           <div className="min-w-max">
             <table className="w-full border-collapse">
-              <thead className="text-xs bg-slate-50">
-                <tr className="border-b border-slate-200">
-                  <th className="px-4 py-3 text-left font-medium text-slate-500">VEHÍCULO</th>
-                  <th className="px-4 py-3 text-left font-medium text-slate-500">DETALLES</th>
-                  <th className="px-4 py-3 text-left font-medium text-slate-500">CLIENTE</th>
-                  <th className="px-4 py-3 text-left font-medium text-slate-500">UBICACIÓN</th>
-                  <th className="px-4 py-3 text-left font-medium text-slate-500">ESTADO</th>
-                  <th className="px-4 py-3 text-center font-medium text-slate-500">ACCIONES</th>
+              <thead className="text-xs bg-gray-50">
+                <tr className="border-b border-gray-200">
+                  <th className="px-3 py-2 text-left font-medium text-gray-500">VEHÍCULO</th>
+                  <th className="px-3 py-2 text-left font-medium text-gray-500">DETALLES</th>
+                  <th className="px-3 py-2 text-left font-medium text-gray-500">CLIENTE</th>
+                  <th className="px-3 py-2 text-left font-medium text-gray-500">UBICACIÓN</th>
+                  <th className="px-3 py-2 text-left font-medium text-gray-500">ESTADO</th>
+                  <th className="px-3 py-2 text-center font-medium text-gray-500">ACCIONES</th>
                 </tr>
               </thead>
               <tbody className="text-sm">
@@ -493,35 +499,35 @@ const VehiclesTableView = ({
                   .map((vehicle, index) => (
                     <tr 
                       key={vehicle._id} 
-                      className={`border-b hover:bg-slate-50 ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
+                      className={`border-b hover:bg-gray-50 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`}
                     >
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-2">
                         <div className="flex flex-col">
-                          <span className="font-medium text-slate-800">{vehicle.brand} {vehicle.model} {vehicle.year}</span>
-                          <span className="text-xs text-slate-500 mt-0.5">Creado: {formatDate(vehicle.createdAt)}</span>
+                          <span className="font-medium text-gray-800">{vehicle.brand} {vehicle.model} {vehicle.year}</span>
+                          <span className="text-xs text-gray-500 mt-0.5">Creado: {formatDate(vehicle.createdAt)}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-2">
                         <div className="flex flex-col">
-                          <span className="text-slate-700">LOT: {vehicle.LOT || '-'}</span>
-                          <span className="text-xs text-slate-500 mt-0.5">PIN: {vehicle.PIN || '-'}</span>
-                          <span className="text-xs text-slate-500 mt-0.5">Casa: {vehicle.auctionHouse || '-'}</span>
+                          <span className="text-gray-700">LOT: {vehicle.LOT || '-'}</span>
+                          <span className="text-xs text-gray-500 mt-0.5">PIN: {vehicle.PIN || '-'}</span>
+                          <span className="text-xs text-gray-500 mt-0.5">Casa: {vehicle.auctionHouse || '-'}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-2">
                         <div className="flex items-center">
                           <div className="flex-shrink-0">
-                            <User className="h-4 w-4 text-slate-400 mr-2" />
+                            <User className="h-4 w-4 text-gray-400 mr-2" />
                           </div>
                           <div className="flex flex-col">
                             <div className="flex items-center">
-                              <span className="text-slate-700 truncate max-w-[120px]">{getClientName(vehicle)}</span>
+                              <span className="text-gray-700 truncate max-w-[120px]">{getClientName(vehicle)}</span>
                               <button
                                 onClick={() => {
                                   setSelectedVehicle(vehicle);
                                   setIsClientModalOpen(true);
                                 }}
-                                className="ml-1 p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full"
+                                className="ml-1 p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
                               >
                                 <Pencil className="h-3 w-3" />
                               </button>
@@ -529,28 +535,28 @@ const VehiclesTableView = ({
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-2">
                         <div className="flex items-center">
-                          <MapPin className="h-4 w-4 text-slate-400 mr-2" />
-                          <span className="text-slate-700 truncate max-w-[160px]">{getLocation(vehicle)}</span>
+                          <MapPin className="h-4 w-4 text-gray-400 mr-2" />
+                          <span className="text-gray-700 truncate max-w-[160px]">{getLocation(vehicle)}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-2">
                         <div className="flex flex-col space-y-2">
                           {getStatusBadge(vehicle.status)}
-                          <div className="mt-1 w-32">
+                          <div className="mt-1 w-24">
                             {getProgressBar(vehicle.status)}
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-wrap justify-center gap-2">
+                      <td className="px-3 py-2">
+                        <div className="flex flex-wrap justify-center gap-1">
                           <button
                             onClick={() => {
                               setSelectedVehicle(vehicle);
                               setIsCommentsModalOpen(true);
                             }}
-                            className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full"
+                            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
                             title={vehicle.comments || 'Sin comentarios'}
                           >
                             <MessageSquare className="h-4 w-4" />
@@ -568,7 +574,7 @@ const VehiclesTableView = ({
       </div>
 
       {/* Mobile View */}
-      <div className="md:hidden p-3 space-y-2">
+      <div className="md:hidden p-2 space-y-2">
         {vehicles
           .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
           .map(vehicle => (
@@ -576,7 +582,7 @@ const VehiclesTableView = ({
           ))}
           
         {vehicles.length === 0 && (
-          <div className="py-6 text-center text-sm text-slate-500 bg-slate-50 rounded-lg my-2">
+          <div className="py-4 text-center text-sm text-gray-500 bg-gray-50 rounded-lg my-2">
             No hay vehículos en este grupo
           </div>
         )}
@@ -590,7 +596,7 @@ const VehiclesTableView = ({
         <VehicleGroupTable 
           vehicles={groupedVehicles.unassigned} 
           groupTitle={`Sin Conductor Asignado (${groupedVehicles.unassigned.length})`}
-          className="border-l-4 border-l-red-500"
+          className="border-l-2 border-black"
         />
       )}
 
@@ -605,14 +611,14 @@ const VehiclesTableView = ({
               key={driver._id}
               vehicles={driverVehicles} 
               groupTitle={`${driver.name} (${driverVehicles.length})`}
-              className="border-l-4 border-l-blue-500"
+              className="border-l-2 border-gray-500"
             />
           );
         })}
 
       {Object.values(groupedVehicles).every(group => group.length === 0) && (
-        <div className="text-center py-12 bg-slate-50 rounded-lg border border-slate-200 shadow-sm">
-          <p className="text-slate-500">No hay vehículos registrados</p>
+        <div className="text-center py-6 bg-gray-50 rounded border border-gray-200">
+          <p className="text-gray-500">No hay vehículos registrados</p>
         </div>
       )}
 
@@ -742,4 +748,4 @@ VehiclesTableView.propTypes = {
   setNotifications: PropTypes.func.isRequired,
 };
 
-export default VehiclesTableView
+export default VehiclesTableView;
