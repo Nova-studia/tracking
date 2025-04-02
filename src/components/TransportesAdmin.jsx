@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import ClientesTab from './ClientesTab';
 import DriversTab from './DriversTab';
 import VehiculosTab from './VehiculosTab';
-import PartnersTab from './PartnersTab'; // Nuevo import
-
+import PartnersTab from './PartnersTab';
+import ClientAccountsTab from './ClientAccountsTab'; // Importamos la nueva pestaña
 
 const API_URL = `${process.env.REACT_APP_API_URL}/api`;
 
@@ -109,7 +109,7 @@ const TransportesAdmin = ({ setNotifications }) => {
           fetchClients(),
           fetchDrivers(),
           fetchVehicles(),
-          fetchPartners() // Añadir esta llamada
+          fetchPartners()
         ]);
       } catch (err) {
         setError('Error al cargar los datos iniciales: ' + err.message);
@@ -120,9 +120,9 @@ const TransportesAdmin = ({ setNotifications }) => {
     };
   
     loadInitialData();
-  }, [userInfo.isMainAdmin]); // Añadir esta dependencia
+  }, [userInfo.isMainAdmin]);
 
-    const handleAddClient = async (newClient) => {
+  const handleAddClient = async (newClient) => {
     try {
       const response = await fetch(`${API_URL}/clients`, {
         method: 'POST',
@@ -413,6 +413,48 @@ const TransportesAdmin = ({ setNotifications }) => {
     }
   };
 
+  // Nuevos métodos para manejar cuentas de clientes
+  const handleAddClientAccount = async (accountData) => {
+    try {
+      const response = await fetch(`${API_URL}/clients/with-account`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(accountData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al crear cuenta de cliente');
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error adding client account:', error);
+      throw error;
+    }
+  };
+
+  const handleToggleClientAccountStatus = async (clientId) => {
+    try {
+      const response = await fetch(`${API_URL}/clients/${clientId}/account-status`, {
+        method: 'PATCH',
+        headers: getAuthHeaders()
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al cambiar estado de cuenta');
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error toggling client account status:', error);
+      throw error;
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -442,92 +484,110 @@ const TransportesAdmin = ({ setNotifications }) => {
       <div className="container mx-auto">
         <header className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900 mb-6">Sistema de Transportes</h1>
-          <div className="flex space-x-1 bg-slate-100 p-1 rounded-lg">
-  <button
-    onClick={() => setActiveTab('vehicles')}
-    className={`px-4 py-2.5 rounded-md flex items-center flex-1 justify-center transition-all ${
-      activeTab === 'vehicles' 
-        ? 'bg-white text-slate-900 shadow-sm' 
-        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-    }`}
-  >
-    Vehículos
-  </button>
-  <button
-    onClick={() => setActiveTab('clients')}
-    className={`px-4 py-2.5 rounded-md flex items-center flex-1 justify-center transition-all ${
-      activeTab === 'clients' 
-        ? 'bg-white text-slate-900 shadow-sm' 
-        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-    }`}
-  >
-    Clientes
-  </button>
-  <button
-    onClick={() => setActiveTab('drivers')}
-    className={`px-4 py-2.5 rounded-md flex items-center flex-1 justify-center transition-all ${
-      activeTab === 'drivers' 
-        ? 'bg-white text-slate-900 shadow-sm' 
-        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-    }`}
-  >
-    Conductores
-  </button>
-  {userInfo.isMainAdmin && (
-    <button
-      onClick={() => setActiveTab('partners')}
-      className={`px-4 py-2.5 rounded-md flex items-center flex-1 justify-center transition-all ${
-        activeTab === 'partners' 
-          ? 'bg-white text-slate-900 shadow-sm' 
-          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-      }`}
-    >
-      Socios
-    </button>
-  )}
-</div>
+          <div className="flex space-x-1 bg-slate-100 p-1 rounded-lg overflow-x-auto">
+            <button
+              onClick={() => setActiveTab('vehicles')}
+              className={`px-4 py-2.5 rounded-md flex items-center flex-1 justify-center transition-all whitespace-nowrap ${
+                activeTab === 'vehicles' 
+                  ? 'bg-white text-slate-900 shadow-sm' 
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              Vehículos
+            </button>
+            <button
+              onClick={() => setActiveTab('clients')}
+              className={`px-4 py-2.5 rounded-md flex items-center flex-1 justify-center transition-all whitespace-nowrap ${
+                activeTab === 'clients' 
+                  ? 'bg-white text-slate-900 shadow-sm' 
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              Clientes
+            </button>
+            <button
+              onClick={() => setActiveTab('clientAccounts')}
+              className={`px-4 py-2.5 rounded-md flex items-center flex-1 justify-center transition-all whitespace-nowrap ${
+                activeTab === 'clientAccounts' 
+                  ? 'bg-white text-slate-900 shadow-sm' 
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              Portal Clientes
+            </button>
+            <button
+              onClick={() => setActiveTab('drivers')}
+              className={`px-4 py-2.5 rounded-md flex items-center flex-1 justify-center transition-all whitespace-nowrap ${
+                activeTab === 'drivers' 
+                  ? 'bg-white text-slate-900 shadow-sm' 
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              Conductores
+            </button>
+            {userInfo.isMainAdmin && (
+              <button
+                onClick={() => setActiveTab('partners')}
+                className={`px-4 py-2.5 rounded-md flex items-center flex-1 justify-center transition-all whitespace-nowrap ${
+                  activeTab === 'partners' 
+                    ? 'bg-white text-slate-900 shadow-sm' 
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                }`}
+              >
+                Socios
+              </button>
+            )}
+          </div>
         </header>
 
         {activeTab === 'clients' && (
-  <ClientesTab 
-    clients={clients} 
-    onAddClient={handleAddClient} 
-  />
-)}
+          <ClientesTab 
+            clients={clients} 
+            onAddClient={handleAddClient} 
+          />
+        )}
 
-{activeTab === 'drivers' && (
-  <DriversTab 
-    drivers={drivers} 
-    onAddDriver={handleAddDriver}
-    onUpdateCredentials={handleUpdateCredentials}
-    onToggleStatus={handleToggleStatus}
-  />
-)}
+        {activeTab === 'clientAccounts' && (
+          <ClientAccountsTab 
+            clients={clients}
+            onAddClientAccount={handleAddClientAccount}
+            onToggleClientAccountStatus={handleToggleClientAccountStatus}
+          />
+        )}
 
-{activeTab === 'vehicles' && (
-  <VehiculosTab 
-    vehicles={vehicles}
-    setVehicles={setVehicles}
-    clients={clients}
-    drivers={drivers} 
-    onAddVehicle={handleAddVehicle}
-    onUpdateStatus={handleUpdateStatus}
-    onAssignDriver={handleAssignDriver}
-    onDeleteVehicle={handleDeleteVehicle}
-    setNotifications={setNotifications}
-    userInfo={userInfo} // Pasar información del usuario
-  />
-)}
+        {activeTab === 'drivers' && (
+          <DriversTab 
+            drivers={drivers} 
+            onAddDriver={handleAddDriver}
+            onUpdateCredentials={handleUpdateCredentials}
+            onToggleStatus={handleToggleStatus}
+          />
+        )}
 
-{activeTab === 'partners' && userInfo.isMainAdmin && (
-  <PartnersTab 
-    partners={partners}
-    onAddPartner={handleAddPartner}
-    onToggleStatus={handleTogglePartnerStatus}
-    onUpdatePartner={handleUpdatePartner}
-    onDeletePartner={handleDeletePartner}
-  />
-)}
+        {activeTab === 'vehicles' && (
+          <VehiculosTab 
+            vehicles={vehicles}
+            setVehicles={setVehicles}
+            clients={clients}
+            drivers={drivers} 
+            onAddVehicle={handleAddVehicle}
+            onUpdateStatus={handleUpdateStatus}
+            onAssignDriver={handleAssignDriver}
+            onDeleteVehicle={handleDeleteVehicle}
+            setNotifications={setNotifications}
+            userInfo={userInfo}
+          />
+        )}
+
+        {activeTab === 'partners' && userInfo.isMainAdmin && (
+          <PartnersTab 
+            partners={partners}
+            onAddPartner={handleAddPartner}
+            onToggleStatus={handleTogglePartnerStatus}
+            onUpdatePartner={handleUpdatePartner}
+            onDeletePartner={handleDeletePartner}
+          />
+        )}
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import TransportesAdmin from './components/TransportesAdmin';
 import Login from './components/Login';
 import DriverDashboard from './components/DriverDashboard';
+import ClientDashboard from './components/ClientDashboard'; // Importamos el nuevo componente
 
 function App() {
   const [auth, setAuth] = useState(() => {
@@ -57,7 +58,7 @@ function App() {
 
   useEffect(() => {
     const fetchNotifications = async () => {
-      if (!auth) return;
+      if (!auth || auth.role === 'client') return; // No cargar notificaciones para clientes
       
       try {
         const response = await fetch(`${process.env.REACT_APP_API_URL}/api/notifications`, {
@@ -168,18 +169,48 @@ function App() {
     return <Login onLogin={handleLogin} />;
   }
 
-  return (
-    <div className="flex flex-col min-h-screen">
-      {/* Header */}
+  // Determinar qué tipo de header mostrar según el rol
+  const renderHeader = () => {
+    // Header simplificado para clientes
+    if (auth.role === 'client') {
+      return (
+        <header className="bg-slate-900 text-white">
+          <div className="container mx-auto px-2 sm:px-4">
+            <div className="h-16 flex flex-wrap items-center justify-between">
+              <div className="flex items-center space-x-2 sm:space-x-4">
+                <span className="font-semibold text-sm sm:text-lg text-white">
+                  Portal del Cliente
+                </span>
+                <span className="text-xs sm:text-sm text-slate-300">
+                  {auth.username || auth.name}
+                </span>
+              </div>
+
+              <div className="flex items-center space-x-2 sm:space-x-4">
+                <button
+                  onClick={handleLogout}
+                  className="px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm bg-slate-800 text-white rounded hover:bg-slate-700 transition-colors"
+                >
+                  Cerrar Sesión
+                </button>
+              </div>
+            </div>
+          </div>
+        </header>
+      );
+    }
+
+    // Header completo para admin y conductores
+    return (
       <header className="bg-slate-900 text-white">
         <div className="container mx-auto px-2 sm:px-4">
           <div className="h-16 flex flex-wrap items-center justify-between">
             <div className="flex items-center space-x-2 sm:space-x-4">
               <span className="font-semibold text-sm sm:text-lg text-white">
-                Administrador
+                {auth.role === 'admin' ? 'Administrador' : 'Conductor'}
               </span>
               <span className="text-xs sm:text-sm text-slate-300">
-                {auth.role === 'admin' ? `${auth.username || auth.name}` : 'Conductor'}
+                {auth.role === 'admin' ? `${auth.username || auth.name}` : auth.name}
               </span>
             </div>
 
@@ -328,18 +359,45 @@ function App() {
           </div>
         </div>
       </header>
+    );
+  };
+
+  // Renderizado condicional basado en el rol del usuario
+  const renderContent = () => {
+    if (auth.role === 'admin') {
+      return <TransportesAdmin setNotifications={setNotifications} />;
+    } else if (auth.role === 'driver') {
+      return <DriverDashboard driverId={auth.driverId || auth.id} setNotifications={setNotifications} />;
+    } else if (auth.role === 'client') {
+      return <ClientDashboard clientId={auth.clientId || auth.id} />;
+    }
+    
+    // Fallback por si hay un rol desconocido
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-500">Error de configuración</h1>
+          <p className="text-gray-700 mt-2">Rol no reconocido: {auth.role}</p>
+          <button
+            onClick={handleLogout}
+            className="mt-4 bg-slate-800 text-white px-4 py-2 rounded hover:bg-slate-700"
+          >
+            Cerrar Sesión
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      {/* Header */}
+      {renderHeader()}
 
       {/* Main Content */}
       <main className="flex-grow bg-gray-50">
         <div className="container mx-auto py-8">
-          {auth.role === 'admin' ? (
-            <TransportesAdmin setNotifications={setNotifications} />
-          ) : (
-            <DriverDashboard 
-              driverId={auth.driverId || auth.id} 
-              setNotifications={setNotifications}
-            />
-          )}
+          {renderContent()}
         </div>
       </main>
 

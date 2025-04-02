@@ -404,6 +404,11 @@ const VehiclesTableView = ({
                 <MapPin className="h-4 w-4 text-gray-400" />
                 <span className="text-xs text-gray-600 truncate">{getLocation(vehicle)}</span>
               </div>
+              <div className="flex items-center space-x-2 col-span-2">
+              <ArrowRight className="h-4 w-4 text-gray-400" />
+  <span className="text-xs font-medium text-gray-600">PIN#:</span>
+  <span className="text-xs text-gray-600">{vehicle.PIN || '-'}</span>
+</div>
               <div className="flex items-center space-x-2">
                 <ArrowRight className="h-4 w-4 text-gray-400" />
                 <span className="text-xs text-gray-600">{vehicle.auctionHouse || '-'}</span>
