@@ -7,6 +7,7 @@ const { clientService, driverService, vehicleService, authService } = require('.
 const Vehicle = require('./models/Vehicle');
 const Driver = require('./models/Driver');
 const User = require('./models/User');
+const Client = require('./models/Client');
 const State = require('./models/State');
 const { uploadMiddleware, cloudinary } = require('./config/cloudinary');
 const Notification = require('./models/Notification');
@@ -144,6 +145,176 @@ app.get('/api/clients', auth, async (req, res) => {
     const clients = await clientService.getAllClients();
     res.json(clients);
   } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+app.get('/api/clients/with-account', auth, async (req, res) => {
+  try {
+    // Verificar que sea admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'No autorizado' });
+    }
+    
+    // Buscar clientes que tienen un userId asociado
+    const clients = await Client.find({ userId: { $exists: true, $ne: null } })
+      .populate('userId', 'username isActive');
+    
+    res.json(clients);
+  } catch (error) {
+    console.error('Error obteniendo clientes con cuenta:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Endpoint para crear un cliente con cuenta de acceso
+app.post('/api/clients/with-account', auth, async (req, res) => {
+  try {
+    // Verificar que sea admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'No autorizado' });
+    }
+    
+    const { name, phoneNumber, username, password } = req.body;
+    
+    // Validaciones
+    if (!name || !phoneNumber || !username || !password) {
+      return res.status(400).json({ message: 'Todos los campos son requeridos' });
+    }
+    
+    // Verificar que el username no exista
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
+      return res.status(400).json({ message: 'El nombre de usuario ya está en uso' });
+    }
+    
+    // Iniciar transacción
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    
+    try {
+      // Crear el usuario
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const user = new User({
+        username,
+        password: hashedPassword,
+        role: 'client',
+        state: 'N/A', // En caso de clientes, puede no ser relevante
+        isActive: true,
+        partnerGroup: 'main'
+      });
+      
+      await user.save({ session });
+      
+      // Crear o actualizar cliente con referencia al usuario
+      let client;
+      
+      // Si el cliente ya existe, actualizar
+      const existingClient = await Client.findOne({ name, phoneNumber });
+      if (existingClient) {
+        existingClient.userId = user._id;
+        client = await existingClient.save({ session });
+      } else {
+        // Crear nuevo cliente
+        client = new Client({
+          name,
+          phoneNumber,
+          userId: user._id
+        });
+        
+        await client.save({ session });
+      }
+      
+      // Commit de la transacción
+      await session.commitTransaction();
+      
+      // Responder con la información del cliente
+      res.status(201).json({
+        _id: client._id,
+        name: client.name,
+        phoneNumber: client.phoneNumber,
+        userId: {
+          _id: user._id,
+          username: user.username,
+          isActive: user.isActive
+        }
+      });
+    } catch (error) {
+      // En caso de error, abortar la transacción
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
+    }
+  } catch (error) {
+    console.error('Error creando cliente con cuenta:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Endpoint para activar/desactivar cuenta de cliente
+app.patch('/api/clients/:clientId/account-status', auth, async (req, res) => {
+  try {
+    // Verificar que sea admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'No autorizado' });
+    }
+    
+    const client = await Client.findById(req.params.clientId);
+    
+    if (!client || !client.userId) {
+      return res.status(404).json({ message: 'Cliente o cuenta de usuario no encontrada' });
+    }
+    
+    // Obtener el usuario y cambiar su estado
+    const user = await User.findById(client.userId);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+    
+    user.isActive = !user.isActive;
+    await user.save();
+    
+    res.json({
+      _id: client._id,
+      name: client.name,
+      phoneNumber: client.phoneNumber,
+      userId: {
+        _id: user._id,
+        username: user.username,
+        isActive: user.isActive
+      }
+    });
+  } catch (error) {
+    console.error('Error cambiando estado de cuenta:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Endpoint específico para que los clientes vean sus vehículos
+app.get('/api/clients/portal/:clientId/vehicles', auth, async (req, res) => {
+  try {
+    // Verificar que el usuario sea un cliente
+    if (req.user.role !== 'client') {
+      return res.status(403).json({ message: 'No autorizado' });
+    }
+    
+    // Buscar el cliente asociado al usuario
+    const client = await Client.findOne({ userId: req.user.id });
+    
+    if (!client) {
+      return res.status(404).json({ message: 'Cliente no encontrado' });
+    }
+    
+    // Buscar los vehículos asociados a este cliente
+    const vehicles = await Vehicle.find({ clientId: client._id })
+      .select('brand model year LOT PIN auctionHouse lotLocation city state status loadingPhotos travelComments createdAt updatedAt')
+      .sort({ createdAt: -1 });
+    
+    res.json(vehicles);
+  } catch (error) {
+    console.error('Error obteniendo vehículos del cliente:', error);
     res.status(500).json({ message: error.message });
   }
 });

@@ -13,7 +13,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['admin', 'driver'], // Eliminamos 'partner'
+    enum: ['admin', 'driver', 'client'], // Incluimos el rol 'client'
     required: true
   },
   state: {

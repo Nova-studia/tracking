@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const Client = require('../models/Client');
 const User = require('../models/User');
 const Driver = require('../models/Driver');
 
@@ -73,6 +74,18 @@ const authService = {
             ...userData,
             name: driver.name,
             driverId: driver._id
+          };
+        }
+      }
+      
+      // Si es un cliente, añadir información específica
+      if (user.role === 'client') {
+        const client = await Client.findOne({ userId: user._id });
+        if (client) {
+          userData = {
+            ...userData,
+            name: client.name,
+            clientId: client._id
           };
         }
       }

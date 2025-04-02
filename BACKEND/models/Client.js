@@ -11,6 +11,11 @@ const clientSchema = new mongoose.Schema({
     required: [true, 'El número de teléfono es requerido'],
     trim: true
   },
+  // Añadir referencia al usuario para clientes con acceso al portal
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
   createdAt: {
     type: Date,
     default: Date.now
