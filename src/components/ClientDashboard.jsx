@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 import { MessageSquare, Truck, ChevronDown, ChevronUp, Car, MapPin, Calendar, ArrowRight, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import PhotoViewModal from './PhotoViewModal';
 
 const API_URL = `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api`;
 
-// Componente de tarjeta de vehículo (sin cambios)
+// Componente que muestra la tarjeta individual de vehículo
 const VehicleCard = ({ vehicle, onViewPhotos }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -35,6 +33,7 @@ const VehicleCard = ({ vehicle, onViewPhotos }) => {
     );
   };
 
+  // Formatear la fecha para mostrar día de la semana
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
@@ -152,36 +151,58 @@ const VehicleCard = ({ vehicle, onViewPhotos }) => {
   );
 };
 
+// Componente para la barra de búsqueda
+const SearchBar = ({ onSearch }) => {
+  const [searchText, setSearchText] = useState('');
+
+  const handleSearch = () => {
+    onSearch(searchText);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
+  return (
+    <div className="flex items-center bg-white rounded-lg border border-slate-200 shadow-sm mb-4 overflow-hidden">
+      <input
+        type="text"
+        placeholder="Buscar por número de lote..."
+        value={searchText}
+        onChange={(e) => setSearchText(e.target.value)}
+        onKeyDown={handleKeyDown}
+        className="w-full px-4 py-2.5 outline-none"
+      />
+      <button
+        onClick={handleSearch}
+        className="px-4 py-2.5 bg-slate-800 text-white flex items-center justify-center hover:bg-slate-700 transition-colors"
+      >
+        <Search className="h-5 w-5" />
+      </button>
+    </div>
+  );
+};
+
 // Componente de paginación
 const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   return (
-    <div className="flex items-center justify-center mt-6 space-x-1">
-      <button 
+    <div className="flex items-center justify-center mt-6">
+      <button
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
-        className={`p-2 rounded-md ${currentPage === 1 ? 'text-slate-400 cursor-not-allowed' : 'text-slate-700 hover:bg-slate-100'}`}
+        className="p-2 border border-slate-200 rounded-l-md bg-white text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <ChevronLeft className="h-5 w-5" />
       </button>
-      
-      {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-        <button
-          key={page}
-          onClick={() => onPageChange(page)}
-          className={`px-3 py-1 rounded-md ${
-            currentPage === page 
-              ? 'bg-slate-800 text-white' 
-              : 'text-slate-700 hover:bg-slate-100'
-          }`}
-        >
-          {page}
-        </button>
-      ))}
-      
-      <button 
+      <div className="px-4 py-2 border-t border-b border-slate-200 bg-white text-sm">
+        Página {currentPage} de {totalPages}
+      </div>
+      <button
         onClick={() => onPageChange(currentPage + 1)}
-        disabled={currentPage === totalPages}
-        className={`p-2 rounded-md ${currentPage === totalPages ? 'text-slate-400 cursor-not-allowed' : 'text-slate-700 hover:bg-slate-100'}`}
+        disabled={currentPage === totalPages || totalPages === 0}
+        className="p-2 border border-slate-200 rounded-r-md bg-white text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <ChevronRight className="h-5 w-5" />
       </button>
@@ -197,10 +218,10 @@ const ClientDashboard = ({ clientId }) => {
   const [isViewPhotoModalOpen, setIsViewPhotoModalOpen] = useState(false);
   const [selectedPhotos, setSelectedPhotos] = useState(null);
   
-  // Nuevos estados para paginación y búsqueda
+  // Nuevas variables para paginación y búsqueda
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
-  const [itemsPerPage] = useState(8);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     const fetchClientVehicles = async () => {
@@ -209,20 +230,22 @@ const ClientDashboard = ({ clientId }) => {
         if (!token) {
           throw new Error('No se encontró token de autenticación');
         }
-
-        const response = await fetch(`${API_URL}/clients/my-vehicles`, {
+    
+        // Cambiar esta línea para usar la ruta específica para clientes
+        const response = await fetch(`${API_URL}/clients/portal/${clientId}/vehicles`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         });
-
+    
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.message || 'Error al cargar vehículos');
         }
-
+    
         const data = await response.json();
+        console.log(`Se cargaron ${data.length} vehículos para el cliente`);
         setVehicles(data);
       } catch (error) {
         console.error('Error fetching client vehicles:', error);
@@ -237,46 +260,39 @@ const ClientDashboard = ({ clientId }) => {
     }
   }, [clientId]);
 
-  // Resetear a la primera página cuando cambie el filtro o la búsqueda
+  // Resetear a la primera página cuando cambia la pestaña o la búsqueda
   useEffect(() => {
     setCurrentPage(1);
   }, [activeTab, searchQuery]);
 
-  // Filtrar vehículos por pestaña activa y búsqueda
+  // Filtrar vehículos por estado y búsqueda
   const filteredVehicles = () => {
     let filtered = vehicles;
     
-    // Filtrar por estado (pestaña)
+    // Filtrar por estado
     if (activeTab !== 'all') {
       filtered = filtered.filter(v => v.status === activeTab);
     }
     
-    // Filtrar por búsqueda (número de lote)
-    if (searchQuery.trim() !== '') {
+    // Filtrar por búsqueda
+    if (searchQuery) {
       filtered = filtered.filter(v => 
-        v.LOT.toString().toLowerCase().includes(searchQuery.toLowerCase())
+        v.LOT && v.LOT.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
     
     return filtered;
   };
-
-  // Obtener vehículos paginados
-  const paginatedVehicles = () => {
+  
+  // Obtener vehículos para la página actual
+  const getCurrentPageVehicles = () => {
     const filtered = filteredVehicles();
     const startIndex = (currentPage - 1) * itemsPerPage;
     return filtered.slice(startIndex, startIndex + itemsPerPage);
   };
 
-  // Calcular el número total de páginas
-  const totalPages = Math.ceil(filteredVehicles().length / itemsPerPage);
-
-  // Manejar cambio de página
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
-    // Scroll hacia arriba para mejor UX
-    window.scrollTo(0, 0);
-  };
+  // Calcular número total de páginas
+  const totalPages = Math.max(1, Math.ceil(filteredVehicles().length / itemsPerPage));
 
   // Contar vehículos por estado
   const counts = {
@@ -286,6 +302,18 @@ const ClientDashboard = ({ clientId }) => {
     loading: vehicles.filter(v => v.status === 'loading').length,
     'in-transit': vehicles.filter(v => v.status === 'in-transit').length,
     delivered: vehicles.filter(v => v.status === 'delivered').length,
+  };
+
+  // Manejar cambio de página
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
+
+  // Manejar búsqueda
+  const handleSearch = (query) => {
+    setSearchQuery(query);
   };
 
   if (loading) {
@@ -319,21 +347,8 @@ const ClientDashboard = ({ clientId }) => {
         <p className="text-slate-600 mt-1">Monitoreo de vehículos en transporte</p>
       </div>
 
-      {/* Buscador por número de lote */}
-      <div className="mb-6">
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-slate-400" />
-          </div>
-          <input
-            type="text"
-            placeholder="Buscar por número de lote"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 pr-4 py-2 w-full rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
-          />
-        </div>
-      </div>
+      {/* Barra de búsqueda */}
+      <SearchBar onSearch={handleSearch} />
 
       {/* Tabs de navegación */}
       <div className="flex overflow-x-auto pb-2 mb-6 gap-2">
@@ -364,22 +379,28 @@ const ClientDashboard = ({ clientId }) => {
         ))}
       </div>
 
-      {/* Información de resultados */}
-      <div className="flex justify-between items-center mb-4">
-        <p className="text-sm text-slate-500">
-          Mostrando {paginatedVehicles().length} de {filteredVehicles().length} vehículos
-        </p>
-        {totalPages > 1 && (
-          <p className="text-sm text-slate-500">
-            Página {currentPage} de {totalPages}
-          </p>
-        )}
-      </div>
+      {/* Resultados de búsqueda */}
+      {searchQuery && (
+        <div className="bg-slate-50 rounded-lg p-3 mb-4 flex items-center justify-between">
+          <div className="flex items-center">
+            <Search className="h-4 w-4 text-slate-500 mr-2" />
+            <span className="text-sm">
+              Resultados para: <span className="font-medium">{searchQuery}</span>
+            </span>
+          </div>
+          <button
+            onClick={() => setSearchQuery('')}
+            className="text-xs text-slate-600 hover:text-slate-800"
+          >
+            Limpiar búsqueda
+          </button>
+        </div>
+      )}
 
       {/* Lista de vehículos */}
       <div className="space-y-4">
-        {paginatedVehicles().length > 0 ? (
-          paginatedVehicles().map((vehicle) => (
+        {getCurrentPageVehicles().length > 0 ? (
+          getCurrentPageVehicles().map((vehicle) => (
             <VehicleCard
               key={vehicle._id}
               vehicle={vehicle}
@@ -392,18 +413,20 @@ const ClientDashboard = ({ clientId }) => {
         ) : (
           <div className="text-center py-12 bg-slate-50 rounded-xl border border-slate-200">
             <p className="text-slate-500">
-              {searchQuery ? 'No se encontraron vehículos con ese número de lote' : 'No hay vehículos en esta categoría'}
+              {searchQuery 
+                ? 'No se encontraron vehículos con ese número de lote' 
+                : 'No hay vehículos en esta categoría'}
             </p>
           </div>
         )}
       </div>
 
       {/* Paginación */}
-      {totalPages > 1 && (
+      {filteredVehicles().length > itemsPerPage && (
         <Pagination 
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
+          currentPage={currentPage} 
+          totalPages={totalPages} 
+          onPageChange={handlePageChange} 
         />
       )}
 
