@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import { MessageSquare, Pencil, Trash2, ChevronDown, ChevronUp, Car, MapPin, Calendar, User, ArrowRight } from 'lucide-react';
+import { Pencil, Trash2, ChevronDown, ChevronUp, Car, MapPin, Calendar, User, ArrowRight, MessageSquare } from 'lucide-react';
 import ClientEditModal from './ClientEditModal';
 import PhotoViewModal from './PhotoViewModal';
 import CommentsModal from './CommentsModal';
 import DriverSelectModal from './DriverSelectModal';
+import VehicleItem from './VehicleItem';
 
 const VehiclesTableView = ({ 
   vehicles, 
@@ -64,28 +65,9 @@ const VehiclesTableView = ({
       const updatedVehicle = await response.json();
       onVehicleUpdate(updatedVehicle);
       
-      const newNotification = {
-        lotInfo: `${selectedVehicle.LOT || 'LOT'} - ${selectedVehicle.brand} ${selectedVehicle.model}`,
-        message: newComment.length > 50 ? `${newComment.substring(0, 50)}...` : newComment,
-        vehicleId: vehicleId,
-        image: selectedVehicle.loadingPhotos?.frontPhoto?.url || null,
-        time: new Date().toLocaleString()
-      };
+      // ELIMINAR ESTAS LÍNEAS: No crear la notificación localmente
+      // La notificación ya se crea en el backend y se recuperará al actualizar la página
       
-      try {
-        await fetch(`${API_URL}/notifications`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify(newNotification)
-        });
-      } catch (notifError) {
-        console.error('Error al guardar notificación en servidor:', notifError);
-      }
-      
-      setNotifications(prev => [...prev, newNotification]);
       return updatedVehicle;
     
     } catch (error) {
@@ -138,6 +120,31 @@ const VehiclesTableView = ({
     }
   };
 
+  const handleDelete = async (vehicleId) => {
+    if (window.confirm('¿Estás seguro de que deseas eliminar este vehículo? Esta acción no se puede deshacer.')) {
+      try {
+        await onDeleteVehicle(vehicleId);
+      } catch (error) {
+        alert('Error al eliminar vehículo: ' + error.message);
+      }
+    }
+  };
+
+  const openPhotoModal = (photos) => {
+    setSelectedPhotos(photos);
+    setIsPhotoModalOpen(true);
+  };
+
+  const openCommentsModal = (vehicle) => {
+    setSelectedVehicle(vehicle);
+    setIsCommentsModalOpen(true);
+  };
+
+  const openClientModal = (vehicle) => {
+    setSelectedVehicle(vehicle);
+    setIsClientModalOpen(true);
+  };
+
   const groupedVehicles = React.useMemo(() => {
     const groups = {
       unassigned: []
@@ -177,6 +184,25 @@ const VehiclesTableView = ({
 
     return groups;
   }, [vehicles]);
+
+  // Utility functions
+  const getClientName = (vehicle) => {
+    if (!vehicle?.clientId) return '-';
+    const clientId = typeof vehicle.clientId === 'object' ? vehicle.clientId._id : vehicle.clientId;
+    return clients.find(c => c._id === clientId)?.name || '-';
+  };
+
+  const getLocation = (vehicle) => {
+    return vehicle.lotLocation || 
+      (vehicle.city && vehicle.state ? `${vehicle.city}, ${vehicle.state}` : '-');
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    return `${days[date.getDay()]} ${date.getDate()} ${months[date.getMonth()]}`;
+  };
 
   // Monochrome status badges with minimal design
   const getStatusBadge = (status) => {
@@ -223,241 +249,7 @@ const VehiclesTableView = ({
     );
   };
 
-  const handleDelete = async (vehicleId) => {
-    if (window.confirm('¿Estás seguro de que deseas eliminar este vehículo? Esta acción no se puede deshacer.')) {
-      try {
-        await onDeleteVehicle(vehicleId);
-      } catch (error) {
-        alert('Error al eliminar vehículo: ' + error.message);
-      }
-    }
-  };
-  
-  // Minimalist action buttons
-  const getActionButton = (vehicle) => {
-    const buttons = [];
-    
-    buttons.push(
-      <button
-        key="delete-button"
-        onClick={() => handleDelete(vehicle._id)}
-        className="p-1.5 text-gray-500 hover:text-black hover:bg-gray-100 rounded-full"
-        title="Eliminar vehículo"
-      >
-        <Trash2 className="h-4 w-4" />
-      </button>
-    );
-  
-    if (vehicle.loadingPhotos && Object.keys(vehicle.loadingPhotos).length > 0) {
-      buttons.push(
-        <button
-          key="view-photos"
-          onClick={() => {
-            setSelectedPhotos(vehicle.loadingPhotos);
-            setIsPhotoModalOpen(true);
-          }}
-          className="text-xs px-3 py-1 border border-gray-300 text-gray-700 rounded hover:bg-gray-100"
-        >
-          Ver Fotos
-        </button>
-      );
-    }
-
-    if (vehicle.status === 'delivered') {
-      if (buttons.length === 0) {
-        buttons.push(
-          <div key="placeholder" className="w-24" />
-        );
-      }
-      return buttons;
-    }
-
-    if (vehicle.status === 'pending' || vehicle.status === 'assigned' || vehicle.status === 'loading') {
-      buttons.push(
-        <button
-          key="assign-driver"
-          onClick={() => openDriverModal(vehicle)}
-          className="text-xs px-3 py-1 rounded border border-gray-300 text-gray-700 hover:bg-gray-100 flex items-center space-x-1"
-        >
-          <User className="h-3 w-3" />
-          <span>
-            {vehicle.status === 'pending' ? 'Asignar' : 'Reasignar'} Conductor
-          </span>
-        </button>
-      );
-    }
-
-    // Simplified button configuration
-    const buttonConfig = {
-      assigned: {
-        action: 'loading',
-        text: 'Iniciar Carga',
-        className: 'bg-black text-white',
-      },
-      loading: {
-        action: 'in-transit',
-        text: 'Iniciar Viaje',
-        className: 'bg-black text-white',
-      },
-      'in-transit': {
-        action: 'delivered',
-        text: 'Entregar',
-        className: 'bg-black text-white',
-      }
-    };
-
-    const config = buttonConfig[vehicle.status];
-    if (config) {
-      buttons.push(
-        <button
-          key="status-button"
-          onClick={() => onUpdateStatus(
-            vehicle._id, 
-            config.action, 
-            `Vehículo ${config.action === 'loading' ? 'en carga' : config.action === 'in-transit' ? 'en tránsito' : 'entregado'}`
-          )}
-          className={`text-xs px-3 py-1 rounded ${config.className}`}
-        >
-          {config.text}
-        </button>
-      );
-    }
-
-    return buttons;
-  };
-
-  const getClientName = (vehicle) => {
-    if (!vehicle?.clientId) return '-';
-    const clientId = typeof vehicle.clientId === 'object' ? vehicle.clientId._id : vehicle.clientId;
-    return clients.find(c => c._id === clientId)?.name || '-';
-  };
-
-  const getLocation = (vehicle) => {
-    return vehicle.lotLocation || 
-      (vehicle.city && vehicle.state ? `${vehicle.city}, ${vehicle.state}` : '-');
-  };
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-    return `${days[date.getDay()]} ${date.getDate()} ${months[date.getMonth()]}`;
-  };
-
-  // Minimalist card design
-  const VehicleCard = ({ vehicle }) => {
-    const [isExpanded, setIsExpanded] = useState(false);
-  
-    return (
-      <div className="bg-white rounded border border-gray-200 overflow-hidden mb-2">
-        <div className="p-3 flex items-center justify-between">
-          <div className="flex flex-col flex-1">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 mr-3">
-                <div className="h-8 w-8 bg-gray-100 rounded-full flex items-center justify-center">
-                  <Car className="h-4 w-4 text-gray-500" />
-                </div>
-              </div>
-              <span className="font-medium text-gray-800">{vehicle.brand} {vehicle.model} {vehicle.year}</span>
-              <div className="ml-auto">
-                {getStatusBadge(vehicle.status)}
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center mt-2">
-              <div className="flex items-center mr-3">
-                <span className="text-xs text-gray-500">LOT: {vehicle.LOT}</span>
-              </div>
-              <div className="flex items-center mr-3">
-                <Calendar className="h-3 w-3 text-gray-400 mr-1" />
-                <span className="text-xs text-gray-500">{formatDate(vehicle.createdAt)}</span>
-              </div>
-              <div className="flex items-center">
-                <MapPin className="h-3 w-3 text-gray-400 mr-1" />
-                <span className="text-xs text-gray-500 truncate max-w-[160px]">{getLocation(vehicle)}</span>
-              </div>
-            </div>
-          </div>
-          <div 
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="p-1.5 rounded hover:bg-gray-100 cursor-pointer"
-          >
-            {isExpanded ? (
-              <ChevronUp className="w-4 h-4 text-gray-500" />
-            ) : (
-              <ChevronDown className="w-4 h-4 text-gray-500" />
-            )}
-          </div>
-        </div>
-  
-        {isExpanded && (
-          <div className="px-4 pb-4 border-t border-gray-100">
-            <div className="mt-3 mb-4">
-              {getProgressBar(vehicle.status)}
-            </div>
-            
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <div className="flex items-center space-x-2">
-                <Calendar className="h-4 w-4 text-gray-400" />
-                <span className="text-xs text-gray-600">{new Date(vehicle.createdAt).toLocaleDateString()}</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <MapPin className="h-4 w-4 text-gray-400" />
-                <span className="text-xs text-gray-600 truncate">{getLocation(vehicle)}</span>
-              </div>
-              <div className="flex items-center space-x-2 col-span-2">
-              <ArrowRight className="h-4 w-4 text-gray-400" />
-  <span className="text-xs font-medium text-gray-600">PIN#:</span>
-  <span className="text-xs text-gray-600">{vehicle.PIN || '-'}</span>
-</div>
-              <div className="flex items-center space-x-2">
-                <ArrowRight className="h-4 w-4 text-gray-400" />
-                <span className="text-xs text-gray-600">{vehicle.auctionHouse || '-'}</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <User className="h-4 w-4 text-gray-400" />
-                <span className="text-xs text-gray-600 truncate">{getClientName(vehicle)}</span>
-              </div>
-            </div>
-  
-            <div className="flex flex-wrap gap-2 mt-3">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedVehicle(vehicle);
-                  setIsCommentsModalOpen(true);
-                }}
-                className="flex items-center justify-center gap-1 px-2 py-1 border border-gray-300 text-gray-700 rounded text-xs hover:bg-gray-100"
-              >
-                <MessageSquare className="w-3 h-3" />
-                <span>Comentarios</span>
-              </button>
-              
-              {vehicle.loadingPhotos && Object.keys(vehicle.loadingPhotos).length > 0 && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedPhotos(vehicle.loadingPhotos);
-                    setIsPhotoModalOpen(true);
-                  }}
-                  className="px-2 py-1 border border-gray-300 text-gray-700 rounded text-xs hover:bg-gray-100"
-                >
-                  Ver Fotos
-                </button>
-              )}
-              
-              {getActionButton(vehicle).map((button, index) => (
-                <span key={index} onClick={e => e.stopPropagation()}>
-                  {button}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  // Minimalist table design
+  // Vehicle Group Table Component
   const VehicleGroupTable = ({ vehicles, groupTitle, className }) => (
     <div className={`bg-white rounded border border-gray-200 overflow-hidden mb-4 ${className}`}>
       <div className="border-b border-gray-200">
@@ -502,75 +294,24 @@ const VehiclesTableView = ({
                 {vehicles
                   .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
                   .map((vehicle, index) => (
-                    <tr 
-                      key={vehicle._id} 
-                      className={`border-b hover:bg-gray-50 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`}
-                    >
-                      <td className="px-3 py-2">
-                        <div className="flex flex-col">
-                          <span className="font-medium text-gray-800">{vehicle.brand} {vehicle.model} {vehicle.year}</span>
-                          <span className="text-xs text-gray-500 mt-0.5">Creado: {formatDate(vehicle.createdAt)}</span>
-                        </div>
-                      </td>
-                      <td className="px-3 py-2">
-                        <div className="flex flex-col">
-                          <span className="text-gray-700">LOT: {vehicle.LOT || '-'}</span>
-                          <span className="text-xs text-gray-500 mt-0.5">PIN: {vehicle.PIN || '-'}</span>
-                          <span className="text-xs text-gray-500 mt-0.5">Casa: {vehicle.auctionHouse || '-'}</span>
-                        </div>
-                      </td>
-                      <td className="px-3 py-2">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0">
-                            <User className="h-4 w-4 text-gray-400 mr-2" />
-                          </div>
-                          <div className="flex flex-col">
-                            <div className="flex items-center">
-                              <span className="text-gray-700 truncate max-w-[120px]">{getClientName(vehicle)}</span>
-                              <button
-                                onClick={() => {
-                                  setSelectedVehicle(vehicle);
-                                  setIsClientModalOpen(true);
-                                }}
-                                className="ml-1 p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
-                              >
-                                <Pencil className="h-3 w-3" />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-3 py-2">
-                        <div className="flex items-center">
-                          <MapPin className="h-4 w-4 text-gray-400 mr-2" />
-                          <span className="text-gray-700 truncate max-w-[160px]">{getLocation(vehicle)}</span>
-                        </div>
-                      </td>
-                      <td className="px-3 py-2">
-                        <div className="flex flex-col space-y-2">
-                          {getStatusBadge(vehicle.status)}
-                          <div className="mt-1 w-24">
-                            {getProgressBar(vehicle.status)}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-3 py-2">
-                        <div className="flex flex-wrap justify-center gap-1">
-                          <button
-                            onClick={() => {
-                              setSelectedVehicle(vehicle);
-                              setIsCommentsModalOpen(true);
-                            }}
-                            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
-                            title={vehicle.comments || 'Sin comentarios'}
-                          >
-                            <MessageSquare className="h-4 w-4" />
-                          </button>
-                          
-                          {getActionButton(vehicle)}
-                        </div>
-                      </td>
-                    </tr>
+                    <VehicleItem 
+                      key={vehicle._id}
+                      vehicle={vehicle}
+                      index={index}
+                      clients={clients}
+                      getClientName={getClientName}
+                      getLocation={getLocation}
+                      formatDate={formatDate}
+                      getStatusBadge={getStatusBadge}
+                      getProgressBar={getProgressBar}
+                      openClientModal={openClientModal}
+                      openCommentsModal={openCommentsModal}
+                      openPhotoModal={openPhotoModal}
+                      openDriverModal={openDriverModal}
+                      handleDelete={handleDelete}
+                      onUpdateStatus={onUpdateStatus}
+                      display="table"
+                    />
                   ))}
               </tbody>
             </table>
@@ -583,7 +324,23 @@ const VehiclesTableView = ({
         {vehicles
           .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
           .map(vehicle => (
-            <VehicleCard key={vehicle._id} vehicle={vehicle} />
+            <VehicleItem 
+              key={vehicle._id}
+              vehicle={vehicle}
+              clients={clients}
+              getClientName={getClientName}
+              getLocation={getLocation}
+              formatDate={formatDate}
+              getStatusBadge={getStatusBadge}
+              getProgressBar={getProgressBar}
+              openClientModal={openClientModal}
+              openCommentsModal={openCommentsModal}
+              openPhotoModal={openPhotoModal}
+              openDriverModal={openDriverModal}
+              handleDelete={handleDelete}
+              onUpdateStatus={onUpdateStatus}
+              display="card"
+            />
           ))}
           
         {vehicles.length === 0 && (

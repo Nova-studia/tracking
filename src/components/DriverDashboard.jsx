@@ -8,63 +8,6 @@ import { MessageSquare, Truck, ChevronDown, ChevronUp, Car, MapPin, Calendar, Us
 
 const API_URL = `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api`;
 
-// Componente simplificado para actualizar el estado
-const StatusUpdate = ({ vehicle, allVehicles, onUpdate }) => {
-  const [isUpdating, setIsUpdating] = useState(false);
-
-  // Función para verificar si es el último vehículo por cargar
-  const isLastVehicleToLoad = () => {
-    // Filtramos los vehículos que están asignados (no en carga ni en tránsito)
-    const assignedVehicles = allVehicles.filter(v => v.status === 'assigned');
-    // Si solo queda este vehículo, es el último
-    return assignedVehicles.length === 1 && assignedVehicles[0]._id === vehicle._id;
-  };
-
-  const handleSubmit = async () => {
-    setIsUpdating(true);
-    try {
-      // Si es el último vehículo por cargar
-      if (isLastVehicleToLoad()) {
-        // Primero cambiamos este a cargando
-        await onUpdate(vehicle._id, 'loading', 'El Vehiculo Fue Cargado!!');
-        
-        // Esperar un momento para asegurarnos que se procesó
-        setTimeout(async () => {
-          // Luego cambiar todos los vehículos a en tránsito
-          const loadingVehicles = allVehicles.filter(v => v.status === 'loading');
-          
-          for (const v of loadingVehicles) {
-            await onUpdate(v._id, 'in-transit', 'Iniciando viaje de todos los vehículos');
-          }
-        }, 1000);
-      } else {
-        // Si no es el último, solo cambiar a cargando
-        await onUpdate(vehicle._id, 'loading', 'Iniciando carga del vehículo');
-      }
-    } catch (error) {
-      alert('Error al actualizar el estado: ' + error.message);
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  // Solo mostrar el botón cuando el vehículo está asignado
-  if (vehicle.status !== 'assigned') {
-    return null;
-  }
-
-  return (
-    <button
-      onClick={handleSubmit}
-      disabled={isUpdating}
-      className="w-full px-4 py-2.5 bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-md shadow-sm shadow-orange-200 hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 backdrop-blur-sm"
-    >
-      <Truck className="w-4 h-4" />
-      {isUpdating ? 'Actualizando...' : 'Iniciar Carga'}
-    </button>
-  );
-};
-
 // Componente que muestra la tarjeta individual de vehículo
 const VehicleCard = ({ vehicle, allVehicles, onViewPhotos, onCommentsOpen, onStatusUpdate }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -99,14 +42,39 @@ const VehicleCard = ({ vehicle, allVehicles, onViewPhotos, onCommentsOpen, onSta
     return `${days[date.getDay()]} ${date.getDate()} ${months[date.getMonth()]}`;
   };
 
-  // Botón para iniciar viaje (solo se muestra si está en carga)
+  // Botón para iniciar viaje (modificado para manejar tanto assigned como loading)
   const StartTripButton = () => {
     const [isUpdating, setIsUpdating] = useState(false);
+
+    // Función para verificar si es el último vehículo por cargar
+    const isLastVehicleToLoad = () => {
+      // Filtramos los vehículos que están asignados (no en carga ni en tránsito)
+      const assignedVehicles = allVehicles.filter(v => v.status === 'assigned');
+      // Si solo queda este vehículo, es el último
+      return assignedVehicles.length === 1 && assignedVehicles[0]._id === vehicle._id;
+    };
 
     const handleStartTrip = async () => {
       setIsUpdating(true);
       try {
-        await onStatusUpdate(vehicle._id, 'in-transit', 'Iniciando viaje');
+        // Verificar si es el último vehículo
+        if (vehicle.status === 'assigned' && isLastVehicleToLoad()) {
+          // Primero cambiamos este a en tránsito
+          await onStatusUpdate(vehicle._id, 'in-transit', 'Iniciando viaje');
+          
+          // Esperar un momento para asegurarnos que se procesó
+          setTimeout(async () => {
+            // Luego cambiar todos los demás vehículos que estén en loading a en tránsito
+            const loadingVehicles = allVehicles.filter(v => v.status === 'loading');
+            
+            for (const v of loadingVehicles) {
+              await onStatusUpdate(v._id, 'in-transit', 'Iniciando viaje de todos los vehículos');
+            }
+          }, 1000);
+        } else {
+          // Si no es el último o ya estaba en loading, solo cambiar a en tránsito
+          await onStatusUpdate(vehicle._id, 'in-transit', 'Iniciando viaje');
+        }
       } catch (error) {
         alert('Error al iniciar viaje: ' + error.message);
       } finally {
@@ -114,7 +82,8 @@ const VehicleCard = ({ vehicle, allVehicles, onViewPhotos, onCommentsOpen, onSta
       }
     };
 
-    if (vehicle.status !== 'loading') {
+    // Mostrar el botón cuando el vehículo está en estado assigned o loading
+    if (vehicle.status !== 'assigned' && vehicle.status !== 'loading') {
       return null;
     }
 
@@ -195,14 +164,7 @@ const VehicleCard = ({ vehicle, allVehicles, onViewPhotos, onCommentsOpen, onSta
           </div>
 
           <div className="flex flex-col gap-3">
-            {/* Botón simplificado de iniciar carga */}
-            <StatusUpdate 
-              vehicle={vehicle}
-              allVehicles={allVehicles}
-              onUpdate={onStatusUpdate}
-            />
-            
-            {/* Botón para iniciar viaje */}
+            {/* Solo mostramos el botón de iniciar viaje */}
             <StartTripButton />
 
             <div className="flex gap-2">
@@ -381,12 +343,12 @@ const DriverDashboard = ({ driverId, setNotifications }) => {
       if (!newComment?.trim()) {
         throw new Error('El comentario es requerido');
       }
-
+  
       const selectedVehicle = assignedVehicles.find(v => v._id === vehicleId);
       if (!selectedVehicle) {
         throw new Error('Vehículo no encontrado');
       }
-
+  
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_URL}/vehicles/${vehicleId}/status`, {
         method: 'PATCH',
@@ -399,34 +361,20 @@ const DriverDashboard = ({ driverId, setNotifications }) => {
           comment: newComment.trim()
         })
       });
-
+  
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Error al actualizar comentarios');
       }
-
+  
       const updatedVehicle = await response.json();
-
+  
       // Usar la función centralizada para actualizar
       refreshVehicleData(updatedVehicle);
-
-      // Crear la notificación local
-      if (updatedVehicle) {
-        const newNotification = {
-          lotInfo: `${updatedVehicle.LOT || 'LOT'} - ${updatedVehicle.brand} ${updatedVehicle.model}`,
-          message: newComment.trim(),
-          vehicleId: vehicleId,
-          image: updatedVehicle.loadingPhotos?.frontPhoto?.url || null,
-          time: new Date().toLocaleString(),
-          partnerGroup: updatedVehicle.partnerGroup // Añadir el grupo del vehículo
-        };
-        
-        console.log('Creando notificación local con grupo:', updatedVehicle.partnerGroup);
-        
-        // Actualizar el estado local de notificaciones
-        setNotifications(prev => [...prev, newNotification]);
-      }
-
+  
+      // ELIMINAR ESTA PARTE: No crear la notificación localmente, solo depender del backend
+      // Las notificaciones se actualizarán cuando se refresque la página
+      
       return updatedVehicle;
     } catch (error) {
       console.error('Error updating comments:', error);

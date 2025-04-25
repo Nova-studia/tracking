@@ -213,33 +213,34 @@ const vehicleService = {
         throw new Error('Vehículo no encontrado');
       }
       
-      // Solo crear notificación si no es un comentario automático
-      if (!isAutoComment) {
-        try {
-          // Usar el partnerGroup del vehículo en lugar del usuario
-          const vehicleGroup = vehicle.partnerGroup;
-          
-          console.log('Creando notificación con datos:', {
-            vehicleId: vehicleId,
-            vehicleGroup: vehicleGroup,
-            lotInfo: vehicle.LOT || 'N/A',
-            message: comment
-          });
-          
-          const notification = new Notification({
-            userId: userId,
-            vehicleId: vehicleId,
-            partnerGroup: vehicleGroup, // Usar el grupo del vehículo
-            lotInfo: vehicle.LOT || 'N/A',
-            message: comment,
-          });
-          await notification.save();
-          console.log('Notificación creada para comentario explícito con grupo del vehículo:', vehicleGroup);
-        } catch (notificationError) {
-          console.error('Error creando notificación:', notificationError);
-          // No interrumpimos el flujo principal si falla la notificación
-        }
-      }
+// Solo crear notificación si es un comentario explícito (no automático ni relacionado con estados)
+if (comment && !isAutoComment && !comment.includes("Vehículo en tránsito") && 
+    !comment.includes("Vehículo entregado") && !comment.includes("Estado actualizado")) {
+  try {
+    // Usar el partnerGroup del vehículo en lugar del usuario
+    const vehicleGroup = vehicle.partnerGroup;
+    
+    console.log('Creando notificación con datos:', {
+      vehicleId: vehicleId,
+      vehicleGroup: vehicleGroup,
+      lotInfo: vehicle.LOT || 'N/A',
+      message: comment
+    });
+    
+    const notification = new Notification({
+      userId: userId,
+      vehicleId: vehicleId,
+      partnerGroup: vehicleGroup, // Usar el grupo del vehículo
+      lotInfo: vehicle.LOT || 'N/A',
+      message: comment,
+    });
+    await notification.save();
+    console.log('Notificación creada para comentario explícito con grupo del vehículo:', vehicleGroup);
+  } catch (notificationError) {
+    console.error('Error creando notificación:', notificationError);
+    // No interrumpimos el flujo principal si falla la notificación
+  }
+}
   
       return vehicle;
     } catch (error) {
