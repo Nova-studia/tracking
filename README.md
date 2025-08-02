@@ -1,70 +1,125 @@
-# Getting Started with Create React App
+# Jorge Minnesota Logistics LLC - Contract System
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Descripción
+Aplicación web moderna construida con Next.js y Tailwind CSS para gestionar contratos digitales de autorización de levantamiento de vehículos. Los clientes pueden firmar contratos digitalmente usando un número de teléfono para verificación, y los administradores pueden ver todos los contratos firmados en un dashboard elegante.
 
-## Available Scripts
+## 🚀 Características
+- ✅ **Framework Moderno**: Next.js 15 con TypeScript
+- ✅ **Diseño Responsivo**: Tailwind CSS con tema rojo/blanco personalizado
+- ✅ **Verificación de Teléfono**: Sistema inteligente para usuarios nuevos/existentes
+- ✅ **Firma Digital**: Canvas HTML5 para captura de firmas
+- ✅ **Base de Datos**: SQLite en carpeta backend organizada
+- ✅ **Dashboard Administrativo**: Interface moderna con estadísticas
+- ✅ **API REST**: Endpoints optimizados con Next.js App Router
+- ✅ **Turbopack**: Desarrollo ultrarrápido habilitado
 
-In the project directory, you can run:
+## 🎨 Tema Visual
+- **Colores Principales**: Rojo (#dc2626) y Blanco
+- **Branding**: Jorge Minnesota Logistics LLC prominente
+- **Diseño**: Moderno, limpio y profesional
+- **Responsive**: Optimizado para móviles y escritorio
 
-### `npm start`
+## 📁 Estructura del Proyecto
+```
+contract-nextjs/
+├── src/
+│   └── app/
+│       ├── api/                    # API Routes
+│       │   ├── contracts/          # CRUD contratos
+│       │   └── check-phone/        # Verificación teléfono
+│       ├── admin/                  # Dashboard administrativo
+│       │   └── page.tsx
+│       ├── page.tsx                # Formulario principal
+│       └── layout.tsx              # Layout global
+├── backend/
+│   ├── database.js                 # Configuración SQLite
+│   └── contracts.db                # Base de datos (se crea automáticamente)
+├── tailwind.config.ts              # Configuración tema rojo
+└── package.json
+```
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## 🛠️ Instalación y Uso
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### Requisitos
+- Node.js 18+ 
+- npm
 
-### `npm test`
+### Instrucciones
+1. **Instalar dependencias:**
+   ```bash
+   npm install
+   ```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+2. **Iniciar desarrollo:**
+   ```bash
+   npm run dev
+   ```
 
-### `npm run build`
+3. **Acceder a la aplicación:**
+   - **Formulario de contrato**: http://localhost:3000
+   - **Dashboard administrativo**: http://localhost:3000/admin
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## 🔗 API Endpoints
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### `POST /api/contracts`
+Crear un nuevo contrato
+```json
+{
+  "phoneNumber": "555-123-4567",
+  "lotNumber": "ABC12345",
+  "fullName": "Juan Pérez",
+  "address": "Calle Principal 123",
+  "signatureData": "data:image/png;base64,..."
+}
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### `GET /api/contracts`
+Obtener lista de todos los contratos
 
-### `npm run eject`
+### `GET /api/check-phone/[phone]`
+Verificar si un teléfono existe en la base de datos
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### `GET /api/contracts/[id]/signature`
+Obtener la firma de un contrato específico
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## 💡 Flujo de Usuario
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### Para Clientes:
+1. **Acceder al enlace** compartido por WhatsApp
+2. **Ingresar teléfono** → presionar "Verificar"
+3. **Si es nuevo**: completar nombre y dirección
+4. **Si existe**: proceder directamente al lote
+5. **Ingresar número de lote** (8 dígitos)
+6. **Firmar digitalmente** en el canvas
+7. **Aceptar contrato** → guardado automático
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### Para Administradores:
+1. **Acceder al dashboard** en `/admin`
+2. **Ver estadísticas** en tiempo real
+3. **Revisar contratos** en tabla organizada
+4. **Ver firmas** en modal elegante
+5. **Auto-actualización** cada 30 segundos
 
-## Learn More
+## 🔧 Tecnologías Utilizadas
+- **Next.js 15** - Framework React de producción
+- **TypeScript** - Tipado estático
+- **Tailwind CSS** - Framework CSS utility-first
+- **SQLite** - Base de datos embebida
+- **Canvas API** - Captura de firmas digitales
+- **Turbopack** - Bundler ultrarrápido
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## 🚦 Scripts Disponibles
+- `npm run dev` - Desarrollo con Turbopack
+- `npm run build` - Build de producción
+- `npm start` - Servidor de producción
+- `npm run lint` - Linting con ESLint
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## ✨ Mejoras de la Migración
+- **Performance**: Turbopack + Next.js 15 = desarrollo 10x más rápido
+- **DX**: TypeScript + mejor estructura de carpetas
+- **UI/UX**: Tailwind CSS + tema rojo/blanco profesional
+- **Organización**: Backend separado + API routes limpias
+- **Responsive**: Diseño completamente móvil-first
+- **Estadísticas**: Dashboard con métricas en tiempo real
 
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+¡La aplicación está lista para producción y optimizada para la mejor experiencia de usuario! 🎉
