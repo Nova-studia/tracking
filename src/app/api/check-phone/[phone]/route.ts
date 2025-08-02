@@ -19,7 +19,7 @@ export async function GET(
     .sort({ timestamp: -1 })
     .lean();
     
-    if (existingContract) {
+    if (existingContract && !Array.isArray(existingContract)) {
       return NextResponse.json({
         exists: true,
         userData: {

@@ -23,4 +23,57 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Mobile-first responsive design */
+* {
+  box-sizing: border-box;
+}
+
+/* Prevent horizontal scroll on mobile */
+html, body {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+/* Improve touch targets on mobile */
+input, button, select, textarea {
+  font-size: 16px !important; /* Prevents zoom on iOS */
+  -webkit-appearance: none;
+  -webkit-border-radius: 0;
+  border-radius: 8px;
+}
+
+/* Better signature canvas touch handling */
+canvas {
+  touch-action: none !important;
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+}
+
+/* Ensure proper spacing on very small screens */
+@media screen and (max-width: 375px) {
+  .container {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+}
+
+/* iPhone specific optimizations */
+@media screen and (max-width: 414px) {
+  input[type="tel"], 
+  input[type="text"], 
+  select, 
+  button {
+    min-height: 48px !important;
+    font-size: 16px !important;
+  }
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import Image from 'next/image';
 import Lottie from 'lottie-react';
 import redCarAnimation from '../../../public/Red Car.json';
 import greenTruckAnimation from '../../../public/Green Trucks.json';
@@ -161,7 +162,7 @@ export default function AdminDashboard() {
       } else {
         throw new Error('Error al eliminar');
       }
-    } catch (error) {
+    } catch {
       // Silenciar errores en consola
       loadContracts(currentPage, searchTerm);
     }
@@ -396,7 +397,7 @@ export default function AdminDashboard() {
                           </button>
                           <button
                             onClick={() => openDeleteModal(
-                              contract.id,
+                              contract.id.toString(),
                               contract.lot_number,
                               contract.full_name || 'N/A'
                             )}
@@ -510,11 +511,13 @@ export default function AdminDashboard() {
             <div className="border rounded-lg p-3 sm:p-4">
               <p className="text-xs sm:text-sm text-gray-600 mb-2">Firma Digital:</p>
               <div className="overflow-hidden rounded-lg">
-                <img
+                <Image
                   src={selectedSignature.signatureData}
                   alt="Firma"
                   className="w-full max-w-full border border-gray-300 rounded-lg"
                   style={{ maxHeight: '300px', objectFit: 'contain' }}
+                  width={500}
+                  height={300}
                 />
               </div>
             </div>

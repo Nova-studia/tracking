@@ -45,6 +45,21 @@ export default function ContractForm() {
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
+
+    // Prevent scrolling when touching the canvas
+    const preventTouch = (e: Event) => {
+      e.preventDefault();
+    };
+
+    canvas.addEventListener('touchstart', preventTouch, { passive: false });
+    canvas.addEventListener('touchmove', preventTouch, { passive: false });
+    canvas.addEventListener('touchend', preventTouch, { passive: false });
+
+    return () => {
+      canvas.removeEventListener('touchstart', preventTouch);
+      canvas.removeEventListener('touchmove', preventTouch);
+      canvas.removeEventListener('touchend', preventTouch);
+    };
   }, []);
 
   // Get coordinates from event
@@ -120,7 +135,7 @@ export default function ContractForm() {
     const canvas = canvasRef.current;
     if (!canvas || !e.touches[0]) return;
     
-    const { x, y } = getCoordinates(e.touches[0], canvas);
+    const { x, y } = getCoordinates(e.touches[0] as Touch, canvas);
     startDrawing(x, y);
   };
 
@@ -129,7 +144,7 @@ export default function ContractForm() {
     const canvas = canvasRef.current;
     if (!canvas || !e.touches[0]) return;
     
-    const { x, y } = getCoordinates(e.touches[0], canvas);
+    const { x, y } = getCoordinates(e.touches[0] as Touch, canvas);
     draw(x, y);
   };
 
@@ -289,7 +304,7 @@ export default function ContractForm() {
       } else {
         throw new Error('Error en el servidor');
       }
-    } catch (error) {
+    } catch {
       setMessage('Error al procesar el contrato. Por favor, intente nuevamente.');
       setMessageType('error');
     } finally {
@@ -311,8 +326,7 @@ export default function ContractForm() {
         setLotCheckMessage('✗ Este número de lote ya ha sido registrado');
         setLotCheckType('error');
       }
-    } catch (error) {
-      console.error('Error checking lot:', error);
+    } catch {
       setLotCheckMessage('');
       setLotCheckType('');
     }
@@ -340,13 +354,13 @@ export default function ContractForm() {
   const displayLot = lotNumber || '[NÚMERO DE LOTE]';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center p-2 sm:p-4">
-      <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl max-w-2xl w-full p-4 sm:p-6 lg:p-8 mx-2 sm:mx-4">
-        <div className="text-center mb-6 sm:mb-8">
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 mb-2 leading-tight">
+    <div className="min-h-screen bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center p-3 sm:p-4" style={{touchAction: 'manipulation'}}>
+      <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl max-w-2xl w-full p-4 sm:p-6 lg:p-8 mx-3 sm:mx-4" style={{maxWidth: '100vw', boxSizing: 'border-box'}}>
+        <div className="text-center mb-4 sm:mb-6 lg:mb-8">
+          <h1 className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-800 mb-2 leading-tight px-2">
             Contrato de Levantamiento de Vehículo
           </h1>
-          <div className="text-lg sm:text-xl font-semibold text-red-600 mb-2">
+          <div className="text-base sm:text-lg lg:text-xl font-semibold text-red-600 mb-2 px-2">
             Jorge Minnesota Logistics LLC
           </div>
         </div>
@@ -357,12 +371,12 @@ export default function ContractForm() {
             <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-2">
               Número de Teléfono:
             </label>
-            <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex flex-col sm:flex-row gap-3">
               <select
                 value={countryCode}
                 onChange={(e) => setCountryCode(e.target.value)}
                 disabled={phoneVerified}
-                className="w-full sm:w-auto px-3 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 disabled:bg-gray-100 bg-white text-sm sm:text-base"
+                className="w-full sm:w-auto px-3 py-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 disabled:bg-gray-100 bg-white text-base font-medium" style={{minHeight: '48px', fontSize: '16px'}}
               >
                 <option value="+1">🇺🇸 +1 (EE.UU.)</option>
                 <option value="+52">🇲🇽 +52 (México)</option>
@@ -379,9 +393,10 @@ export default function ContractForm() {
                   }
                 }}
                 disabled={phoneVerified}
-                className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 disabled:bg-gray-100 text-sm sm:text-base"
+                className="flex-1 px-4 py-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 disabled:bg-gray-100 text-base font-medium"
                 placeholder="(555) 123-4567"
                 maxLength={14}
+                style={{minHeight: '48px', fontSize: '16px'}}
                 required
               />
               
@@ -389,7 +404,7 @@ export default function ContractForm() {
                 type="button"
                 onClick={checkPhone}
                 disabled={phoneVerified || isLoading || phoneNumber.replace(/\D/g, '').length !== 10}
-                className={`w-full sm:w-auto px-4 sm:px-6 py-3 text-white rounded-lg transition-colors text-sm sm:text-base font-medium ${
+                className={`w-full sm:w-auto px-4 sm:px-6 py-4 text-white rounded-lg transition-colors text-base font-semibold ${
                   phoneVerified 
                     ? 'bg-green-600 hover:bg-green-700' 
                     : phoneNumber.replace(/\D/g, '').length !== 10
@@ -398,6 +413,7 @@ export default function ContractForm() {
                         ? 'bg-green-500'
                         : 'bg-green-500 hover:bg-green-500'
                 }`}
+                style={{minHeight: '48px', fontSize: '16px', touchAction: 'manipulation'}}
               >
                 {isLoading ? 'Verificando...' : phoneVerified ? 'Verificado ✓' : 'Verificar'}
               </button>
@@ -422,8 +438,9 @@ export default function ContractForm() {
                   id="fullName"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm sm:text-base"
+                  className="w-full px-4 py-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-base font-medium"
                   placeholder="Ingrese su nombre completo"
+                  style={{minHeight: '48px', fontSize: '16px'}}
                   required
                 />
               </div>
@@ -437,8 +454,9 @@ export default function ContractForm() {
                   id="address"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm sm:text-base"
+                  className="w-full px-4 py-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-base font-medium"
                   placeholder="Ingrese su dirección completa"
+                  style={{minHeight: '48px', fontSize: '16px'}}
                   required
                 />
               </div>
@@ -466,7 +484,7 @@ export default function ContractForm() {
                   }
                 }}
                 maxLength={8}
-                className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-red-500 text-sm sm:text-base font-mono ${
+                className={`w-full px-4 py-4 border-2 rounded-lg focus:ring-2 focus:ring-red-500 text-base font-mono font-medium ${
                   lotCheckType === 'error' 
                     ? 'border-red-500 focus:border-red-500' 
                     : lotCheckType === 'success'
@@ -474,6 +492,7 @@ export default function ContractForm() {
                       : 'border-gray-300 focus:border-red-500'
                 }`}
                 placeholder="Ejemplo: ABC12345"
+                style={{minHeight: '48px', fontSize: '16px'}}
                 required
               />
               {lotCheckMessage && (
@@ -488,9 +507,9 @@ export default function ContractForm() {
 
           {/* Contract Text */}
           {phoneVerified && (
-            <div className="mb-6 sm:mb-8 p-4 sm:p-6 bg-gray-50 rounded-lg border-l-4 border-red-600">
+            <div className="mb-6 sm:mb-8 p-4 sm:p-6 bg-gray-50 rounded-lg border-l-4 border-red-600" style={{lineHeight: '1.6'}}>
               <p className="font-semibold text-base sm:text-lg mb-3 sm:mb-4">CONTRATO DE AUTORIZACIÓN DE LEVANTAMIENTO</p>
-              <p className="mb-3 sm:mb-4 leading-relaxed text-sm sm:text-base">
+              <p className="mb-3 sm:mb-4 leading-relaxed text-sm sm:text-base" style={{fontSize: '15px', lineHeight: '1.5'}}>
                 Yo, <span className="font-semibold text-red-600">{displayName}</span>, el abajo firmante, 
                 <strong> ACEPTO Y RECONOZCO</strong> que el vehículo correspondiente al lote número{' '}
                 <span className="font-mono font-bold text-red-600 break-all">{displayLot}</span> es de mi 
@@ -526,7 +545,11 @@ export default function ContractForm() {
                     width: '100%', 
                     maxWidth: '600px', 
                     height: 'auto',
-                    minHeight: '150px'
+                    minHeight: '200px',
+                    touchAction: 'none',
+                    userSelect: 'none',
+                    WebkitUserSelect: 'none',
+                    WebkitTouchCallout: 'none'
                   }}
                   onMouseDown={handleMouseDown}
                   onMouseMove={handleMouseMove}
@@ -542,7 +565,8 @@ export default function ContractForm() {
                 <button
                   type="button"
                   onClick={clearSignature}
-                  className="px-4 sm:px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm sm:text-base"
+                  className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-base font-semibold"
+                  style={{minHeight: '48px', fontSize: '16px', touchAction: 'manipulation'}}
                 >
                   Limpiar Firma
                 </button>
@@ -558,7 +582,8 @@ export default function ContractForm() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 sm:py-4 bg-red-600 text-white text-base sm:text-lg font-semibold rounded-lg hover:bg-red-700 disabled:bg-gray-400 transition-colors"
+              className="w-full py-4 bg-red-600 text-white text-lg font-bold rounded-lg hover:bg-red-700 disabled:bg-gray-400 transition-colors"
+              style={{minHeight: '56px', fontSize: '18px', touchAction: 'manipulation'}}
             >
               {isLoading ? 'Procesando...' : 'ACEPTAR Y FIRMAR CONTRATO'}
             </button>
@@ -613,14 +638,16 @@ export default function ContractForm() {
               
               <button
                 onClick={resetForm}
-                className="w-full py-2.5 sm:py-3 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors text-sm sm:text-base"
+                className="w-full py-4 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors text-base"
+                style={{minHeight: '48px', fontSize: '16px', touchAction: 'manipulation'}}
               >
                 Registrar Otro Vehículo
               </button>
               
               <button
                 onClick={() => setShowSuccessModal(false)}
-                className="w-full py-2.5 sm:py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors text-sm sm:text-base"
+                className="w-full py-4 bg-gray-200 text-gray-700 font-bold rounded-lg hover:bg-gray-300 transition-colors text-base"
+                style={{minHeight: '48px', fontSize: '16px', touchAction: 'manipulation'}}
               >
                 Cerrar
               </button>

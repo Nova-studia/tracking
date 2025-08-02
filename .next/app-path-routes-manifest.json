@@ -1,0 +1,12 @@
+{
+  "/_not-found/page": "/_not-found",
+  "/api/check-lot/[lot]/route": "/api/check-lot/[lot]",
+  "/api/check-phone/[phone]/route": "/api/check-phone/[phone]",
+  "/api/contracts/[id]/route": "/api/contracts/[id]",
+  "/api/contracts/[id]/signature/route": "/api/contracts/[id]/signature",
+  "/api/contracts/route": "/api/contracts",
+  "/api/contracts/stream/route": "/api/contracts/stream",
+  "/icon.svg/route": "/icon.svg",
+  "/admin/page": "/admin",
+  "/page": "/"
+}

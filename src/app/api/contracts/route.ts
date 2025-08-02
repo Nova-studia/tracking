@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Contract from '@/models/Contract';
-import { notifyNewContract } from './stream/route';
+import { notifyNewContract } from '@/lib/stream-utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -59,11 +59,11 @@ export async function POST(request: NextRequest) {
       contractId: savedContract._id
     });
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error processing request:', error);
     
     // Handle MongoDB duplicate key error
-    if (error.code === 11000 && error.keyPattern?.lot_number) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 11000 && 'keyPattern' in error && (error as { keyPattern?: { lot_number?: number } }).keyPattern?.lot_number) {
       return NextResponse.json(
         { error: 'Este número de lote ya ha sido registrado. Por favor, verifique el número e intente con otro.' },
         { status: 409 }
@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
     
     // Transform _id to id for frontend compatibility
     const transformedContracts = contracts.map(contract => ({
-      id: contract._id.toString(),
+      id: (contract._id as { toString: () => string }).toString(),
       phone_number: contract.phone_number,
       lot_number: contract.lot_number,
       full_name: contract.full_name,

@@ -23,10 +23,10 @@ export async function GET(
       );
     }
 
-    console.log(`Revisando firma de número de lote: ${contract.lot_number}`);
+    console.log(`Revisando firma de número de lote: ${contract && !Array.isArray(contract) ? contract.lot_number : 'unknown'}`);
     
     return NextResponse.json({
-      signatureData: contract.signature_data
+      signatureData: contract && !Array.isArray(contract) ? contract.signature_data : null
     });
     
   } catch (error) {

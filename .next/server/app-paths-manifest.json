@@ -1,0 +1,12 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/check-lot/[lot]/route": "app/api/check-lot/[lot]/route.js",
+  "/api/check-phone/[phone]/route": "app/api/check-phone/[phone]/route.js",
+  "/api/contracts/[id]/route": "app/api/contracts/[id]/route.js",
+  "/api/contracts/[id]/signature/route": "app/api/contracts/[id]/signature/route.js",
+  "/api/contracts/route": "app/api/contracts/route.js",
+  "/api/contracts/stream/route": "app/api/contracts/stream/route.js",
+  "/icon.svg/route": "app/icon.svg/route.js",
+  "/admin/page": "app/admin/page.js",
+  "/page": "app/page.js"
+}
