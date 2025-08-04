@@ -1,6 +1,20 @@
 import { NextResponse } from 'next/server';
 import mongoose from 'mongoose';
 
+interface CollectionInfo {
+  name: string;
+  count: number;
+  hasTargetLots: boolean;
+  sampleDocs: unknown[];
+}
+
+interface DatabaseResult {
+  name: string;
+  sizeOnDisk?: number;
+  collections: CollectionInfo[];
+  error?: string;
+}
+
 export async function GET() {
   try {
     console.log('🔍 Discovering all databases in cluster...');
@@ -9,6 +23,9 @@ export async function GET() {
     console.log('🔗 Connecting to admin database...');
     
     const connection = await mongoose.createConnection(baseUri);
+    if (!connection.db) {
+      throw new Error('Failed to connect to database');
+    }
     const admin = connection.db.admin();
     
     // List all databases
@@ -24,8 +41,8 @@ export async function GET() {
         const db = connection.useDb(dbInfo.name);
         
         // List collections in this database
-        const collections = await db.listCollections().toArray();
-        const dbResult = {
+        const collections = await (db.listCollections() as unknown as { toArray(): Promise<{ name: string }[]> }).toArray();
+        const dbResult: DatabaseResult = {
           name: dbInfo.name,
           sizeOnDisk: dbInfo.sizeOnDisk,
           collections: []
@@ -37,7 +54,7 @@ export async function GET() {
             const count = await collection.countDocuments();
             
             let hasTargetLots = false;
-            let sampleDocs = [];
+            let sampleDocs: unknown[] = [];
             
             if (count > 0) {
               // Check if this collection has our target lots
@@ -55,7 +72,7 @@ export async function GET() {
                 .toArray();
             }
             
-            (dbResult.collections as any[]).push({
+            dbResult.collections.push({
               name: colInfo.name,
               count,
               hasTargetLots,
@@ -88,7 +105,7 @@ export async function GET() {
       success: true,
       targetLots,
       totalDatabases: databases.length,
-      results: results.filter(r => !('error' in r) && (r as any).collections.length > 0)
+      results: results.filter(r => !('error' in r) && r.collections && r.collections.length > 0)
     });
     
   } catch (error) {

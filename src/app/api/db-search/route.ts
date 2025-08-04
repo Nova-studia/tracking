@@ -58,7 +58,7 @@ export async function GET() {
             timestamp: c.timestamp
           })),
           hasTargetLots: contracts.some(c => 
-            ['98879846', 'JDIDBFJF', '65654654'].includes(c.lot_number)
+            c.lot_number && ['98879846', 'JDIDBFJF', '65654654'].includes(c.lot_number)
           )
         });
         
