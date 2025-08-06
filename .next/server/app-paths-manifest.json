@@ -1,5 +1,6 @@
 {
   "/admin/page": "app/admin/page.js",
+  "/api/contracts/[id]/signature/route": "app/api/contracts/[id]/signature/route.js",
   "/api/contracts/route": "app/api/contracts/route.js",
   "/api/contracts/stream/route": "app/api/contracts/stream/route.js",
   "/api/users/route": "app/api/users/route.js",

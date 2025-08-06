@@ -207,7 +207,7 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-gray-50 p-2 sm:p-4">
       {/* Header */}
-      <div className="bg-gradient-to-r from-red-600 to-red-800 text-white p-4 sm:p-6 lg:p-8 rounded-xl sm:rounded-2xl mb-6 sm:mb-8 text-center shadow-lg">
+      <div className="bg-gradient-to-r from-red-600 to-red-600 text-white p-4 sm:p-6 lg:p-8 rounded-xl sm:rounded-2xl mb-6 sm:mb-8 text-center shadow-lg">
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 tracking-wide leading-tight">
           Jorge Minnesota Logistics LLC
         </h1>
@@ -260,14 +260,14 @@ export default function AdminDashboard() {
       </div>
 
       {/* Contracts Table */}
-      <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg overflow-hidden">
-        <div className="bg-red-600 text-white p-4 sm:p-6">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-gradient-to-r from-red-600 to-red-500 text-white p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3 sm:gap-4">
             <div className="flex items-center gap-3">
               <h2 className="text-lg sm:text-xl font-semibold">Lista de Contratos</h2>
               <Link 
                 href="/users"
-                className="flex items-center gap-1 px-3 py-1.5 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white text-sm rounded-xl hover:shadow-md transition-all duration-200 font-medium backdrop-blur-sm"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -292,7 +292,7 @@ export default function AdminDashboard() {
                       handleSearch();
                     }
                   }}
-                  className="w-full sm:w-64 px-3 sm:px-4 py-2 rounded-lg bg-white text-gray-800 placeholder-gray-500 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm sm:text-base font-mono"
+                  className="w-full sm:w-64 px-3 sm:px-4 py-2 rounded-xl bg-white/95 backdrop-blur-sm text-gray-800 placeholder-gray-500 border border-white/30 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 text-sm sm:text-base font-mono shadow-sm"
                   maxLength={8}
                 />
                 <div className="absolute right-3 top-2.5 text-xs text-gray-400">
@@ -303,10 +303,10 @@ export default function AdminDashboard() {
                 <button
                   onClick={handleSearch}
                   disabled={searchInput.trim() !== '' && searchInput.trim().length !== 8}
-                  className={`px-3 sm:px-4 py-2 rounded-lg transition-colors text-sm sm:text-base whitespace-nowrap flex items-center gap-2 ${
+                  className={`px-3 sm:px-4 py-2 rounded-xl transition-all duration-200 text-sm sm:text-base whitespace-nowrap flex items-center gap-2 font-medium ${
                     searchInput.trim() === '' || searchInput.trim().length === 8
-                      ? 'bg-white/20 hover:bg-white/30 text-white cursor-pointer'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      ? 'bg-white/20 hover:bg-white/30 text-white cursor-pointer hover:shadow-md backdrop-blur-sm'
+                      : 'bg-gray-300/50 text-gray-400 cursor-not-allowed'
                   }`}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -317,7 +317,7 @@ export default function AdminDashboard() {
                 {searchTerm && (
                   <button
                     onClick={handleClearSearch}
-                    className="px-3 sm:px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-sm sm:text-base whitespace-nowrap flex items-center gap-2"
+                    className="px-3 sm:px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl transition-all duration-200 text-sm sm:text-base whitespace-nowrap flex items-center gap-2 font-medium hover:shadow-md backdrop-blur-sm"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -327,7 +327,7 @@ export default function AdminDashboard() {
                 )}
                 <button
                   onClick={() => loadContracts(currentPage, searchTerm)}
-                  className="px-3 sm:px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-sm sm:text-base whitespace-nowrap"
+                  className="px-3 sm:px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl transition-all duration-200 text-sm sm:text-base whitespace-nowrap font-medium hover:shadow-md backdrop-blur-sm"
                 >
                   Actualizar
                 </button>
@@ -359,7 +359,7 @@ export default function AdminDashboard() {
           <div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-full">
-                <thead className="bg-red-50 border-b-2 border-red-600">
+                <thead className="bg-red-50/80 border-b border-red-200">
                   <tr>
                     <th className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 text-left text-xs sm:text-sm font-semibold text-red-800 w-12"></th>
                     <th className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 text-left text-xs sm:text-sm font-semibold text-red-800">Teléfono</th>
@@ -370,12 +370,14 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {contracts.map((contract) => (
-                    <tr key={contract.id} className="border-b hover:bg-red-50 transition-colors">
+                  {contracts.map((contract, index) => (
+                    <tr key={contract.id} className="border-b border-gray-100 hover:bg-red-50/50 transition-all duration-200">
                       <td className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 text-center">
-                        <svg className="w-4 h-4 sm:w-5 sm:h-5 text-red-600 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 6M7 13h10M7 13l-1.5 6m9.5-6v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01" />
-                        </svg>
+                        <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full mx-auto flex items-center justify-center text-white text-xs font-bold ${
+                          index % 2 === 0 ? 'bg-red-500' : 'bg-red-600'
+                        }`}>
+                          {contract.id}
+                        </div>
                       </td>
                       <td className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 text-xs sm:text-sm font-mono">
                         <span className="block sm:hidden text-xs text-gray-500">Tel:</span>
@@ -403,7 +405,7 @@ export default function AdminDashboard() {
                               contract.full_name || 'N/A',
                               contract.timestamp
                             )}
-                            className="px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 bg-red-600 text-white text-xs sm:text-sm rounded-md sm:rounded-lg hover:bg-red-700 hover:shadow-md transform hover:scale-105 transition-all duration-200 whitespace-nowrap cursor-pointer"
+                            className="px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 bg-red-500 text-white text-xs sm:text-sm rounded-xl hover:bg-red-600 hover:shadow-md transform hover:scale-105 transition-all duration-200 whitespace-nowrap cursor-pointer font-medium"
                           >
                             Ver Firma
                           </button>
@@ -413,7 +415,7 @@ export default function AdminDashboard() {
                               contract.lot_number,
                               contract.full_name || 'N/A'
                             )}
-                            className="p-1.5 sm:p-2 bg-red-500 text-white rounded-md hover:bg-red-600 hover:shadow-lg transform hover:scale-110 transition-all duration-200 cursor-pointer group active:scale-95"
+                            className="p-1.5 sm:p-2 bg-red-400 text-white rounded-xl hover:bg-red-500 hover:shadow-lg transform hover:scale-110 transition-all duration-200 cursor-pointer group active:scale-95"
                             title={`Eliminar vehículo ${contract.lot_number}`}
                             style={{ cursor: 'pointer' }}
                           >
@@ -434,15 +436,15 @@ export default function AdminDashboard() {
             
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="p-3 sm:p-4 lg:p-6 border-t bg-gray-50 flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-2">
+              <div className="p-3 sm:p-4 lg:p-6 border-t border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-2">
                 <div className="flex items-center gap-1 sm:gap-2 w-full sm:w-auto justify-center">
                   <button
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-md sm:rounded-lg text-xs sm:text-sm ${
+                    className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm transition-all duration-200 font-medium ${
                       currentPage === 1 
                         ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
-                        : 'bg-red-600 text-white hover:bg-red-700'
+                        : 'bg-red-500 text-white hover:bg-red-600 hover:shadow-md'
                     }`}
                   >
                     <span className="hidden sm:inline">Anterior</span>
@@ -465,10 +467,10 @@ export default function AdminDashboard() {
                         <button
                           key={pageNum}
                           onClick={() => handlePageChange(pageNum)}
-                          className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-md sm:rounded-lg text-xs sm:text-sm min-w-[32px] sm:min-w-[36px] ${
+                          className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm min-w-[32px] sm:min-w-[36px] transition-all duration-200 font-medium ${
                             currentPage === pageNum
-                              ? 'bg-red-600 text-white'
-                              : 'bg-white text-red-600 border border-red-600 hover:bg-red-50'
+                              ? 'bg-red-500 text-white shadow-md'
+                              : 'bg-white text-red-500 border border-red-200 hover:bg-red-50 hover:shadow-sm'
                           }`}
                         >
                           {pageNum}
@@ -480,10 +482,10 @@ export default function AdminDashboard() {
                   <button
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
-                    className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-md sm:rounded-lg text-xs sm:text-sm ${
+                    className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm transition-all duration-200 font-medium ${
                       currentPage === totalPages 
                         ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
-                        : 'bg-red-600 text-white hover:bg-red-700'
+                        : 'bg-red-500 text-white hover:bg-red-600 hover:shadow-md'
                     }`}
                   >
                     <span className="hidden sm:inline">Siguiente</span>
@@ -502,8 +504,8 @@ export default function AdminDashboard() {
 
       {/* Signature Modal */}
       {selectedSignature && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-2 sm:p-4 z-50">
-          <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 max-w-2xl w-full mx-2 sm:mx-4 max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 sm:p-6 lg:p-8 max-w-2xl w-full mx-2 sm:mx-4 max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4 sm:mb-6">
               <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800">Firma del Contrato</h3>
               <button
@@ -520,13 +522,13 @@ export default function AdminDashboard() {
               <p className="text-sm sm:text-base"><strong>Fecha:</strong> {formatTimestamp(selectedSignature.timestamp)}</p>
             </div>
             
-            <div className="border rounded-lg p-3 sm:p-4">
-              <p className="text-xs sm:text-sm text-gray-600 mb-2">Firma Digital:</p>
-              <div className="overflow-hidden rounded-lg">
+            <div className="border border-gray-200 rounded-xl p-3 sm:p-4 bg-gray-50/30">
+              <p className="text-xs sm:text-sm text-gray-600 mb-2 font-medium">Firma Digital:</p>
+              <div className="overflow-hidden rounded-xl bg-white border border-gray-100">
                 <Image
                   src={selectedSignature.signatureData}
                   alt="Firma"
-                  className="w-full max-w-full border border-gray-300 rounded-lg"
+                  className="w-full max-w-full rounded-xl"
                   style={{ maxHeight: '300px', objectFit: 'contain' }}
                   width={500}
                   height={300}
@@ -539,8 +541,8 @@ export default function AdminDashboard() {
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && deleteData && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6 sm:p-8 text-center">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 max-w-md w-full mx-4 p-6 sm:p-8 text-center">
             <div className="mb-4 sm:mb-6">
               <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 bg-red-100 rounded-full flex items-center justify-center mb-3 sm:mb-4">
                 <svg className="w-6 h-6 sm:w-8 sm:h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -563,13 +565,13 @@ export default function AdminDashboard() {
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <button
                 onClick={cancelDelete}
-                className="flex-1 py-2.5 sm:py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 hover:shadow-md transform hover:scale-105 active:scale-95 transition-all duration-200 text-sm sm:text-base cursor-pointer"
+                className="flex-1 py-2.5 sm:py-3 bg-gray-200 text-gray-700 font-semibold rounded-xl hover:bg-gray-300 hover:shadow-md transform hover:scale-105 active:scale-95 transition-all duration-200 text-sm sm:text-base cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 onClick={confirmDelete}
-                className="flex-1 py-2.5 sm:py-3 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 hover:shadow-lg transform hover:scale-105 active:scale-95 transition-all duration-200 text-sm sm:text-base cursor-pointer"
+                className="flex-1 py-2.5 sm:py-3 bg-red-500 text-white font-semibold rounded-xl hover:bg-red-600 hover:shadow-lg transform hover:scale-105 active:scale-95 transition-all duration-200 text-sm sm:text-base cursor-pointer"
               >
                 Eliminar Vehículo
               </button>
