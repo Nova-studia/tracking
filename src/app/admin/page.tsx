@@ -347,157 +347,162 @@ export default function AdminDashboard() {
         </div>
 
         {loading ? (
-          <div className="p-8 sm:p-12 text-center text-gray-500">
+          <div className="bg-white rounded-xl border border-gray-100 text-center py-16">
             <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
-            <span className="text-sm sm:text-base">Cargando contratos...</span>
+            <span className="text-sm sm:text-base text-gray-500">Cargando contratos...</span>
           </div>
         ) : contracts.length === 0 ? (
-          <div className="p-8 sm:p-12 text-center text-gray-500">
-            <span className="text-sm sm:text-base">No hay contratos registrados</span>
+          <div className="bg-white rounded-xl border border-gray-100 text-center py-16">
+            <div className="max-w-md mx-auto">
+              <div className="w-16 h-16 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M5 11l1.5-4.5h11L19 11H5zm1.5 5c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.22.42-1.42 1.01L3 12v7c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-7l-2.08-5.99z"/>
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No hay contratos registrados</h3>
+              <p className="text-gray-500 mb-6">Los contratos aparecerán aquí cuando se registren en el sistema</p>
+            </div>
           </div>
         ) : (
-          <div>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-full">
-                <thead className="bg-red-50/80 border-b border-red-200">
-                  <tr>
-                    <th className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 text-left text-xs sm:text-sm font-semibold text-red-800 w-12"></th>
-                    <th className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 text-left text-xs sm:text-sm font-semibold text-red-800">Teléfono</th>
-                    <th className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 text-left text-xs sm:text-sm font-semibold text-red-800">Nombre</th>
-                    <th className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 text-left text-xs sm:text-sm font-semibold text-red-800">Lote</th>
-                    <th className="hidden sm:table-cell px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 text-left text-xs sm:text-sm font-semibold text-red-800">Fecha y Hora</th>
-                    <th className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 text-left text-xs sm:text-sm font-semibold text-red-800">Firma</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {contracts.map((contract, index) => (
-                    <tr key={contract.id} className="border-b border-gray-100 hover:bg-red-50/50 transition-all duration-200">
-                      <td className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 text-center">
-                        <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full mx-auto flex items-center justify-center text-white text-xs font-bold ${
-                          index % 2 === 0 ? 'bg-red-500' : 'bg-red-600'
-                        }`}>
-                          {contract.id}
-                        </div>
-                      </td>
-                      <td className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 text-xs sm:text-sm font-mono">
-                        <span className="block sm:hidden text-xs text-gray-500">Tel:</span>
-                        <span className="break-all">{contract.phone_number || 'N/A'}</span>
-                      </td>
-                      <td className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 text-xs sm:text-sm font-medium">
-                        <span className="block sm:hidden text-xs text-gray-500">Nombre:</span>
-                        <span className="break-words">{contract.full_name || 'N/A'}</span>
-                      </td>
-                      <td className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4">
-                        <span className="block sm:hidden text-xs text-gray-500">Lote:</span>
-                        <span className="font-mono font-bold text-red-600 text-sm sm:text-base lg:text-lg break-all">
-                          {contract.lot_number}
-                        </span>
-                      </td>
-                      <td className="hidden sm:table-cell px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 text-xs sm:text-sm text-gray-600">
-                        {formatTimestamp(contract.timestamp)}
-                      </td>
-                      <td className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => viewSignature(
-                              contract.id,
-                              contract.lot_number,
-                              contract.full_name || 'N/A',
-                              contract.timestamp
-                            )}
-                            className="px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 bg-red-500 text-white text-xs sm:text-sm rounded-xl hover:bg-red-600 hover:shadow-md transform hover:scale-105 transition-all duration-200 whitespace-nowrap cursor-pointer font-medium"
-                          >
-                            Ver Firma
-                          </button>
-                          <button
-                            onClick={() => openDeleteModal(
-                              contract.id.toString(),
-                              contract.lot_number,
-                              contract.full_name || 'N/A'
-                            )}
-                            className="p-1.5 sm:p-2 bg-red-400 text-white rounded-xl hover:bg-red-500 hover:shadow-lg transform hover:scale-110 transition-all duration-200 cursor-pointer group active:scale-95"
-                            title={`Eliminar vehículo ${contract.lot_number}`}
-                            style={{ cursor: 'pointer' }}
-                          >
-                            <svg className="w-3 h-3 sm:w-4 sm:h-4 group-hover:rotate-12 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                        </div>
-                        <div className="block sm:hidden text-xs text-gray-500 mt-1">
-                          {formatTimestamp(contract.timestamp)}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="p-3 sm:p-4 lg:p-6 border-t border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-2">
-                <div className="flex items-center gap-1 sm:gap-2 w-full sm:w-auto justify-center">
-                  <button
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm transition-all duration-200 font-medium ${
-                      currentPage === 1 
-                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
-                        : 'bg-red-500 text-white hover:bg-red-600 hover:shadow-md'
-                    }`}
-                  >
-                    <span className="hidden sm:inline">Anterior</span>
-                    <span className="sm:hidden">←</span>
-                  </button>
-                  
-                  <div className="flex gap-1 mx-2">
-                    {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
-                      let pageNum;
-                      if (totalPages <= 3) {
-                        pageNum = i + 1;
-                      } else {
-                        const start = Math.max(1, currentPage - 1);
-                        const end = Math.min(totalPages, start + 2);
-                        pageNum = start + i;
-                        if (pageNum > end) return null;
-                      }
+          <div className="space-y-3">
+            {contracts.map((contract, index) => (
+              <div key={contract.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-200">
+                <div className="p-6">
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-start gap-4 flex-1">
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold text-lg ${
+                        index % 2 === 0 ? 'bg-gradient-to-br from-red-500 to-red-600' : 'bg-gradient-to-br from-red-600 to-red-700'
+                      }`}>
+                        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M5 11l1.5-4.5h11L19 11H5zm1.5 5c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.22.42-1.42 1.01L3 12v7c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-7l-2.08-5.99z"/>
+                        </svg>
+                      </div>
                       
-                      return (
-                        <button
-                          key={pageNum}
-                          onClick={() => handlePageChange(pageNum)}
-                          className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm min-w-[32px] sm:min-w-[36px] transition-all duration-200 font-medium ${
-                            currentPage === pageNum
-                              ? 'bg-red-500 text-white shadow-md'
-                              : 'bg-white text-red-500 border border-red-200 hover:bg-red-50 hover:shadow-sm'
-                          }`}
-                        >
-                          {pageNum}
-                        </button>
-                      );
-                    })}
+                      <div className="flex-1 min-w-0">
+                        <div className="mb-3">
+                          <h3 className="text-lg font-semibold text-gray-900">
+                            Lote {contract.lot_number}
+                          </h3>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
+                          <div className="flex items-center gap-2">
+                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            <span>{contract.full_name || 'Sin nombre'}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>
+                              {new Date(contract.timestamp).toLocaleDateString('es-ES', { 
+                                day: 'numeric', 
+                                month: 'short'
+                              })} - {new Date(contract.timestamp).toLocaleTimeString('es-ES', { 
+                                hour: '2-digit', 
+                                minute: '2-digit'
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 ml-4">
+                      <button
+                        onClick={() => viewSignature(
+                          contract.id,
+                          contract.lot_number,
+                          contract.full_name || 'N/A',
+                          contract.timestamp
+                        )}
+                        className="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 text-xs font-medium rounded-lg transition-colors"
+                      >
+                        Ver Firma
+                      </button>
+                      <button
+                        onClick={() => openDeleteModal(
+                          contract.id.toString(),
+                          contract.lot_number,
+                          contract.full_name || 'N/A'
+                        )}
+                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Eliminar contrato"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
-                  
-                  <button
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm transition-all duration-200 font-medium ${
-                      currentPage === totalPages 
-                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
-                        : 'bg-red-500 text-white hover:bg-red-600 hover:shadow-md'
-                    }`}
-                  >
-                    <span className="hidden sm:inline">Siguiente</span>
-                    <span className="sm:hidden">→</span>
-                  </button>
-                </div>
-                
-                <div className="text-xs text-gray-500 mt-2 sm:mt-0 sm:ml-4">
-                  Página {currentPage} de {totalPages}
                 </div>
               </div>
-            )}
+            ))}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-6 flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className={`px-3 py-2 rounded-xl text-sm transition-all duration-200 font-medium ${
+                  currentPage === 1 
+                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                    : 'bg-red-500 text-white hover:bg-red-600 hover:shadow-md'
+                }`}
+              >
+                <span className="hidden sm:inline">Anterior</span>
+                <span className="sm:hidden">←</span>
+              </button>
+              
+              <div className="flex gap-1 mx-2">
+                {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 3) {
+                    pageNum = i + 1;
+                  } else {
+                    const start = Math.max(1, currentPage - 1);
+                    const end = Math.min(totalPages, start + 2);
+                    pageNum = start + i;
+                    if (pageNum > end) return null;
+                  }
+                  
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => handlePageChange(pageNum)}
+                      className={`px-3 py-2 rounded-xl text-sm min-w-[36px] transition-all duration-200 font-medium ${
+                        currentPage === pageNum
+                          ? 'bg-red-500 text-white shadow-md'
+                          : 'bg-white text-red-500 border border-red-200 hover:bg-red-50 hover:shadow-sm'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+              
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className={`px-3 py-2 rounded-xl text-sm transition-all duration-200 font-medium ${
+                  currentPage === totalPages 
+                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                    : 'bg-red-500 text-white hover:bg-red-600 hover:shadow-md'
+                }`}
+              >
+                <span className="hidden sm:inline">Siguiente</span>
+                <span className="sm:hidden">→</span>
+              </button>
+            </div>
+            
+            <div className="text-sm text-gray-500 mt-2 sm:mt-0">
+              Página {currentPage} de {totalPages}
+            </div>
           </div>
         )}
       </div>
