@@ -169,6 +169,19 @@ const ContractSchema = new __TURBOPACK__imported__module__$5b$externals$5d2f$mon
         required: true,
         trim: true
     },
+    gatepass: {
+        type: String,
+        required: true,
+        trim: true,
+        maxlength: 6,
+        uppercase: true,
+        validate: {
+            validator: function(v) {
+                return /^[A-Z0-9]*$/.test(v);
+            },
+            message: 'Gatepass solo puede contener letras y números'
+        }
+    },
     signature_data: {
         type: String,
         required: true
@@ -218,7 +231,8 @@ async function GET(request, { params }) {
         }, {
             phone_number: 1,
             full_name: 1,
-            address: 1
+            address: 1,
+            gatepass: 1
         }).sort({
             timestamp: -1
         }).lean();
@@ -228,7 +242,8 @@ async function GET(request, { params }) {
                 userData: {
                     phone_number: existingContract.phone_number,
                     full_name: existingContract.full_name,
-                    address: existingContract.address
+                    address: existingContract.address,
+                    gatepass: existingContract.gatepass
                 }
             });
         } else {

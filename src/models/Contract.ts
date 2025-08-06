@@ -5,6 +5,7 @@ export interface IContract extends Document {
   lot_number: string;
   full_name: string;
   address: string;
+  gatepass: string;
   signature_data: string;
   timestamp: Date;
   ip_address?: string;
@@ -32,6 +33,19 @@ const ContractSchema: Schema = new Schema({
     type: String,
     required: true,
     trim: true
+  },
+  gatepass: {
+    type: String,
+    required: true,
+    trim: true,
+    maxlength: 6,
+    uppercase: true,
+    validate: {
+      validator: function(v: string) {
+        return /^[A-Z0-9]*$/.test(v);
+      },
+      message: 'Gatepass solo puede contener letras y números'
+    }
   },
   signature_data: {
     type: String,

@@ -169,6 +169,19 @@ const ContractSchema = new __TURBOPACK__imported__module__$5b$externals$5d2f$mon
         required: true,
         trim: true
     },
+    gatepass: {
+        type: String,
+        required: true,
+        trim: true,
+        maxlength: 6,
+        uppercase: true,
+        validate: {
+            validator: function(v) {
+                return /^[A-Z0-9]*$/.test(v);
+            },
+            message: 'Gatepass solo puede contener letras y números'
+        }
+    },
     signature_data: {
         type: String,
         required: true
@@ -291,14 +304,28 @@ async function POST(request) {
     try {
         await (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mongodb$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"])();
         const body = await request.json();
-        const { phoneNumber, lotNumber, fullName, address, signatureData } = body;
+        const { phoneNumber, lotNumber, fullName, address, gatepass, signatureData } = body;
+        console.log('📥 API received contract data:', {
+            phoneNumber,
+            lotNumber,
+            fullName,
+            address,
+            gatepass: gatepass ? 'PROVIDED' : 'MISSING',
+            signatureData: signatureData ? 'PROVIDED' : 'MISSING'
+        });
         // Get client IP
         const forwardedFor = request.headers.get('x-forwarded-for');
         const realIp = request.headers.get('x-real-ip');
         const ipAddress = forwardedFor?.split(',')[0] || realIp || 'unknown';
-        if (!phoneNumber || !lotNumber || !signatureData) {
+        if (!phoneNumber || !lotNumber || !gatepass || !signatureData) {
+            const missing = [];
+            if (!phoneNumber) missing.push('phoneNumber');
+            if (!lotNumber) missing.push('lotNumber');
+            if (!gatepass) missing.push('gatepass');
+            if (!signatureData) missing.push('signatureData');
+            console.log('❌ Missing required fields:', missing);
             return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
-                error: 'Teléfono, número de lote y firma son requeridos'
+                error: `Campos faltantes: ${missing.join(', ')}. Todos los campos son requeridos.`
             }, {
                 status: 400
             });
@@ -306,6 +333,13 @@ async function POST(request) {
         if (lotNumber.length !== 8) {
             return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
                 error: 'El número de lote debe tener exactamente 8 dígitos'
+            }, {
+                status: 400
+            });
+        }
+        if (gatepass.length > 6 || !/^[A-Z0-9]*$/.test(gatepass)) {
+            return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
+                error: 'El Gatepass debe tener máximo 6 caracteres alfanuméricos'
             }, {
                 status: 400
             });
@@ -327,6 +361,7 @@ async function POST(request) {
             lot_number: lotNumber.toUpperCase(),
             full_name: fullName,
             address: address,
+            gatepass: gatepass,
             signature_data: signatureData,
             ip_address: ipAddress
         });
@@ -376,7 +411,7 @@ async function GET(request) {
         // Get total count for pagination
         const total = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$models$2f$Contract$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].countDocuments(filter);
         // Get paginated results
-        const contracts = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$models$2f$Contract$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].find(filter).select('_id phone_number lot_number full_name address timestamp').sort({
+        const contracts = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$models$2f$Contract$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].find(filter).select('_id phone_number lot_number full_name address gatepass timestamp').sort({
             timestamp: -1
         }).skip(skip).limit(limit).lean();
         // Transform _id to id for frontend compatibility
@@ -386,6 +421,7 @@ async function GET(request) {
                 lot_number: contract.lot_number,
                 full_name: contract.full_name,
                 address: contract.address,
+                gatepass: contract.gatepass,
                 timestamp: contract.timestamp
             }));
         return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({

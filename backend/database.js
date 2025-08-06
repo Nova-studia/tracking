@@ -12,6 +12,7 @@ db.serialize(() => {
         phone_number TEXT NOT NULL,
         full_name TEXT,
         address TEXT,
+        gatepass TEXT,
         signature_data TEXT NOT NULL,
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
         ip_address TEXT
@@ -21,6 +22,7 @@ db.serialize(() => {
     db.run(`ALTER TABLE contracts ADD COLUMN phone_number TEXT`, () => {});
     db.run(`ALTER TABLE contracts ADD COLUMN full_name TEXT`, () => {});
     db.run(`ALTER TABLE contracts ADD COLUMN address TEXT`, () => {});
+    db.run(`ALTER TABLE contracts ADD COLUMN gatepass TEXT`, () => {});
 });
 
 module.exports = db;

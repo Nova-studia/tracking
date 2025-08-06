@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
           _id: "$phone_number",
           full_name: { $first: "$full_name" },
           address: { $first: "$address" },
+          gatepass: { $first: "$gatepass" },
           contracts: {
             $push: {
               _id: "$_id",
@@ -36,6 +37,7 @@ export async function GET(request: NextRequest) {
           phone_number: "$_id",
           full_name: 1,
           address: 1,
+          gatepass: 1,
           contracts: 1,
           contract_count: 1,
           first_contract: 1,

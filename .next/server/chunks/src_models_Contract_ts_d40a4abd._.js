@@ -31,6 +31,19 @@ const ContractSchema = new __TURBOPACK__imported__module__$5b$externals$5d2f$mon
         required: true,
         trim: true
     },
+    gatepass: {
+        type: String,
+        required: true,
+        trim: true,
+        maxlength: 6,
+        uppercase: true,
+        validate: {
+            validator: function(v) {
+                return /^[A-Z0-9]*$/.test(v);
+            },
+            message: 'Gatepass solo puede contener letras y números'
+        }
+    },
     signature_data: {
         type: String,
         required: true

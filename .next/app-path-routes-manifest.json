@@ -10,7 +10,9 @@
   "/api/db-migrate/route": "/api/db-migrate",
   "/api/db-search/route": "/api/db-search",
   "/api/db-test/route": "/api/db-test",
+  "/api/users/route": "/api/users",
   "/icon.svg/route": "/icon.svg",
   "/admin/page": "/admin",
-  "/page": "/"
+  "/page": "/",
+  "/users/page": "/users"
 }

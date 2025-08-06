@@ -6,6 +6,7 @@ interface UserData {
   phone_number: string;
   full_name: string;
   address: string;
+  gatepass: string;
 }
 
 export default function ContractForm() {
@@ -13,6 +14,7 @@ export default function ContractForm() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [fullName, setFullName] = useState('');
   const [address, setAddress] = useState('');
+  const [gatepass, setGatepass] = useState('');
   const [lotNumber, setLotNumber] = useState('');
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [userData, setUserData] = useState<UserData | null>(null);
@@ -210,6 +212,10 @@ export default function ContractForm() {
         // Usuario existente
         setUserData(data.userData);
         setPhoneVerified(true);
+        // Pre-llenar el gatepass si existe
+        if (data.userData.gatepass) {
+          setGatepass(data.userData.gatepass);
+        }
         setMessage('Teléfono verificado - Cliente existente. Proceda con el número de lote.');
         setMessageType('success');
         console.log('✅ Existing user verified:', data.userData);
@@ -256,6 +262,12 @@ export default function ContractForm() {
       return;
     }
 
+    if (!gatepass.trim()) {
+      setMessage('Por favor, ingrese el número de Gatepass.');
+      setMessageType('error');
+      return;
+    }
+
     if (!userData && (!fullName.trim() || !address.trim())) {
       setMessage('Por favor, complete todos los campos requeridos.');
       setMessageType('error');
@@ -276,18 +288,23 @@ export default function ContractForm() {
 
       const signatureData = canvas.toDataURL();
 
+      const requestData = {
+        phoneNumber: getFullPhoneNumber(),
+        lotNumber: lotNumber.toUpperCase(),
+        fullName: userData ? userData.full_name : fullName,
+        address: userData ? userData.address : address,
+        gatepass: gatepass,
+        signatureData,
+      };
+
+      console.log('📤 Sending contract data:', requestData);
+
       const response = await fetch('/api/contracts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          phoneNumber: getFullPhoneNumber(),
-          lotNumber: lotNumber.toUpperCase(),
-          fullName: userData ? userData.full_name : fullName,
-          address: userData ? userData.address : address,
-          signatureData,
-        }),
+        body: JSON.stringify(requestData),
       });
 
       if (response.ok) {
@@ -302,7 +319,10 @@ export default function ContractForm() {
         setShowSuccessModal(true);
         setIsLoading(false);
       } else {
-        throw new Error('Error en el servidor');
+        const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }));
+        console.log('❌ Server error response:', errorData);
+        setMessage(errorData.error || 'Error en el servidor');
+        setMessageType('error');
       }
     } catch {
       setMessage('Error al procesar el contrato. Por favor, intente nuevamente.');
@@ -337,6 +357,7 @@ export default function ContractForm() {
     setPhoneNumber('');
     setFullName('');
     setAddress('');
+    setGatepass('');
     setLotNumber('');
     setPhoneVerified(false);
     setUserData(null);
@@ -460,6 +481,7 @@ export default function ContractForm() {
                   required
                 />
               </div>
+
             </>
           )}
 
@@ -502,6 +524,35 @@ export default function ContractForm() {
                   {lotCheckMessage}
                 </p>
               )}
+            </div>
+          )}
+
+          {/* Gatepass Field */}
+          {phoneVerified && (
+            <div className="mb-4 sm:mb-6">
+              <label htmlFor="gatepass" className="block text-sm font-medium text-gray-700 mb-2">
+                Gatepass (máximo 6 caracteres):
+              </label>
+              <input
+                type="text"
+                id="gatepass"
+                value={gatepass}
+                onChange={(e) => {
+                  const value = e.target.value.toUpperCase();
+                  // Solo permitir letras y números, máximo 6 caracteres
+                  if (/^[A-Z0-9]*$/.test(value) && value.length <= 6) {
+                    setGatepass(value);
+                  }
+                }}
+                maxLength={6}
+                className="w-full px-4 py-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-base font-mono font-medium"
+                placeholder="Ejemplo: ABC123"
+                style={{minHeight: '48px', fontSize: '16px'}}
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Solo letras y números, máximo 6 caracteres ({gatepass.length}/6)
+              </p>
             </div>
           )}
 

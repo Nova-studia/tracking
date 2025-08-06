@@ -14,7 +14,7 @@ export async function GET(
     
     const existingContract = await Contract.findOne(
       { phone_number: phoneNumber },
-      { phone_number: 1, full_name: 1, address: 1 }
+      { phone_number: 1, full_name: 1, address: 1, gatepass: 1 }
     )
     .sort({ timestamp: -1 })
     .lean();
@@ -25,7 +25,8 @@ export async function GET(
         userData: {
           phone_number: existingContract.phone_number,
           full_name: existingContract.full_name,
-          address: existingContract.address
+          address: existingContract.address,
+          gatepass: existingContract.gatepass
         }
       });
     } else {
