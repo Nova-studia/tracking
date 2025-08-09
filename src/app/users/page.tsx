@@ -324,14 +324,14 @@ export default function UsersPage() {
                                 </div>
                               </div>
                               <Link
-                                href={`/api/contracts/${contract._id}`}
-                                className="px-3 py-1 bg-gray-100 text-gray-700 hover:bg-gray-200 text-xs font-medium rounded-lg transition-colors"
+                                href={`/viaje/${contract._id}`}
+                                className="px-3 py-1 bg-gray-100 text-gray-700 hover:bg-gray-200 text-xs font-medium rounded-lg transition-colors cursor-pointer"
                                 target="_blank"
                               >
                                 Ver
                               </Link>
                             </div>
-                            {contract.ip_address && (
+                            {contract.ip_address && contract.ip_address !== '::1' && (
                               <div className="flex items-center gap-2 text-xs text-gray-500 pt-2 border-t border-gray-100">
                                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9" />

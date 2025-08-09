@@ -334,11 +334,12 @@ export default function AdminDashboard() {
           <div className="bg-white rounded-b-2xl shadow-sm overflow-hidden">
             {/* Table Headers */}
             <div className="bg-white border-b border-gray-200">
-              <div className="grid grid-cols-12 gap-4 px-6 py-4 text-sm font-semibold text-gray-700">
+              <div className="grid grid-cols-14 gap-4 px-6 py-4 text-sm font-semibold text-gray-700">
                 <div className="col-span-1"></div>
                 <div className="col-span-2">Teléfono</div>
                 <div className="col-span-2">Nombre</div>
                 <div className="col-span-2">Lote</div>
+                <div className="col-span-2">Gatepass</div>
                 <div className="col-span-3">Fecha y Hora</div>
                 <div className="col-span-2">Firma</div>
               </div>
@@ -348,10 +349,10 @@ export default function AdminDashboard() {
             <div className="divide-y divide-gray-100">
               {contracts.map((contract, index) => (
                 <div key={contract.id} className="hover:bg-gray-50 transition-colors">
-                  <div className="grid grid-cols-12 gap-4 px-6 py-4 items-center">
+                  <div className="grid grid-cols-14 gap-4 px-6 py-4 items-center">
                     <div className="col-span-1">
-                      <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                        <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                        <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0H4m16 0l-2-2m0 0l-2 2m2-2v-4M4 13l2-2m0 0l2 2m-2-2v-4" />
                         </svg>
                       </div>
@@ -365,6 +366,11 @@ export default function AdminDashboard() {
                     <div className="col-span-2">
                       <span className="text-lg font-bold text-black font-mono">
                         {contract.lot_number}
+                      </span>
+                    </div>
+                    <div className="col-span-2 text-sm text-gray-600">
+                      <span className="font-mono">
+                        {contract.gatepass || 'N/A'}
                       </span>
                     </div>
                     <div className="col-span-3 text-sm text-gray-600">
