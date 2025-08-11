@@ -375,7 +375,7 @@ export default function ContractForm() {
   const displayLot = lotNumber || '[NÚMERO DE LOTE]';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center p-3 sm:p-4" style={{touchAction: 'manipulation'}}>
+    <div className="min-h-screen bg-black flex items-center justify-center p-3 sm:p-4" style={{touchAction: 'manipulation'}}>
       <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl max-w-2xl w-full p-4 sm:p-6 lg:p-8 mx-3 sm:mx-4" style={{maxWidth: '100vw', boxSizing: 'border-box'}}>
         <div className="text-center mb-4 sm:mb-6 lg:mb-8">
           <h1 className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-800 mb-2 leading-tight px-2">
@@ -689,7 +689,7 @@ export default function ContractForm() {
               
               <button
                 onClick={resetForm}
-                className="w-full py-4 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors text-base"
+                className="w-full py-4 bg-black text-white font-bold rounded-lg hover:bg-red-700 transition-colors text-base"
                 style={{minHeight: '48px', fontSize: '16px', touchAction: 'manipulation'}}
               >
                 Registrar Otro Vehículo

@@ -270,6 +270,15 @@ export default function AdminDashboard() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
             <h2 className="text-xl font-bold">Lista de Contratos</h2>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <Link
+                href="/users"
+                className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-medium flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+                </svg>
+                Usuarios
+              </Link>
               <div className="relative">
                 <input
                   type="text"
