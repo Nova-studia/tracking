@@ -1,0 +1,16 @@
+[Unit]
+Description=Tracking Next.js Application
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/var/www/tracking
+ExecStart=/usr/bin/npm run dev
+Restart=always
+RestartSec=10
+Environment=NODE_ENV=development
+Environment=PORT=3000
+
+[Install]
+WantedBy=multi-user.target

@@ -1,18 +1,19 @@
 {
+  "/api/db-test/route": "/api/db-test",
   "/_not-found/page": "/_not-found",
+  "/api/db-discover/route": "/api/db-discover",
+  "/api/db-search/route": "/api/db-search",
+  "/api/db-migrate/route": "/api/db-migrate",
   "/api/check-lot/[lot]/route": "/api/check-lot/[lot]",
   "/api/check-phone/[phone]/route": "/api/check-phone/[phone]",
   "/api/contracts/[id]/route": "/api/contracts/[id]",
-  "/api/contracts/[id]/signature/route": "/api/contracts/[id]/signature",
   "/api/contracts/route": "/api/contracts",
-  "/api/contracts/stream/route": "/api/contracts/stream",
-  "/api/db-discover/route": "/api/db-discover",
-  "/api/db-migrate/route": "/api/db-migrate",
-  "/api/db-search/route": "/api/db-search",
-  "/api/db-test/route": "/api/db-test",
   "/api/users/route": "/api/users",
+  "/api/contracts/[id]/signature/route": "/api/contracts/[id]/signature",
+  "/api/contracts/stream/route": "/api/contracts/stream",
   "/icon.svg/route": "/icon.svg",
   "/admin/page": "/admin",
   "/page": "/",
-  "/users/page": "/users"
+  "/users/page": "/users",
+  "/viaje/[id]/page": "/viaje/[id]"
 }

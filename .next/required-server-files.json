@@ -97,7 +97,7 @@
         "transform": "lodash/{{member}}"
       }
     },
-    "outputFileTracingRoot": "/home/nova/apps/tracking",
+    "outputFileTracingRoot": "/var/www/tracking",
     "experimental": {
       "useSkewCookie": false,
       "nodeMiddleware": false,
@@ -156,7 +156,7 @@
       "middlewarePrefetch": "flexible",
       "optimisticClientCache": true,
       "manualClientBasePath": false,
-      "cpus": 23,
+      "cpus": 1,
       "memoryBasedWorkersCount": false,
       "imgOptConcurrency": null,
       "imgOptTimeoutInSeconds": 7,
@@ -288,10 +288,10 @@
     "bundlePagesRouterDependencies": false,
     "configFileName": "next.config.ts",
     "turbopack": {
-      "root": "/home/nova/apps/tracking"
+      "root": "/var/www/tracking"
     }
   },
-  "appDir": "/home/nova/apps/tracking",
+  "appDir": "/var/www/tracking",
   "relativeAppDir": "",
   "files": [
     ".next/routes-manifest.json",

@@ -1,4 +1,4 @@
-// File: /home/nova/apps/tracking/src/app/api/db-migrate/route.ts
+// File: /var/www/tracking/src/app/api/db-migrate/route.ts
 import * as entry from '../../../../../src/app/api/db-migrate/route.js'
 import type { NextRequest } from 'next/server.js'
 
