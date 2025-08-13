@@ -370,6 +370,18 @@ export default function ContractForm() {
     clearSignature();
   };
 
+  const resetForNewVehicle = () => {
+    setGatepass('');
+    setLotNumber('');
+    setShowSuccessModal(false);
+    setSuccessData(null);
+    setMessage('');
+    setMessageType('');
+    setLotCheckMessage('');
+    setLotCheckType('');
+    clearSignature();
+  };
+
   const currentDate = new Date().toLocaleDateString('es-ES');
   const displayName = userData ? userData.full_name : (fullName || '[NOMBRE COMPLETO]');
   const displayLot = lotNumber || '[NÚMERO DE LOTE]';
@@ -688,7 +700,7 @@ export default function ContractForm() {
               </p>
               
               <button
-                onClick={resetForm}
+                onClick={resetForNewVehicle}
                 className="w-full py-4 bg-black text-white font-bold rounded-lg hover:bg-red-700 transition-colors text-base"
                 style={{minHeight: '48px', fontSize: '16px', touchAction: 'manipulation'}}
               >
@@ -696,7 +708,7 @@ export default function ContractForm() {
               </button>
               
               <button
-                onClick={() => setShowSuccessModal(false)}
+                onClick={resetForm}
                 className="w-full py-4 bg-gray-200 text-gray-700 font-bold rounded-lg hover:bg-gray-300 transition-colors text-base"
                 style={{minHeight: '48px', fontSize: '16px', touchAction: 'manipulation'}}
               >

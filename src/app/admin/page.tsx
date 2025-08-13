@@ -343,14 +343,13 @@ export default function AdminDashboard() {
           <div className="bg-white rounded-b-2xl shadow-sm overflow-hidden">
             {/* Table Headers */}
             <div className="bg-white border-b border-gray-200">
-              <div className="grid grid-cols-14 gap-4 px-6 py-4 text-sm font-semibold text-gray-700">
+              <div className="grid grid-cols-12 gap-4 px-6 py-4 text-sm font-semibold text-gray-700">
                 <div className="col-span-1"></div>
-                <div className="col-span-2">Teléfono</div>
-                <div className="col-span-2">Nombre</div>
+                <div className="col-span-3">Nombre</div>
                 <div className="col-span-2">Lote</div>
                 <div className="col-span-2">Gatepass</div>
                 <div className="col-span-3">Fecha y Hora</div>
-                <div className="col-span-2">Firma</div>
+                <div className="col-span-1">Firma</div>
               </div>
             </div>
             
@@ -358,7 +357,7 @@ export default function AdminDashboard() {
             <div className="divide-y divide-gray-100">
               {contracts.map((contract, index) => (
                 <div key={contract.id} className="hover:bg-gray-50 transition-colors">
-                  <div className="grid grid-cols-14 gap-4 px-6 py-4 items-center">
+                  <div className="grid grid-cols-12 gap-4 px-6 py-4 items-center">
                     <div className="col-span-1">
                       <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
                         <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -366,10 +365,7 @@ export default function AdminDashboard() {
                         </svg>
                       </div>
                     </div>
-                    <div className="col-span-2 text-sm text-gray-900">
-                      {contract.phone_number}
-                    </div>
-                    <div className="col-span-2 text-sm text-gray-900">
+                    <div className="col-span-3 text-sm text-gray-900">
                       {contract.full_name || 'N/A'}
                     </div>
                     <div className="col-span-2">
@@ -393,7 +389,7 @@ export default function AdminDashboard() {
                         minute: '2-digit'
                       })}
                     </div>
-                    <div className="col-span-2 flex gap-2">
+                    <div className="col-span-1 flex gap-2">
                       <button
                         onClick={() => viewSignature(
                           contract.id,
