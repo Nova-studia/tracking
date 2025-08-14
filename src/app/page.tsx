@@ -576,8 +576,10 @@ export default function ContractForm() {
                 Yo, <span className="font-semibold text-red-600">{displayName}</span>, el abajo firmante, 
                 <strong> ACEPTO Y RECONOZCO</strong> que el vehículo correspondiente al lote número{' '}
                 <span className="font-mono font-bold text-red-600 break-all">{displayLot}</span> es de mi 
-                propiedad y que entiendo que al término de 3 meses el vehículo se subastará en caso de no 
-                ser pagado o retirado de las instalaciones de Jorge Minnesota Logistics LLC.
+                propiedad y que entiendo que al término de 3 dias que el vehículo este en la posesion de Jorge Minnesota Logistics LLC empezara a acumular cargos de almacenamiento, en caso de no ser pagado o retirado de las instalaciones.
+              </p>
+              <p className="mb-3 sm:mb-4 leading-relaxed text-sm sm:text-base">
+                En dado caso de que no se retire despues de 3 meses de que empiezen los cargos illustrados arriba, se tomaran otras medidas legales.
               </p>
               <p className="mb-3 sm:mb-4 leading-relaxed text-sm sm:text-base">
                 Esta declaración es otorgada de manera voluntaria y con pleno conocimiento de las consecuencias 
