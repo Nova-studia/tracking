@@ -1,9 +1,12 @@
 {
   "/admin/page": "app/admin/page.js",
-  "/api/check-lot/[lot]/route": "app/api/check-lot/[lot]/route.js",
-  "/api/check-phone/[phone]/route": "app/api/check-phone/[phone]/route.js",
+  "/api/contracts/[id]/route": "app/api/contracts/[id]/route.js",
   "/api/contracts/[id]/signature/route": "app/api/contracts/[id]/signature/route.js",
   "/api/contracts/route": "app/api/contracts/route.js",
   "/api/contracts/stream/route": "app/api/contracts/stream/route.js",
-  "/page": "app/page.js"
+  "/api/user/[phone]/route": "app/api/user/[phone]/route.js",
+  "/api/users/route": "app/api/users/route.js",
+  "/user/[phone]/page": "app/user/[phone]/page.js",
+  "/users/page": "app/users/page.js",
+  "/viaje/[id]/page": "app/viaje/[id]/page.js"
 }

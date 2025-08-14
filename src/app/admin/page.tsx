@@ -37,7 +37,6 @@ export default function AdminDashboard() {
     lotNumber: string;
     fullName: string;
   } | null>(null);
-  const [expandedContract, setExpandedContract] = useState<number | null>(null);
   const recordsPerPage = 20;
 
   // Refs to keep current values for SSE callback
@@ -119,9 +118,6 @@ export default function AdminDashboard() {
     setCurrentPage(1);
   };
 
-  const toggleContractExpansion = (contractId: number) => {
-    setExpandedContract(expandedContract === contractId ? null : contractId);
-  };
 
   const totalPages = Math.ceil(totalContracts / recordsPerPage);
 

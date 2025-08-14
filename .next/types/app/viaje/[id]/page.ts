@@ -1,4 +1,4 @@
-// File: /var/www/tracking/src/app/viaje/[id]/page.tsx
+// File: /home/nova/apps/tracking/src/app/viaje/[id]/page.tsx
 import * as entry from '../../../../../src/app/viaje/[id]/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

@@ -7,6 +7,8 @@ export interface IContract extends Document {
   address: string;
   gatepass: string;
   signature_data: string;
+  owner_name: string;
+  owner_phone: string;
   timestamp: Date;
   ip_address?: string;
 }
@@ -50,6 +52,16 @@ const ContractSchema: Schema = new Schema({
   signature_data: {
     type: String,
     required: true
+  },
+  owner_name: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  owner_phone: {
+    type: String,
+    required: true,
+    trim: true
   },
   timestamp: {
     type: Date,

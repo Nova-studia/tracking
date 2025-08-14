@@ -48,6 +48,16 @@ const ContractSchema = new __TURBOPACK__imported__module__$5b$externals$5d2f$mon
         type: String,
         required: true
     },
+    owner_name: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    owner_phone: {
+        type: String,
+        required: true,
+        trim: true
+    },
     timestamp: {
         type: Date,
         default: Date.now

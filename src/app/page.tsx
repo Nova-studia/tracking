@@ -7,6 +7,8 @@ interface UserData {
   full_name: string;
   address: string;
   gatepass: string;
+  owner_name: string;
+  owner_phone: string;
 }
 
 export default function ContractForm() {
@@ -16,6 +18,8 @@ export default function ContractForm() {
   const [address, setAddress] = useState('');
   const [gatepass, setGatepass] = useState('');
   const [lotNumber, setLotNumber] = useState('');
+  const [ownerName, setOwnerName] = useState('');
+  const [ownerPhone, setOwnerPhone] = useState('');
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -212,9 +216,15 @@ export default function ContractForm() {
         // Usuario existente
         setUserData(data.userData);
         setPhoneVerified(true);
-        // Pre-llenar el gatepass si existe
+        // Pre-llenar los campos si existen
         if (data.userData.gatepass) {
           setGatepass(data.userData.gatepass);
+        }
+        if (data.userData.owner_name) {
+          setOwnerName(data.userData.owner_name);
+        }
+        if (data.userData.owner_phone) {
+          setOwnerPhone(data.userData.owner_phone);
         }
         setMessage('Teléfono verificado - Cliente existente. Proceda con el número de lote.');
         setMessageType('success');
@@ -268,7 +278,7 @@ export default function ContractForm() {
       return;
     }
 
-    if (!userData && (!fullName.trim() || !address.trim())) {
+    if (!userData && (!fullName.trim() || !address.trim() || !ownerName.trim() || !ownerPhone.trim())) {
       setMessage('Por favor, complete todos los campos requeridos.');
       setMessageType('error');
       return;
@@ -294,6 +304,8 @@ export default function ContractForm() {
         fullName: userData ? userData.full_name : fullName,
         address: userData ? userData.address : address,
         gatepass: gatepass,
+        ownerName: userData ? userData.owner_name : ownerName,
+        ownerPhone: userData ? userData.owner_phone : ownerPhone,
         signatureData,
       };
 
@@ -359,6 +371,8 @@ export default function ContractForm() {
     setAddress('');
     setGatepass('');
     setLotNumber('');
+    setOwnerName('');
+    setOwnerPhone('');
     setPhoneVerified(false);
     setUserData(null);
     setShowSuccessModal(false);
@@ -489,6 +503,44 @@ export default function ContractForm() {
                   onChange={(e) => setAddress(e.target.value)}
                   className="w-full px-4 py-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-base font-medium"
                   placeholder="Ingrese su dirección completa"
+                  style={{minHeight: '48px', fontSize: '16px'}}
+                  required
+                />
+              </div>
+
+              <div className="mb-4 sm:mb-6">
+                <label htmlFor="ownerName" className="block text-sm font-medium text-gray-700 mb-2">
+                  Nombre del Dueño de la Cuenta:
+                </label>
+                <input
+                  type="text"
+                  id="ownerName"
+                  value={ownerName}
+                  onChange={(e) => setOwnerName(e.target.value)}
+                  className="w-full px-4 py-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-base font-medium"
+                  placeholder="Ingrese el nombre del dueño de la cuenta"
+                  style={{minHeight: '48px', fontSize: '16px'}}
+                  required
+                />
+              </div>
+
+              <div className="mb-4 sm:mb-6">
+                <label htmlFor="ownerPhone" className="block text-sm font-medium text-gray-700 mb-2">
+                  Teléfono del Dueño de la Cuenta:
+                </label>
+                <input
+                  type="tel"
+                  id="ownerPhone"
+                  value={ownerPhone}
+                  onChange={(e) => {
+                    const formatted = formatPhoneNumber(e.target.value);
+                    if (formatted.replace(/\D/g, '').length <= 10) {
+                      setOwnerPhone(formatted);
+                    }
+                  }}
+                  className="w-full px-4 py-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-base font-medium"
+                  placeholder="(555) 123-4567"
+                  maxLength={14}
                   style={{minHeight: '48px', fontSize: '16px'}}
                   required
                 />

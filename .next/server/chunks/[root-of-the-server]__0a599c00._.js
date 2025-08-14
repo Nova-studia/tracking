@@ -186,6 +186,16 @@ const ContractSchema = new __TURBOPACK__imported__module__$5b$externals$5d2f$mon
         type: String,
         required: true
     },
+    owner_name: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    owner_phone: {
+        type: String,
+        required: true,
+        trim: true
+    },
     timestamp: {
         type: Date,
         default: Date.now
@@ -304,24 +314,28 @@ async function POST(request) {
     try {
         await (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mongodb$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"])();
         const body = await request.json();
-        const { phoneNumber, lotNumber, fullName, address, gatepass, signatureData } = body;
+        const { phoneNumber, lotNumber, fullName, address, gatepass, ownerName, ownerPhone, signatureData } = body;
         console.log('📥 API received contract data:', {
             phoneNumber,
             lotNumber,
             fullName,
             address,
             gatepass: gatepass ? 'PROVIDED' : 'MISSING',
+            ownerName,
+            ownerPhone,
             signatureData: signatureData ? 'PROVIDED' : 'MISSING'
         });
         // Get client IP
         const forwardedFor = request.headers.get('x-forwarded-for');
         const realIp = request.headers.get('x-real-ip');
         const ipAddress = forwardedFor?.split(',')[0] || realIp || 'unknown';
-        if (!phoneNumber || !lotNumber || !gatepass || !signatureData) {
+        if (!phoneNumber || !lotNumber || !gatepass || !ownerName || !ownerPhone || !signatureData) {
             const missing = [];
             if (!phoneNumber) missing.push('phoneNumber');
             if (!lotNumber) missing.push('lotNumber');
             if (!gatepass) missing.push('gatepass');
+            if (!ownerName) missing.push('ownerName');
+            if (!ownerPhone) missing.push('ownerPhone');
             if (!signatureData) missing.push('signatureData');
             console.log('❌ Missing required fields:', missing);
             return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
@@ -362,6 +376,8 @@ async function POST(request) {
             full_name: fullName,
             address: address,
             gatepass: gatepass,
+            owner_name: ownerName,
+            owner_phone: ownerPhone,
             signature_data: signatureData,
             ip_address: ipAddress
         });
@@ -411,7 +427,7 @@ async function GET(request) {
         // Get total count for pagination
         const total = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$models$2f$Contract$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].countDocuments(filter);
         // Get paginated results
-        const contracts = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$models$2f$Contract$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].find(filter).select('_id phone_number lot_number full_name address gatepass timestamp').sort({
+        const contracts = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$models$2f$Contract$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].find(filter).select('_id phone_number lot_number full_name address gatepass owner_name owner_phone timestamp').sort({
             timestamp: -1
         }).skip(skip).limit(limit).lean();
         // Transform _id to id for frontend compatibility
@@ -422,6 +438,8 @@ async function GET(request) {
                 full_name: contract.full_name,
                 address: contract.address,
                 gatepass: contract.gatepass,
+                owner_name: contract.owner_name,
+                owner_phone: contract.owner_phone,
                 timestamp: contract.timestamp
             }));
         return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
